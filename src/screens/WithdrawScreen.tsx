@@ -12,7 +12,6 @@ import {
 } from '../constants';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
-import { BalanceCard } from '../components/BalanceCard';
 
 interface Props {
   state: GameState;
@@ -89,17 +88,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         </div>
       )}
-
-      {/* ✅ STANDARD BALANCE CARD — same as Home & Slots screens */}
-      <BalanceCard
-        lockedPP={state.lockedPotPP}
-        withdrawablePP={state.withdrawablePP}
-        tierBadge={state.tierBadge}
-        tierLabel={state.tierLabel}
-        potCap={state.potCap}
-        xp={state.xp}
-        nextXp={state.nextXp}
-      />
 
       {/* Info Banner */}
       <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50 flex items-start gap-2">
