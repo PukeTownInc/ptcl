@@ -4,6 +4,7 @@ import type { GameState, Screen } from '../types';
 import { getTier } from '../constants';
 import type { GameActions } from '../useGameState';
 import { BalanceCard } from '../components/BalanceCard';
+import { XPBar } from '../components/XPBar';
 import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
 interface Props {
@@ -78,6 +79,8 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         nextXp={null}
         compact
       />
+      {/* XP Bar — directly under Balance Card */}
+      <XPBar xp={state.xp} nextXp={null} />
       {/* Spins remaining banner */}
       <button
         onClick={() => onNavigate('slots')}
