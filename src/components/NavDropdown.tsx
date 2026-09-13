@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Radioactive, Gamepad2, Zap, Trophy, Wallet, Settings, User, Check } from 'lucide-react';
 import type { Screen } from '../types';
-const NAV: { id: Screen; label: string; icon: typeof Radioactive }[] = [
-  { id: 'home', label: 'Contamination Zone', icon: Radioactive },
-  { id: 'slots', label: 'Reactor Reels', icon: Gamepad2 },
-  { id: 'missions', label: 'Hazard Duties', icon: Zap },
-  { id: 'leaderboards', label: 'Toxicity Ranks', icon: Trophy },
-  { id: 'withdraw', label: 'Waste Withdrawal', icon: Wallet },
-  { id: 'profile', label: 'Radiation Profile', icon: User },
-  { id: 'settings', label: 'Lab Controls', icon: Settings },
+const NAV = [
+  { id: 'home' as Screen, label: 'Contamination Zone', icon: Radioactive },
+  { id: 'slots' as Screen, label: 'Reactor Reels', icon: Gamepad2 },
+  { id: 'missions' as Screen, label: 'Hazard Duties', icon: Zap },
+  { id: 'leaderboards' as Screen, label: 'Toxicity Ranks', icon: Trophy },
+  { id: 'withdraw' as Screen, label: 'Waste Withdrawal', icon: Wallet },
+  { id: 'profile' as Screen, label: 'Radiation Profile', icon: User },
+  { id: 'settings' as Screen, label: 'Lab Controls', icon: Settings },
 ];
 export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s: Screen, target?: string) => void }) {
   const [open, setOpen] = useState(false);
