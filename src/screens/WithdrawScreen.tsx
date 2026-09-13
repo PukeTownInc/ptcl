@@ -89,22 +89,24 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       )}
 
-      {/* Balance Summary — UPDATED LABELS */}
+      {/* Balance Summary — ✅ BOXES SWAPPED */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet size={20} className="text-radioactive-400" />
           <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
-            <div className="text-[10px] text-radioactive-400/60 uppercase">CONTAGION CACHE</div>
-            <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
-            <div className="text-[10px] text-radioactive-300/40 font-mono">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
-          </div>
+          {/* LEFT BOX — NOW CONTAGION VAULT */}
           <div className="rounded-lg bg-ink-700/50 border border-toxic-900/40 p-3">
             <div className="text-[10px] text-toxic-100/40 uppercase">CONTAGION VAULT</div>
             <div className="font-mono text-xl font-bold text-toxic-300">{formatPP(state.lockedPotPP)}</div>
             <div className="text-[10px] text-toxic-100/30 font-mono">Watch video to unlock</div>
+          </div>
+          {/* RIGHT BOX — NOW CONTAGION CACHE */}
+          <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
+            <div className="text-[10px] text-radioactive-400/60 uppercase">CONTAGION CACHE</div>
+            <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
+            <div className="text-[10px] text-radioactive-300/40 font-mono">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
           </div>
         </div>
       </div>
@@ -245,7 +247,7 @@ function StatusBadge({ status }: { status: WithdrawalRecord['status'] }) {
   };
   return (
     <span className={`text-[10px] font-display font-bold uppercase px-2 py-0.5 rounded border ${styles[status]} flex items-center gap-1`}>
-      {status === 'sent' && <CheckCircle22 size={10} />}
+      {status === 'sent' && <CheckCircle2 size={10} />}
       {status === 'pending' && <Clock size={10} />}
       {status}
     </span>
