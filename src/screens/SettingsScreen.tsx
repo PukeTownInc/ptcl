@@ -37,7 +37,7 @@ export function SettingsScreen({ state, actions }: Props) {
             <h2 className="font-display font-bold text-sm text-toxic-300">Terms of Service</h2>
           </div>
           <div className="text-[11px] text-toxic-100/60 space-y-3 font-mono leading-relaxed">
-            <p><span className="text-toxic-400 font-bold">1. Eligibility.</span> Puke Town Cash Lab is a free-to-play rewards game. You must be 13 or older to use this app. If under 18, use only with parent or guardian consent.</p>
+            <p><span className="text-toxic-400 font-bold">1. Eligibility.</span> Puke Town Cash Lab is a free-to-play rewards game. You must be aged 13 or older to use this app. If you are under 13, you may use this service only with the explicit consent of a parent or legal guardian.</p>
             <p><span className="text-toxic-400 font-bold">2. Currency.</span> All in-game currency is Puke Points (PP). Conversion: 10,000 PP = $0.25 USD. Platform fee: 10% per withdrawal.</p>
             <p><span className="text-toxic-400 font-bold">3. Withdrawals.</span> Min 50,000 PP, max 500,000 PP per withdrawal. 24h cooldown between withdrawals, resetting at midnight UTC. Payouts via FaucetPay only.</p>
             <p><span className="text-toxic-400 font-bold">4. Resets.</span> Daily limits, free spins, and daily rewards reset automatically at midnight UTC every day. Monthly tiers, XP streaks, and monthly caps reset on the 1st of each month at 00:00 UTC. These are intentional design features — not bugs.</p>
@@ -59,13 +59,14 @@ export function SettingsScreen({ state, actions }: Props) {
             <h2 className="font-display font-bold text-sm text-toxic-300">Privacy Policy</h2>
           </div>
           <div className="text-[11px] text-toxic-100/60 space-y-3 font-mono leading-relaxed">
-            <p><span className="text-toxic-400 font-bold">1. Data Stored.</span> We store your email, game progress (XP, Puke Points, spins), and withdrawal history. All data is linked to your account.</p>
-            <p><span className="text-toxic-400 font-bold">2. Cloud Sync.</span> Your game state auto-syncs to our secure database on every change. Local backup is also kept on your device.</p>
-            <p><span className="text-toxic-400 font-bold">3. FaucetPay.</span> Your FaucetPay email is used solely for processing withdrawals. We never share it with third parties.</p>
-            <p><span className="text-toxic-400 font-bold">4. Ads.</span> Third-party ad networks may collect anonymous usage data per their own privacy policies.</p>
-            <p><span className="text-toxic-400 font-bold">5. Cookies.</span> We use local storage to persist your session and game state. No tracking cookies.</p>
-            <p><span className="text-toxic-400 font-bold">6. Deletion.</span> You can reset all progress in Settings. Account deletion removes all data permanently.</p>
-            <p><span className="text-toxic-400 font-bold">7. Children.</span> This service is not directed at children under 13. No knowingly collected data from minors.</p>
+            <p><span className="text-toxic-400 font-bold">1. What Data We Collect.</span> We only collect what is truly needed to run the app and save your progress: your email address, game progress (XP, Puke Points, spins, rewards, missions, withdrawal history), and your FaucetPay email address — only when you provide it for withdrawals. We do not collect unnecessary personal information.</p>
+            <p><span className="text-toxic-400 font-bold">2. How We Use Your Data.</span> To save your progress across devices and logins, process withdrawals, detect abuse, and send critical service announcements only. We never send marketing emails.</p>
+            <p><span className="text-toxic-400 font-bold">3. Data Storage & Security.</span> Your data is stored securely in our encrypted cloud database. We do not sell, rent, or share your personal information with anyone — ever.</p>
+            <p><span className="text-toxic-400 font-bold">4. Advertising Data.</span> Ad partners may collect limited anonymous usage data. This does not include your name, email, or personal identifiers.</p>
+            <p><span className="text-toxic-400 font-bold">5. Cookies & Local Storage.</span> We use only essential local storage to remember your session and game state. No tracking cookies.</p>
+            <p><span className="text-toxic-400 font-bold">6. Your Rights & Deletion.</span> Reset progress in Settings, or delete your account permanently. You may request full data deletion at any time.</p>
+            <p><span className="text-toxic-400 font-bold">7. Children.</span> You must be aged 13 or older to use this app. If you are under 13, you may use this service only with the explicit consent of a parent or legal guardian. We do not knowingly collect data from children under 13. If discovered without verified consent, it will be deleted immediately.</p>
+            <p><span className="text-toxic-400 font-bold">8. Updates.</span> We may update this policy. Continued use means acceptance.</p>
           </div>
         </div>
       </div>
