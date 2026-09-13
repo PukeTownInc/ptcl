@@ -18,40 +18,40 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
   const handleDailyBonus = () => {
     if (state.freeSpinsClaimed) {
-      toast('info', 'Already Claimed', 'Come back tomorrow for more free spins');
+      toast('info', 'Already Contaminated', 'Return tomorrow for more');
       return;
     }
     setAdModal({
-      title: 'Daily Bonus Spins',
-      subtitle: 'Watch this video to claim your daily reward',
-      reward: '+10 Spins',
+      title: 'Daily Contagion Bonus',
+      subtitle: 'Absorb radiation to claim reward',
+      reward: '+10 Toxic Twists',
       onComplete: () => {
         actions.claimDailyBonusSpins();
         actions.watchAd();
-        toast('success', 'Daily Bonus Claimed!', '+10 Spins added to your account');
+        toast('success', 'Contagion Absorbed!', '+10 Twists added');
       },
     });
   };
   const handleDailyBoost = () => {
     if (state.dailyBoostClaimed) {
-      toast('info', 'Already Claimed', 'Come back tomorrow for your next Daily Boost');
+      toast('info', 'Already Exposed', 'Return tomorrow for more');
       return;
     }
     setAdModal({
-      title: 'Daily Boost',
-      subtitle: 'Watch this video for your daily boost reward',
-      reward: '+5 Spins + 50 XP',
+      title: 'Radiation Surge',
+      subtitle: 'Absorb broadcast for daily boost',
+      reward: '+5 Twists + 50 Exposure',
       onComplete: () => {
         actions.claimDailyBoost();
         actions.addXP(50, true);
         actions.watchAd();
-        toast('success', 'Daily Boost Claimed!', '+5 Spins + 50 XP');
+        toast('success', 'Surge Active!', '+5 Twists + 50 Exposure');
       },
     });
   };
   return (
     <div className="space-y-4">
-      {/* Hero / logo panel */}
+      {/* Logo panel */}
       <div className="relative grunge-panel overflow-hidden">
         <div className="absolute inset-0 hazard-stripes opacity-[0.03]" />
         <div className="relative p-3 text-center flex items-center justify-center min-h-[140px]">
@@ -79,9 +79,9 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         nextXp={null}
         compact
       />
-      {/* XP Bar — directly under Balance Card */}
+      {/* Radiation Exposure Bar */}
       <XPBar xp={state.xp} nextXp={null} />
-      {/* Spins remaining banner */}
+      {/* Twists banner */}
       <button
         onClick={() => onNavigate('slots')}
         className="toxic-btn w-full py-4 flex items-center justify-between px-5 group"
@@ -89,13 +89,13 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         <div className="flex items-center gap-2">
           <Sparkles size={20} />
           <span className="text-left">
-            <div className="text-sm">{state.spinsRemaining} Spins Ready</div>
-            <div className="text-[10px] opacity-70 font-normal">Tap to spin & win Puke Points</div>
+            <div className="text-sm">{state.spinsRemaining} Toxic Twists Ready</div>
+            <div className="text-[10px] opacity-70 font-normal">Twist reels & gather Puke Points</div>
           </span>
         </div>
         <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
       </button>
-      {/* Daily bonus + daily boost */}
+      {/* Daily buttons */}
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={handleDailyBonus}
@@ -103,9 +103,9 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
           className="yellow-btn p-3 text-left h-full disabled:opacity-30"
         >
           <Gift size={20} className="mb-1" />
-          <div className="text-xs">Daily Bonus</div>
-          <div className="text-[10px] opacity-80 font-normal">+10 Spins</div>
-          <div className="ad-badge mt-1.5"><Tv size={8} /> Video</div>
+          <div className="text-xs">Daily Contagion</div>
+          <div className="text-[10px] opacity-80 font-normal">+10 Toxic Twists</div>
+          <div className="ad-badge mt-1.5"><Tv size={8} /> Toxic Broadcast</div>
         </button>
         <button
           onClick={handleDailyBoost}
@@ -113,16 +113,16 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
           className="yellow-btn p-3 text-left h-full disabled:opacity-30"
         >
           <Tv size={20} className="mb-1" />
-          <div className="text-xs">Daily Boost</div>
-          <div className="text-[10px] opacity-80 font-normal">+5 Spins + 50 XP</div>
-          <div className="ad-badge mt-1.5"><Tv size={8} /> Video</div>
+          <div className="text-xs">Radiation Surge</div>
+          <div className="text-[10px] opacity-80 font-normal">+5 Twists + 50 Exposure</div>
+          <div className="ad-badge mt-1.5"><Tv size={8} /> Contagion Feed</div>
         </button>
       </div>
       {/* Quick links */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
-        <QuickLink icon={<Target />} label="Daily Missions" sub="Complete all for 200 XP + 20 spins" onClick={() => onNavigate('missions')} />
-        <QuickLink icon={<Play />} label="Get Spinning" sub="Spin the slots & win Puke Points" onClick={() => onNavigate('slots')} />
-        <QuickLink icon={<Users />} label="Refer Friends" sub="+30 spins + 100 XP for each signup" onClick={() => onNavigate('profile', 'referral-box')} />
+        <QuickLink icon={<Target />} label="Contagion Goals" sub="Complete → 200 Exposure + 20 Twists" onClick={() => onNavigate('missions')} />
+        <QuickLink icon={<Play />} label="Enter Contagion" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
+        <QuickLink icon={<Users />} label="Spread Infection" sub="+30 Twists + 100 Exposure each" onClick={() => onNavigate('profile', 'referral-box')} />
       </div>
       <AdModal
         open={!!adModal}
