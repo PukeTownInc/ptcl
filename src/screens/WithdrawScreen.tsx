@@ -25,7 +25,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
   const [crypto, setCrypto] = useState(CRYPTO_OPTIONS[0].id);
   const [amountStr, setAmountStr] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
   const cooldownActive = state.lastWithdraw && Date.now() - state.lastWithdraw < WITHDRAW_COOLDOWN_MS;
   const cooldownMs = cooldownActive ? (WITHDRAW_COOLDOWN_MS - (Date.now() - (state.lastWithdraw as number))) : 0;
   const cooldownHrs = Math.ceil(cooldownMs / 3600000);
@@ -46,21 +45,19 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
 
   const handleWithdraw = () => {
     if (!isLoggedIn) {
-      toast('error', 'Login Required', 'Sign in to withdraw your Puke Points');
+      toast('error', 'QUARANTINED', 'Absorb radiation to access your Goop supply');
       return;
     }
     if (!canWithdraw) {
-      if (amount < MIN_WITHDRAW_PP) toast('error', 'Below Minimum', `Min withdrawal: ${formatPP(MIN_WITHDRAW_PP)} Puke Points`);
-      else if (amount > MAX_WITHDRAW_PP) toast('error', 'Above Maximum', `Max withdrawal: ${formatPP(MAX_WITHDRAW_PP)} Puke Points`);
-      else if (amount > state.withdrawablePP) toast('error', 'Insufficient Balance', 'Not enough withdrawable Puke Points');
-      else if (cooldownActive) toast('error', 'Cooldown Active', `Wait ${cooldownHrs}h before next withdrawal`);
-      else if (!email.trim()) toast('error', 'Email Required', 'Enter your FaucetPay email');
+      if (amount < MIN_WITHDRAW_PP) toast('error', 'DOSE TOO LOW', `Minimum release: ${formatPP(MIN_WITHDRAW_PP)} Goops`);
+      else if (amount > MAX_WITHDRAW_PP) toast('error', 'DOSE TOO HIGH', `Maximum release: ${formatPP(MAX_WITHDRAW_PP)} Goops`);
+      else if (amount > state.withdrawablePP) toast('error', 'INSUFFICIENT GOOP', 'Not enough decontaminated supply available');
+      else if (cooldownActive) toast('error', 'RADIATION COOLDOWN', `Wait ${cooldownHrs}h before next release`);
+      else if (!email.trim()) toast('error', 'EMAIL REQUIRED', 'Enter your FaucetPay email');
       return;
     }
-
     setSubmitting(true);
     actions.setFaucetpayEmail(email.trim());
-
     setTimeout(() => {
       const rec: WithdrawalRecord = {
         id: Math.random().toString(36).slice(2),
@@ -75,54 +72,54 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       actions.recordWithdrawal(rec);
       setSubmitting(false);
       setAmountStr('');
-      toast('success', 'Withdrawal Sent!', `$${payoutUsd.toFixed(2)} USD to ${email}`);
+      toast('success', '☢️ SUPPLY RELEASED!', `$${payoutUsd.toFixed(2)} USD sent to ${email}`);
     }, 1800);
   };
 
   return (
     <div className="space-y-4">
-      {/* Login required banner */}
+      {/* Login Required Banner */}
       {!isLoggedIn && (
         <div className="grunge-panel p-3 border-l-4 border-l-hazard-amber/50 flex items-start gap-2">
           <LogIn size={16} className="text-hazard-amber shrink-0 mt-0.5" />
           <div className="text-[11px] text-toxic-100/60">
-            <p className="text-hazard-amber font-bold">Login required to withdraw</p>
-            <p className="mt-0.5 text-toxic-100/40">Sign in with email to sync your balance and withdraw earnings.</p>
+            <p className="text-hazard-amber font-bold">☢️ EXPOSURE REQUIRED</p>
+            <p className="mt-0.5 text-toxic-100/40">Absorb radiation with your email to unlock and release your Goop supply.</p>
           </div>
         </div>
       )}
 
-      {/* Balance summary */}
+      {/* Balance Summary */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet size={20} className="text-radioactive-400" />
-          <h2 className="font-display font-bold text-sm text-radioactive-400">FaucetPay Withdrawal</h2>
+          <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
-            <div className="text-[10px] text-radioactive-400/60 uppercase">Withdrawable</div>
+            <div className="text-[10px] text-radioactive-400/60 uppercase">RELEASE SUPPLY</div>
             <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
             <div className="text-[10px] text-radioactive-300/40 font-mono">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
           </div>
           <div className="rounded-lg bg-ink-700/50 border border-toxic-900/40 p-3">
-            <div className="text-[10px] text-toxic-100/40 uppercase">Locked Pot</div>
+            <div className="text-[10px] text-toxic-100/40 uppercase">QUARANTINED RESERVE</div>
             <div className="font-mono text-xl font-bold text-toxic-300">{formatPP(state.lockedPotPP)}</div>
-            <div className="text-[10px] text-toxic-100/30 font-mono">Watch video to unlock</div>
+            <div className="text-[10px] text-toxic-100/30 font-mono">Absorb radiation to decontaminate</div>
           </div>
         </div>
       </div>
 
-      {/* Info banner */}
+      {/* Info Banner */}
       <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50 flex items-start gap-2">
         <AlertTriangle size={16} className="text-radioactive-400 shrink-0 mt-0.5" />
         <div className="text-[11px] text-toxic-100/60">
-          <p>Min withdrawal: <span className="text-radioactive-400 font-bold">{formatPP(MIN_WITHDRAW_PP)} PP</span> • Max: <span className="text-radioactive-400 font-bold">{formatPP(MAX_WITHDRAW_PP)} PP</span></p>
-          <p className="mt-1">Platform fee: <span className="text-hazard-amber">{(PLATFORM_FEE * 100).toFixed(0)}%</span> • Cooldown: 24h between withdrawals</p>
-          <p className="mt-1 text-toxic-100/40">Conversion: 10,000 Puke Points = $0.25 USD</p>
+          <p>Minimum release: <span className="text-radioactive-400 font-bold">{formatPP(MIN_WITHDRAW_PP)} Goops</span> • Maximum: <span className="text-radioactive-400 font-bold">{formatPP(MAX_WITHDRAW_PP)} Goops</span></p>
+          <p className="mt-1">Radiation processing fee: <span className="text-hazard-amber">{(PLATFORM_FEE * 100).toFixed(0)}%</span> • Contamination cooldown: 24h between releases</p>
+          <p className="mt-1 text-toxic-100/40">Contamination rate: 10,000 Goops = $0.25 USD</p>
         </div>
       </div>
 
-      {/* Withdrawal form */}
+      {/* Withdrawal Form — EMAIL BOX UNCHANGED */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -136,7 +133,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
 
         <div>
-          <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">Crypto Currency</label>
+          <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">Radiation Currency</label>
           <div className="grid grid-cols-3 gap-1.5">
             {CRYPTO_OPTIONS.map((c) => (
               <button
@@ -155,7 +152,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
 
         <div>
-          <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">Amount (Puke Points)</label>
+          <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">Dosage (Goops)</label>
           <input
             type="number"
             value={amountStr}
@@ -164,31 +161,31 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             className="w-full bg-ink-900 border border-toxic-900/50 rounded-lg px-3 py-2.5 font-mono text-sm text-toxic-200 focus:border-toxic-400 focus:outline-none focus:neon-border transition-all"
           />
           <div className="flex gap-1.5 mt-1.5">
-            <button onClick={() => setAmountStr(String(Math.min(MAX_WITHDRAW_PP, Math.max(MIN_WITHDRAW_PP, state.withdrawablePP))))} className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300">Max</button>
-            <button onClick={() => setAmountStr(String(MIN_WITHDRAW_PP))} className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300">Min</button>
+            <button onClick={() => setAmountStr(String(Math.min(MAX_WITHDRAW_PP, Math.max(MIN_WITHDRAW_PP, state.withdrawablePP))))} className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300">MAX DOSE</button>
+            <button onClick={() => setAmountStr(String(MIN_WITHDRAW_PP))} className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300">MIN DOSE</button>
           </div>
         </div>
 
-        {/* Fee breakdown */}
+        {/* Fee Breakdown */}
         {amount > 0 && (
           <div className="rounded-lg bg-ink-700/50 p-3 space-y-1.5 text-xs font-mono">
             <div className="flex justify-between text-toxic-100/60">
-              <span>Amount</span><span className="text-toxic-300">{formatPP(amount)} Puke Points</span>
+              <span>Contamination Dose</span><span className="text-toxic-300">{formatPP(amount)} Goops</span>
             </div>
             <div className="flex justify-between text-toxic-100/60">
-              <span>Platform fee (10%)</span><span className="text-hazard-amber">-{formatPP(fee)} Puke Points</span>
+              <span>Radiation Processing (10%)</span><span className="text-hazard-amber">-{formatPP(fee)} Goops</span>
             </div>
             <div className="flex justify-between text-toxic-100/60 border-t border-toxic-900/40 pt-1.5">
-              <span className="text-radioactive-400">You receive</span><span className="text-radioactive-400 font-bold">${payoutUsd.toFixed(2)} USD</span>
+              <span className="text-radioactive-400">☢️ You Receive</span><span className="text-radioactive-400 font-bold">${payoutUsd.toFixed(2)} USD</span>
             </div>
           </div>
         )}
 
-        {/* Cooldown notice */}
+        {/* Cooldown Notice */}
         {cooldownActive && (
           <div className="rounded-lg bg-hazard-amber/10 border border-hazard-amber/30 p-2.5 flex items-center gap-2">
             <Clock size={14} className="text-hazard-amber shrink-0" />
-            <span className="text-[11px] text-hazard-amber font-mono">Cooldown active — {cooldownHrs}h remaining</span>
+            <span className="text-[11px] text-hazard-amber font-mono">☢️ Radiation dissipating — {cooldownHrs}h until next release</span>
           </div>
         )}
 
@@ -198,19 +195,19 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2"
         >
           {submitting ? (
-            <><span className="animate-spin inline-block w-4 h-4 border-2 border-ink-900 border-t-transparent rounded-full" /> Processing...</>
+            <><span className="animate-spin inline-block w-4 h-4 border-2 border-ink-900 border-t-transparent rounded-full" /> Releasing...</>
           ) : (
-            <><Wallet size={18} /> Withdraw to FaucetPay <ArrowRight size={16} /></>
+            <><Wallet size={18} /> ☢️ RELEASE GOOP SUPPLY <ArrowRight size={16} /></>
           )}
         </button>
       </div>
 
-      {/* Withdrawal history */}
+      {/* Release History */}
       {state.withdrawalHistory.length > 0 && (
         <div className="grunge-panel p-4">
           <div className="flex items-center gap-2 mb-3">
             <History size={16} className="text-toxic-300" />
-            <h3 className="font-display font-bold text-sm text-toxic-300">Withdrawal History</h3>
+            <h3 className="font-display font-bold text-sm text-toxic-300">☢️ CONTAMINATION LOG</h3>
           </div>
           <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-hide">
             {state.withdrawalHistory.map((w) => (
@@ -228,11 +225,11 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       )}
 
-      {/* Security note */}
+      {/* Security Note */}
       <div className="grunge-panel p-3 flex items-start gap-2">
         <Lock size={14} className="text-toxic-400 shrink-0 mt-0.5" />
         <p className="text-[10px] text-toxic-100/40">
-          All payouts processed via FaucetPay server-side API. XP never affects withdrawals — pure progression only.
+          All supplies released via FaucetPay secure channel. Exposure levels do not affect your Goop — contamination is pure progression.
         </p>
       </div>
     </div>
@@ -246,11 +243,17 @@ function StatusBadge({ status }: { status: WithdrawalRecord['status'] }) {
     failed: 'text-hazard-red bg-hazard-red/10 border-hazard-red/40',
     refunded: 'text-toxic-100/40 bg-ink-700 border-toxic-900/40',
   };
+  const labels: Record<string, string> = {
+    sent: '☢️ RELEASED',
+    pending: '⏳ CONTAMINATING',
+    failed: '☠️ DISSIPATED',
+    refunded: '↩️ QUARANTINED',
+  };
   return (
     <span className={`text-[10px] font-display font-bold uppercase px-2 py-0.5 rounded border ${styles[status]} flex items-center gap-1`}>
       {status === 'sent' && <CheckCircle2 size={10} />}
       {status === 'pending' && <Clock size={10} />}
-      {status}
+      {labels[status] || status}
     </span>
   );
 }
