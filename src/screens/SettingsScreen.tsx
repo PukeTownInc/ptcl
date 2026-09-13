@@ -82,7 +82,7 @@ export function SettingsScreen({ state, actions }: Props) {
         </div>
         <div className="text-[11px] text-toxic-100/50 space-y-1.5 font-mono">
           <p className="text-toxic-400 font-bold">☢️ Puke Town Cash Lab ☢️</p>
-          <p>⏱️ Spend Minutes 💰 Earn Money</p>
+          <p>⏱️ Play & Watch Ads → Earn Puke Points → Withdraw as Cash Value</p>
           <p>💰 Currency: 10,000 Puke Points = $0.25 USD</p>
           <p className="text-toxic-100/40">🎰 Free Play • 💧 FaucetPay Native • 📱 PWA Ready</p>
         </div>
