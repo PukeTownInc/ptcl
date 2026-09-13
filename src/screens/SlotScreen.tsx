@@ -360,6 +360,36 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         compact
       />
 
+      {/* ✅ RADIATION EXPOSURE XP BAR — MATCHES HOME PAGE STYLE */}
+      <div className="grunge-panel p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Zap size={14} className="text-toxic-400" />
+            <span className="font-mono text-sm text-toxic-300">{state.xp.toLocaleString()} Contamination XP</span>
+          </div>
+          <span className="text-[10px] text-toxic-100/40 font-mono">+1 XP per Twist</span>
+        </div>
+        {(() => {
+          const next = getNextTier(state.xp);
+          if (!next) return (
+            <div className="h-2 rounded-full bg-radioactive-500/30 border border-radioactive-600/40" />
+          );
+          const cur = getTier(state.xp);
+          const pct = ((state.xp - cur.minXp) / (next.minXp - cur.minXp)) * 100;
+          return (
+            <>
+              <div className="h-2 rounded-full bg-ink-700 overflow-hidden">
+                <div className="h-full bg-toxic-400 transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
+              </div>
+              <div className="flex items-center justify-between mt-1 text-[9px] font-mono text-toxic-100/40">
+                <span>{cur.badge} {cur.label}</span>
+                <span>{next.badge} {next.label} • {next.minXp.toLocaleString()} XP</span>
+              </div>
+            </>
+          );
+        })()}
+      </div>
+
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
         <div className="flex flex-wrap gap-2">
           {freeSpinsLeft > 0 && (
