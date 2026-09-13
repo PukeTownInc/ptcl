@@ -1,4 +1,4 @@
-import type { SlotSymbol, SymbolId } from './types';
+import type { SlotSymbol, SymbolId, Tier } from './types';
 
 export const COLORS = {
   toxic: '#39FF14',
@@ -15,6 +15,34 @@ export const WITHDRAW_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 export const DAILY_XP_FREE_CAP = 150;
 export const DAILY_XP_BONUS_CAP = 100;
 export const DAILY_XP_MAX = 250;
+
+export interface TierInfo {
+  id: Tier;
+  label: string;
+  badge: string;
+  minXp: number;
+  maxXp: number;
+  potCap: number;
+  dailyUnlocks: number;
+  multiplier: number;
+  dailySpinsBase: number;
+  dailyMissions: number;
+}
+
+export const TIERS: TierInfo[] = [
+  { id: 'bronze',   label: 'Bronze',   badge: '🥉', minXp: 0,      maxXp: 500,    potCap: 15000,  dailyUnlocks: 1, multiplier: 1.0,  dailySpinsBase: 25, dailyMissions: 3 },
+  { id: 'silver',   label: 'Silver',   badge: '🥈', minXp: 500,    maxXp: 2500,   potCap: 30000,  dailyUnlocks: 2, multiplier: 1.05, dailySpinsBase: 40, dailyMissions: 5 },
+  { id: 'gold',     label: 'Gold',     badge: '🥇', minXp: 2500,   maxXp: 10000,  potCap: 60000,  dailyUnlocks: 3, multiplier: 1.1,  dailySpinsBase: 55, dailyMissions: 8 },
+  { id: 'platinum', label: 'Platinum', badge: '💎', minXp: 10000,  maxXp: Infinity, potCap: 150000, dailyUnlocks: 5, multiplier: 1.2,  dailySpinsBase: 85, dailyMissions: 12 },
+];
+
+export function getTier(xp: number): TierInfo {
+  return [...TIERS].reverse().find((t) => xp >= t.minXp) ?? TIERS[0];
+}
+
+export function getNextTier(xp: number): TierInfo | null {
+  return TIERS.find((t) => t.minXp > xp) ?? null;
+}
 
 export const SYMBOLS: Record<SymbolId, SlotSymbol> = {
   puke:    { id: 'puke',    emoji: '🤢', label: 'Nausea',  pays: [2, 3, 9],     weight: 26 },
@@ -42,19 +70,21 @@ export const JACKPOT_TYPES = [
   { type: 'major' as const, amount: 120, label: 'Major' },
   { type: 'grand' as const, amount: 300, label: 'Grand' },
 ];
+
 export const JACKPOT_WEIGHTS = [50, 30, 15, 5];
 
 export const REEL_COUNT = 5;
 export const ROW_COUNT = 3;
+
 export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 10;
 
 export const MISSIONS = [
-  { id: 'spins',     label: 'Twist Reels 20 Times', target: 20,  baseXp: 50,  adXp: 75,  icon: '🎰', adSpins: 5 },
-  { id: 'ads',       label: 'Absorb 5 Broadcasts', target: 5,   baseXp: 50,  adXp: 75,  icon: '📺', adSpins: 5 },
-  { id: 'wheel',     label: 'Spin Contagion Wheel 3 Times', target: 3, baseXp: 50, adXp: 75, icon: '🎡', adSpins: 5 },
-  { id: 'claistreak',label: 'Claim Daily Contagion', target: 1,  baseXp: 50,  adXp: 75,  icon: '📅', adSpins: 5 },
-  { id: 'earnpp',    label: 'Gather 100 Puke Points', target: 100, baseXp: 50, adXp: 75,  icon: '🎯', adSpins: 5 },
+  { id: 'spins',     label: 'Spin 20 Times',      target: 20,  baseXp: 50,  adXp: 75,  icon: '🎰', adSpins: 5 },
+  { id: 'ads',       label: 'Watch 5 Ads',        target: 5,   baseXp: 50,  adXp: 75,  icon: '📺', adSpins: 5 },
+  { id: 'wheel',     label: 'Spin the Double or Nothing Wheel 3 Times', target: 3, baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
+  { id: 'claistreak',label: 'Claim Daily Streak',  target: 1,  baseXp: 50,  adXp: 75,  icon: '📅', adSpins: 5 },
+  { id: 'earnpp',    label: 'Earn 100 Puke Points', target: 100, baseXp: 50, adXp: 75,  icon: '🎯', adSpins: 5 },
 ];
 
 export const ALL_MISSIONS_BONUS = { baseXp: 100, adXp: 150, baseSpins: 0, adSpins: 10 };
@@ -66,6 +96,7 @@ export interface StreakDayReward {
   ppBoost?: boolean;
   label: string;
 }
+
 export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 1, spins: 2, xp: 10, label: 'Day 1' },
   { day: 2, spins: 3, xp: 15, label: 'Day 2' },
@@ -75,9 +106,11 @@ export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 6, spins: 8, xp: 40, label: 'Day 6' },
   { day: 7, spins: 15, xp: 75, ppBoost: true, label: 'Day 7 — MAX!' },
 ];
+
 export const MAX_STREAK_DAY = 7;
 
 export const ppToUsd = (pp: number) => pp * PP_TO_USD;
+
 export function formatPP(pp: number): string {
   return pp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
