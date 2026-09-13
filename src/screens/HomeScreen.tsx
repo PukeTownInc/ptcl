@@ -3,22 +3,18 @@ import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target } from 'lucide-re
 import type { GameState, Screen } from '../types';
 import { getTier } from '../constants';
 import type { GameActions } from '../useGameState';
-import { Logo } from '../components/Logo';
 import { BalanceCard } from '../components/BalanceCard';
 import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
-
 interface Props {
   state: GameState;
   actions: GameActions;
   onNavigate: (s: Screen, target?: string) => void;
 }
-
 export function HomeScreen({ state, actions, onNavigate }: Props) {
   const toast = useToast();
   const tier = getTier(state.xp);
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
-
   const handleDailyBonus = () => {
     if (state.freeSpinsClaimed) {
       toast('info', 'Already Claimed', 'Come back tomorrow for more free spins');
@@ -35,7 +31,6 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       },
     });
   };
-
   const handleDailyBoost = () => {
     if (state.dailyBoostClaimed) {
       toast('info', 'Already Claimed', 'Come back tomorrow for your next Daily Boost');
@@ -53,20 +48,26 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       },
     });
   };
-
   return (
     <div className="space-y-4">
       {/* Hero / logo panel */}
       <div className="relative grunge-panel overflow-hidden">
         <div className="absolute inset-0 hazard-stripes opacity-[0.03]" />
         <div className="relative p-5 text-center">
-          <div className="animate-float flex justify-center">
-            <Logo large />
+          <div className="flex justify-center">
+            <img 
+              src="/logo.png" 
+              alt="Logo" 
+              style={{ 
+                height: '180px', 
+                width: 'auto',
+                objectFit: 'contain',
+                display: 'block'
+              }} 
+            />
           </div>
-          <h2 className="font-display font-black text-xl text-radioactive-400 neon-text-yellow tracking-[0.3em]">CASH LAB</h2>
         </div>
       </div>
-
       {/* Balance overview */}
       <BalanceCard
         lockedPP={state.lockedPotPP}
@@ -78,7 +79,6 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         nextXp={null}
         compact
       />
-
       {/* Spins remaining banner */}
       <button
         onClick={() => onNavigate('slots')}
@@ -93,7 +93,6 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         </div>
         <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
       </button>
-
       {/* Daily bonus + daily boost */}
       <div className="grid grid-cols-2 gap-3">
         <button
@@ -106,7 +105,6 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
           <div className="text-[10px] opacity-80 font-normal">+10 Spins</div>
           <div className="ad-badge mt-1.5"><Tv size={8} /> Video</div>
         </button>
-
         <button
           onClick={handleDailyBoost}
           disabled={state.dailyBoostClaimed}
@@ -118,14 +116,12 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
           <div className="ad-badge mt-1.5"><Tv size={8} /> Video</div>
         </button>
       </div>
-
       {/* Quick links */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
         <QuickLink icon={<Target />} label="Daily Missions" sub="Complete all for 200 XP + 20 spins" onClick={() => onNavigate('missions')} />
         <QuickLink icon={<Play />} label="Get Spinning" sub="Spin the slots & win Puke Points" onClick={() => onNavigate('slots')} />
         <QuickLink icon={<Users />} label="Refer Friends" sub="+30 spins + 100 XP for each signup" onClick={() => onNavigate('profile', 'referral-box')} />
       </div>
-
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
@@ -137,7 +133,6 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
     </div>
   );
 }
-
 function QuickLink({ icon, label, sub, onClick }: { icon: React.ReactNode; label: string; sub: string; onClick: () => void }) {
   return (
     <button onClick={onClick} className="flex items-center gap-3 px-4 py-3 w-full hover:bg-toxic-500/5 transition-colors text-left">
@@ -150,5 +145,3 @@ function QuickLink({ icon, label, sub, onClick }: { icon: React.ReactNode; label
     </button>
   );
 }
-
-
