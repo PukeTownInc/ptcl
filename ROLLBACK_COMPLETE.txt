@@ -1,0 +1,17 @@
+ROLLBACK COMPLETE ✅
+
+Timestamp: 2026-09-13T17:26:03Z
+Repository has been successfully restored to commit d675903a2e59fb8e2e9041a99d7059dd632725e3
+
+Commits reverted:
+- e8ccc3845ffb687b8acd8475fbb5ca705e549d84: Simplify dependencies array in useGameState
+- 00ea31090e2de253eaffc495a36a58439e8f9b20: Refactor HomeScreen to remove unused loginStreak
+- c9b0978f6ce0af78bb6f95f9674cb478b9e6ce3e: Refactor useGameState by removing loginStreak
+- d5cc4df0b9709ae8f09defa92c9a451a90091218: Refactor HomeScreen component and state management
+- cf23192b1c856e6fd545fcb20aaaa148db7e4062: Revise comments for BalanceCard and XPBar components
+- 7d2879cd92e225c3125cff27a6fca6fb09e7d927: Refactor HomeScreen to remove tier props
+- 12319832dec8df7cdf4bca02d957be575b155ad6: Remove Tier type from types.ts
+- 121774c51f035933c92924cb0d85d4a782c057dd: Refactor game state logic removing tiers
+- 4219863be0111aeb0a63ef56d311b73125f00bda: Refactor constants and update mission labels theme
+
+Safe state restored. All files now match commit d675903.
