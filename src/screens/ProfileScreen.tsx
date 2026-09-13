@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, Share2, Copy, Check } from 'lucide-react';
 import type { GameState } from '../types';
-import { getTier, TIERS } from '../constants';
+import { getTier } from '../constants';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { Logo } from '../components/Logo';
@@ -85,38 +85,6 @@ export function ProfileScreen({ state, actions }: Props) {
             <Share2 size={12} className="inline mr-1" /> Simulate Referral
           </button>
         </div>
-      </div>
-      {/* Tier table */}
-      <div className="grunge-panel p-4">
-        <h3 className="font-display font-bold text-sm text-toxic-300 mb-3">XP Tier System</h3>
-        <div className="space-y-2">
-          {TIERS.map((t) => {
-            const isCurrent = tier.id === t.id;
-            return (
-              <div
-                key={t.id}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
-                  isCurrent ? 'bg-toxic-500/10 border-toxic-400/40' : 'bg-ink-700/40 border-toxic-900/30'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{t.badge}</span>
-                  <div>
-                    <div className={`font-display font-bold text-xs ${isCurrent ? 'text-toxic-400' : 'text-toxic-200'}`}>{t.label}</div>
-                    <div className="text-[9px] text-toxic-100/40 font-mono">{t.minXp.toLocaleString()}{t.maxXp !== Infinity ? `–${t.maxXp.toLocaleString()}` : '+'} XP</div>
-                  </div>
-                </div>
-                <div className="text-right text-[10px] font-mono text-toxic-100/50">
-                  <div>{(t.potCap / 1000).toFixed(0)}k pot</div>
-                  <div className="text-radioactive-400">x{t.multiplier}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <p className="text-[10px] text-toxic-100/40 mt-3 font-mono">
-          XP = progress only • never converts to cash • all limits reset midnight UTC
-        </p>
       </div>
     </div>
   );
