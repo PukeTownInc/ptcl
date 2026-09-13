@@ -30,7 +30,7 @@ export function BalanceCard({
         </div>
         <div className="flex items-baseline gap-2 mt-1">
           <span className="font-mono text-2xl font-bold text-toxic-400 neon-text">{formatPP(lockedPP)}</span>
-          <span className="text-xs text-toxic-100/50">Contagion Points</span>
+          <span className="text-xs text-toxic-100/50">Puke Points</span>
         </div>
         <div className="text-[10px] font-mono text-toxic-100/40 mt-0.5">
           ${ppToUsd(lockedPP).toFixed(2)} Contagion Value
@@ -41,14 +41,14 @@ export function BalanceCard({
             style={{ width: `${potPct}%` }}
           />
         </div>
-        <p className="text-[9px] font-mono text-toxic-100/30 mt-1">{formatPP(lockedPP)} / {formatPP(potCap)} Contagion Points</p>
+        <p className="text-[9px] font-mono text-toxic-100/30 mt-1">{formatPP(lockedPP)} / {formatPP(potCap)} Puke Points</p>
       </div>
       {/* Contagion Cache */}
       <div className="rounded-lg p-3 border border-radioactive-600/40 bg-radioactive-500/5">
         <span className="text-xs font-display uppercase tracking-wider text-radioactive-400">Contagion Cache</span>
         <div className="flex items-baseline gap-2 mt-1">
           <span className="font-mono text-2xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(withdrawablePP)}</span>
-          <span className="text-xs text-radioactive-300/60">Contagion Points</span>
+          <span className="text-xs text-radioactive-300/60">Puke Points</span>
         </div>
         <div className="text-[10px] font-mono text-radioactive-300/40 mt-0.5">
           ${ppToUsd(withdrawablePP).toFixed(2)} Contagion Value
