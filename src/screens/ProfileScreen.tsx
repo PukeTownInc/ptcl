@@ -51,7 +51,7 @@ export function ProfileScreen({ state, actions }: Props) {
           </div>
           <div className="flex-1">
             <h2 className="font-display font-bold text-sm text-toxic-300">Player Account</h2>
-            <p className="text-[11px] text-toxic-100/50 font-mono">{tier.badge} {tier.label} • {state.xp.toLocaleString()} XP</p>
+            <p className="text-[11px] text-toxic-100/50 font-mono">{state.xp.toLocaleString()} XP</p>
           </div>
         </div>
         {/* Lifetime stats */}
