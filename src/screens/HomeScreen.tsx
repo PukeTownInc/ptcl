@@ -1,21 +1,22 @@
 import { useState } from 'react';
 import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target } from 'lucide-react';
 import type { GameState, Screen } from '../types';
-import { getTier } from '../constants';
 import type { GameActions } from '../useGameState';
 import { BalanceCard } from '../components/BalanceCard';
 import { XPBar } from '../components/XPBar';
 import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
+
 interface Props {
   state: GameState;
   actions: GameActions;
   onNavigate: (s: Screen, target?: string) => void;
 }
+
 export function HomeScreen({ state, actions, onNavigate }: Props) {
   const toast = useToast();
-  const tier = getTier(state.xp);
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
+
   const handleDailyBonus = () => {
     if (state.freeSpinsClaimed) {
       toast('info', 'Already Contaminated', 'Return tomorrow for more');
@@ -32,6 +33,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       },
     });
   };
+
   const handleDailyBoost = () => {
     if (state.dailyBoostClaimed) {
       toast('info', 'Already Exposed', 'Return tomorrow for more');
@@ -49,6 +51,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       },
     });
   };
+
   return (
     <div className="space-y-4">
       {/* Logo panel */}
@@ -68,19 +71,19 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
           />
         </div>
       </div>
-      {/* Balance overview */}
+
+      {/* Balance overview — NO TIER PROPS ANYMORE ✅ */}
       <BalanceCard
         lockedPP={state.lockedPotPP}
         withdrawablePP={state.withdrawablePP}
-        tierBadge={tier.badge}
-        tierLabel={tier.label}
-        potCap={tier.potCap}
         xp={state.xp}
         nextXp={null}
         compact
       />
-      {/* Radiation Exposure Bar */}
-      <XPBar xp={state.xp} nextXp={null} />
+
+      {/* Radiation Exposure Bar — ONLY xp ✅ */}
+      <XPBar xp={state.xp} />
+
       {/* Twists banner */}
       <button
         onClick={() => onNavigate('slots')}
@@ -95,6 +98,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         </div>
         <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
       </button>
+
       {/* Daily buttons */}
       <div className="grid grid-cols-2 gap-3">
         <button
@@ -118,12 +122,14 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
           <div className="ad-badge mt-1.5"><Tv size={8} /> Contagion Feed</div>
         </button>
       </div>
+
       {/* Quick links */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
         <QuickLink icon={<Target />} label="Contagion Goals" sub="Complete → 200 Exposure + 20 Twists" onClick={() => onNavigate('missions')} />
         <QuickLink icon={<Play />} label="Enter Contagion" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
         <QuickLink icon={<Users />} label="Spread Infection" sub="+30 Twists + 100 Exposure each" onClick={() => onNavigate('profile', 'referral-box')} />
       </div>
+
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
@@ -135,6 +141,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
     </div>
   );
 }
+
 function QuickLink({ icon, label, sub, onClick }: { icon: React.ReactNode; label: string; sub: string; onClick: () => void }) {
   return (
     <button onClick={onClick} className="flex items-center gap-3 px-4 py-3 w-full hover:bg-toxic-500/5 transition-colors text-left">
