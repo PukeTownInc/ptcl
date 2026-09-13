@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Trash2, Info, FileText, Shield } from 'lucide-react';
 import type { GameState } from '../types';
 import type { GameActions } from '../useGameState';
@@ -6,24 +6,6 @@ import { useToast } from '../components/Toast';
 interface Props {
   state: GameState;
   actions: GameActions;
-}
-function useMonthlyCountdown() {
-  const [remaining, setRemaining] = useState('');
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-      const diff = nextMonth.getTime() - now.getTime();
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      setRemaining(`${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`);
-    };
-    update();
-    const interval = setInterval(update, 60000);
-    return () => clearInterval(interval);
-  }, []);
-  return remaining;
 }
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -45,7 +27,6 @@ export function SettingsScreen({ state, actions }: Props) {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [sound, setSound] = useState(true);
   const [haptic, setHaptic] = useState(true);
-  const monthlyCountdown = useMonthlyCountdown();
 
   if (showTerms) {
     return (
@@ -93,15 +74,6 @@ export function SettingsScreen({ state, actions }: Props) {
   }
   return (
     <div className="space-y-4">
-      {/* Monthly reset countdown */}
-      <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50">
-        <div className="flex items-center justify-between">
-          <div className="text-[11px] text-toxic-100/60 font-mono">
-            <span className="text-radioactive-400 font-bold">Monthly Reset</span> — 1st of next month 00:00 UTC
-          </div>
-          <span className="font-mono text-sm font-bold text-radioactive-400 neon-text-yellow tabular-nums">{monthlyCountdown}</span>
-        </div>
-      </div>
       {/* About */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-2">
