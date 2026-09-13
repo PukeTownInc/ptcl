@@ -6,12 +6,10 @@ import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { Logo } from '../components/Logo';
 import { StatsGrid } from '../components/StatsGrid';
-
 interface Props {
   state: GameState;
   actions: GameActions;
 }
-
 function useMonthlyCountdown() {
   const [remaining, setRemaining] = useState('');
   useEffect(() => {
@@ -30,7 +28,6 @@ function useMonthlyCountdown() {
   }, []);
   return remaining;
 }
-
 export function ProfileScreen({ state, actions }: Props) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
@@ -46,10 +43,8 @@ export function ProfileScreen({ state, actions }: Props) {
       return 'PUKE-XXXXXX';
     }
   });
-
   const tier = getTier(state.xp);
   const referralLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://puketown.app'}/?ref=${referralCode}`;
-
   const handleCopyLink = () => {
     try {
       navigator.clipboard.writeText(referralLink);
@@ -60,13 +55,11 @@ export function ProfileScreen({ state, actions }: Props) {
       toast('error', 'Copy Failed', 'Copy this link manually');
     }
   };
-
   const handleSimulateReferral = () => {
     actions.recordReferral();
     actions.addXP(100, true);
     toast('success', 'Referral Bonus!', '+30 spins + 100 XP (when friend watches 1st ad)');
   };
-
   return (
     <div className="space-y-4">
       {/* Account / tier card */}
@@ -80,24 +73,12 @@ export function ProfileScreen({ state, actions }: Props) {
             <p className="text-[11px] text-toxic-100/50 font-mono">{tier.badge} {tier.label} • {state.xp.toLocaleString()} XP</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="stat-chip text-center">
-            <div className="text-[9px] text-toxic-100/40 uppercase">Total Spins</div>
-            <div className="text-toxic-300 text-sm">{state.totalSpins.toLocaleString()}</div>
-          </div>
-          <div className="stat-chip text-center">
-            <div className="text-[9px] text-toxic-100/40 uppercase">Jackpots Won</div>
-            <div className="text-radioactive-400 text-sm">{state.jackpotWins}</div>
-          </div>
-        </div>
-
         {/* Lifetime stats */}
         <div className="mt-3">
           <h4 className="font-display font-bold text-xs text-toxic-300 mb-2 px-1">Lifetime Stats</h4>
           <StatsGrid state={state} />
         </div>
       </div>
-
       {/* Monthly reset countdown */}
       <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50">
         <div className="flex items-center justify-between">
@@ -107,7 +88,6 @@ export function ProfileScreen({ state, actions }: Props) {
           <span className="font-mono text-sm font-bold text-radioactive-400 neon-text-yellow tabular-nums">{monthlyCountdown}</span>
         </div>
       </div>
-
       {/* Referral section */}
       <div id="referral-box" className="grunge-panel p-4 scroll-mt-20">
         <div className="flex items-center gap-2 mb-3">
@@ -134,7 +114,6 @@ export function ProfileScreen({ state, actions }: Props) {
           </button>
         </div>
       </div>
-
       {/* Tier table */}
       <div className="grunge-panel p-4">
         <h3 className="font-display font-bold text-sm text-toxic-300 mb-3">XP Tier System</h3>
@@ -167,7 +146,6 @@ export function ProfileScreen({ state, actions }: Props) {
           XP = progress only • never converts to cash • all limits reset midnight UTC
         </p>
       </div>
-
       {/* Preferences */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
         <div className="px-4 py-3 flex items-center justify-between">
@@ -186,7 +164,6 @@ export function ProfileScreen({ state, actions }: Props) {
     </div>
   );
 }
-
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
