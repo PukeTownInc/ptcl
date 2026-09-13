@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Tv, Zap, Flame, Users, ChevronRight, Target } from 'lucide-react';
+import { useState } from 'react';
+import { Tv, Zap, Users, ChevronRight, Target } from 'lucide-react';
 import type { GameState, Screen } from '../types';
 import { getTier, getNextTier, NEXT_MONTHLY_RESET } from '../constants';
 import type { GameActions } from '../useGameState';
-import { isXPBoostActive, isHotStreakActive } from '../useGameState';
 import { Logo } from '../components/Logo';
 import { BalanceCard } from '../components/BalanceCard';
 import { XPBar } from '../components/XPBar';
@@ -20,7 +19,6 @@ interface Props {
 export function HomeScreen({ state, actions, onNavigate }: Props) {
   const toast = useToast();
   const [showAd, setShowAd] = useState(false);
-  const [adReward, setAdReward] = useState<{ pp: number; xp: number } | null>(null);
 
   const tier = getTier(state.xp);
   const nextTier = getNextTier(state.xp);
@@ -28,7 +26,6 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
   const handleAdComplete = (rewardPP: number, rewardXP: number) => {
     actions.earnPP(rewardPP);
     actions.earnXP(rewardXP);
-    setAdReward({ pp: rewardPP, xp: rewardXP });
     setShowAd(false);
     toast('success', 'Ad Watched!', `+${rewardPP} Puke Points • +${rewardXP} XP`);
   };
