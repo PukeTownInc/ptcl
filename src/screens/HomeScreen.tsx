@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Tv, Zap, Flame, Users, ChevronRight, Target, Wallet } from 'lucide-react';
+import { Tv, Zap, Flame, Users, ChevronRight, Target } from 'lucide-react';
 import type { GameState, Screen } from '../types';
-import { getTier, getNextTier, NEXT_MONTHLY_RESET, formatPP, ppToUsd } from '../constants';
+import { getTier, getNextTier, NEXT_MONTHLY_RESET } from '../constants';
 import type { GameActions } from '../useGameState';
 import { isXPBoostActive, isHotStreakActive } from '../useGameState';
 import { Logo } from '../components/Logo';
+import { BalanceCard } from '../components/BalanceCard';
 import { XPBar } from '../components/XPBar';
 import { StatsGrid } from '../components/StatsGrid';
 import { AdModal } from '../components/AdModal';
@@ -42,27 +43,15 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         </div>
       </div>
 
-      {/* ✅ WORKING BALANCE BOX — same as Withdraw Screen */}
-      <div className="grunge-panel p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Wallet size={20} className="text-radioactive-400" />
-          <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {/* LEFT — CONTAGION VAULT */}
-          <div className="rounded-lg bg-ink-700/50 border border-toxic-900/40 p-3">
-            <div className="text-[10px] text-toxic-100/40 uppercase">CONTAGION VAULT</div>
-            <div className="font-mono text-xl font-bold text-toxic-300">{formatPP(state.lockedPotPP)}</div>
-            <div className="text-[10px] text-toxic-100/30 font-mono">Watch video to unlock</div>
-          </div>
-          {/* RIGHT — CONTAGION CACHE */}
-          <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
-            <div className="text-[10px] text-radioactive-400/60 uppercase">CONTAGION CACHE</div>
-            <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
-            <div className="text-[10px] text-radioactive-300/40 font-mono">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
-          </div>
-        </div>
-      </div>
+      <BalanceCard
+        lockedPP={state.lockedPotPP}
+        withdrawablePP={state.withdrawablePP}
+        tierBadge={tier.badge}
+        tierLabel={tier.label}
+        potCap={state.potCap}
+        xp={state.xp}
+        nextXp={nextTier?.xpRequired ?? null}
+      />
 
       <XPBar xp={state.xp} nextXp={nextTier?.xpRequired ?? null} tierLabel={tier.label} />
 
