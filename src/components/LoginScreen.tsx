@@ -26,15 +26,16 @@ export function LoginScreen({ onSkip }: Props) {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ink-900 px-6 animate-fade-in overflow-y-auto py-8">
       <div className="absolute inset-0 hazard-stripes opacity-[0.03]" />
-      <div className="relative text-center mb-6">
-        <div className="animate-float">
+      <div className="relative text-center mb-6 w-full flex flex-col items-center">
+        <div className="flex justify-center">
           <img 
             src="/logo.png" 
             alt="Logo" 
             style={{ 
-              height: '80px', 
+              height: '140px', 
               width: 'auto',
-              objectFit: 'contain'
+              objectFit: 'contain',
+              display: 'block'
             }} 
           />
         </div>
