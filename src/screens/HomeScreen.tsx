@@ -72,7 +72,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         </div>
       </div>
 
-      {/* Balance overview — NO TIER PROPS ANYMORE ✅ */}
+      {/* Balance overview — tier props REMOVED only */}
       <BalanceCard
         lockedPP={state.lockedPotPP}
         withdrawablePP={state.withdrawablePP}
@@ -81,10 +81,10 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         compact
       />
 
-      {/* Radiation Exposure Bar — ONLY xp ✅ */}
+      {/* Radiation Exposure Bar — nextXp REMOVED only */}
       <XPBar xp={state.xp} />
 
-      {/* Twists banner */}
+      {/* Twists banner — UNCHANGED */}
       <button
         onClick={() => onNavigate('slots')}
         className="toxic-btn w-full py-4 flex items-center justify-between px-5 group"
@@ -99,7 +99,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
       </button>
 
-      {/* Daily buttons */}
+      {/* Daily buttons — UNCHANGED */}
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={handleDailyBonus}
@@ -123,7 +123,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         </button>
       </div>
 
-      {/* Quick links */}
+      {/* Quick links — UNCHANGED */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
         <QuickLink icon={<Target />} label="Contagion Goals" sub="Complete → 200 Exposure + 20 Twists" onClick={() => onNavigate('missions')} />
         <QuickLink icon={<Play />} label="Enter Contagion" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
