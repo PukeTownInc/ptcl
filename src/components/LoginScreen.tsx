@@ -32,7 +32,7 @@ export function LoginScreen({ onSkip }: Props) {
             src="/logo.png" 
             alt="Logo" 
             style={{ 
-              height: '200px', 
+              height: '180px', 
               width: 'auto',
               objectFit: 'contain',
               display: 'block'
