@@ -1,17 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = "https://vzpglyzsixdigdatgnda.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_rlkyG-l57wfZ855XrZ8Htw_4pKCEqok";
 
-if (!url || !anonKey) {
-  throw new Error('Supabase env vars missing');
-}
-
-export const supabase = createClient(url, anonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
-  },
-});
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
