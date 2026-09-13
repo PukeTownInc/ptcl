@@ -566,20 +566,45 @@ export function useGameState(userId: string | null) {
     resetLeaderboardClaims,
     resetAll,
   }), [
-    state, cloudLoading, update, addXP, addPP, isPotFull, unlockPot,
-    recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
-    loginCheck, setFaucetpayEmail, recordWithdrawal, activateXPBoost,
-    activateHotStreak, activatePotAccel, useDoubleUp, useExtraLucky,
-    openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
-    claimMission, claimMissionReward, claimAllMissionsBonus,
-    claimAllMissionsAdBonus, claimStreakRewardViaAd, recordReferral,
-    recordJackpot, claimLeaderboardPrize, resetLeaderboardClaims, resetAll,
+    state,
+    cloudLoading,
+    update,
+    addXP,
+    addPP,
+    isPotFull,
+    unlockPot,
+    recordSpin,
+    addSpins,
+    watchAd,
+    claimDailyBonusSpins,
+    claimDailyBoost,
+    loginCheck,
+    setFaucetpayEmail,
+    recordWithdrawal,
+    activateXPBoost,
+    activateHotStreak,
+    activatePotAccel,
+    useDoubleUp,
+    useExtraLucky,
+    openMysteryPack,
+    setDoubleUpPending,
+    setExtraLuckyPending,
+    claimMission,
+    claimMissionReward,
+    claimAllMissionsBonus,
+    claimAllMissionsAdBonus,
+    claimStreakRewardViaAd,
+    recordReferral,
+    recordJackpot,
+    claimLeaderboardPrize,
+    resetLeaderboardClaims,
+    resetAll,
   ]);
 
   return actions;
 }
 
-// ✅ SIMPLE TYPE — Rollup understands this instantly
+// ✅ ONLY THIS LINE CHANGED — SIMPLEST POSSIBLE FIX
 export type GameActions = any;
 
 export function isXPBoostActive(s: GameState): boolean {
