@@ -78,7 +78,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Login Required Banner */}
       {!isLoggedIn && (
         <div className="grunge-panel p-3 border-l-4 border-l-hazard-amber/50 flex items-start gap-2">
           <LogIn size={16} className="text-hazard-amber shrink-0 mt-0.5" />
@@ -89,7 +88,28 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       )}
 
-      {/* Info Banner */}
+      {/* ✅ SWAPPED: Vault on LEFT, Cache on RIGHT */}
+      <div className="grunge-panel p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Wallet size={20} className="text-radioactive-400" />
+          <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {/* LEFT — CONTAGION VAULT */}
+          <div className="rounded-lg bg-ink-700/50 border border-toxic-900/40 p-3">
+            <div className="text-[10px] text-toxic-100/40 uppercase">CONTAGION VAULT</div>
+            <div className="font-mono text-xl font-bold text-toxic-300">{formatPP(state.lockedPotPP)}</div>
+            <div className="text-[10px] text-toxic-100/30 font-mono">Watch video to unlock</div>
+          </div>
+          {/* RIGHT — CONTAGION CACHE */}
+          <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
+            <div className="text-[10px] text-radioactive-400/60 uppercase">CONTAGION CACHE</div>
+            <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
+            <div className="text-[10px] text-radioactive-300/40 font-mono">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
+          </div>
+        </div>
+      </div>
+
       <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50 flex items-start gap-2">
         <AlertTriangle size={16} className="text-radioactive-400 shrink-0 mt-0.5" />
         <div className="text-[11px] text-toxic-100/60">
@@ -99,7 +119,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       </div>
 
-      {/* Withdrawal Form — EMAIL BOX 100% UNCHANGED */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -146,7 +165,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         </div>
 
-        {/* Fee Breakdown */}
         {amount > 0 && (
           <div className="rounded-lg bg-ink-700/50 p-3 space-y-1.5 text-xs font-mono">
             <div className="flex justify-between text-toxic-100/60">
@@ -161,7 +179,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         )}
 
-        {/* Cooldown Notice */}
         {cooldownActive && (
           <div className="rounded-lg bg-hazard-amber/10 border border-hazard-amber/30 p-2.5 flex items-center gap-2">
             <Clock size={14} className="text-hazard-amber shrink-0" />
@@ -182,7 +199,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </button>
       </div>
 
-      {/* Withdrawal History */}
       {state.withdrawalHistory.length > 0 && (
         <div className="grunge-panel p-4">
           <div className="flex items-center gap-2 mb-3">
@@ -205,7 +221,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       )}
 
-      {/* Security Note */}
       <div className="grunge-panel p-3 flex items-start gap-2">
         <Lock size={14} className="text-toxic-400 shrink-0 mt-0.5" />
         <p className="text-[10px] text-toxic-100/40">
