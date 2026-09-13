@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check } from 'lucide-react';
 import type { Screen } from '../types';
-
 const NAV: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'slots', label: 'Slots', icon: Gamepad2 },
@@ -11,11 +10,9 @@ const NAV: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
-
 export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s: Screen, target?: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
@@ -33,12 +30,10 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
       document.removeEventListener('keydown', handleKey);
     };
   }, [open]);
-
   const handleSelect = (s: Screen) => {
     onChange(s);
     setOpen(false);
   };
-
   return (
     <div ref={ref} className="relative">
       <button
@@ -48,7 +43,16 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
       >
         <div className="relative">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-b from-toxic-400 to-toxic-700 flex items-center justify-center animate-glow-pulse">
-            <span className="text-lg">🤮</span>
+            <img 
+              src="/logo-192.png" 
+              alt="Menu" 
+              style={{ 
+                height: '28px', 
+                width: '28px',
+                objectFit: 'contain',
+                display: 'block'
+              }} 
+            />
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-radioactive-400 animate-pulse" />
         </div>
@@ -57,7 +61,6 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
           <p className="text-[8px] font-mono text-radioactive-400/70 leading-none mt-0.5">CASH LAB ☢️</p>
         </div>
       </button>
-
       {open && (
         <div
           className="absolute top-[50px] left-0 z-[999] py-2 min-w-[200px] animate-fade-in"
