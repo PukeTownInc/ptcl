@@ -1,19 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Trash2, Info, FileText, Shield } from 'lucide-react';
 import type { GameState } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
-
 interface Props {
   state: GameState;
   actions: GameActions;
 }
-
+function useMonthlyCountdown() {
+  const [remaining, setRemaining] = useState('');
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+      const diff = nextMonth.getTime() - now.getTime();
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setRemaining(`${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`);
+    };
+    update();
+    const interval = setInterval(update, 60000);
+    return () => clearInterval(interval);
+  }, []);
+  return remaining;
+}
+function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!on)}
+      className={`relative w-11 h-6 rounded-full transition-all ${on ? 'bg-toxic-500/30 border border-toxic-400' : 'bg-ink-700 border border-toxic-900/40'}`}
+    >
+      <span
+        className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${on ? 'left-6 bg-toxic-400' : 'left-0.5 bg-toxic-100/40'}`}
+        style={on ? { boxShadow: '0 0 8px #39ff14' } : undefined}
+      />
+    </button>
+  );
+}
 export function SettingsScreen({ state, actions }: Props) {
   const toast = useToast();
   const [confirmReset, setConfirmReset] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [sound, setSound] = useState(true);
+  const [haptic, setHaptic] = useState(true);
+  const monthlyCountdown = useMonthlyCountdown();
 
   if (showTerms) {
     return (
@@ -37,7 +69,6 @@ export function SettingsScreen({ state, actions }: Props) {
       </div>
     );
   }
-
   if (showPrivacy) {
     return (
       <div className="space-y-4">
@@ -60,9 +91,17 @@ export function SettingsScreen({ state, actions }: Props) {
       </div>
     );
   }
-
   return (
     <div className="space-y-4">
+      {/* Monthly reset countdown */}
+      <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50">
+        <div className="flex items-center justify-between">
+          <div className="text-[11px] text-toxic-100/60 font-mono">
+            <span className="text-radioactive-400 font-bold">Monthly Reset</span> — 1st of next month 00:00 UTC
+          </div>
+          <span className="font-mono text-sm font-bold text-radioactive-400 neon-text-yellow tabular-nums">{monthlyCountdown}</span>
+        </div>
+      </div>
       {/* About */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-2">
@@ -76,7 +115,17 @@ export function SettingsScreen({ state, actions }: Props) {
           <p className="text-toxic-100/40">🎰 Free Play • 💧 FaucetPay Native • 📱 PWA Ready</p>
         </div>
       </div>
-
+      {/* Preferences */}
+      <div className="grunge-panel divide-y divide-toxic-900/30">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-toxic-200">Sound Effects</span>
+          <Toggle on={sound} onChange={setSound} />
+        </div>
+        <div className="px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-toxic-200">Haptic Feedback</span>
+          <Toggle on={haptic} onChange={setHaptic} />
+        </div>
+      </div>
       {/* Terms & Privacy */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
         <button onClick={() => setShowTerms(true)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5 transition-colors">
@@ -94,7 +143,6 @@ export function SettingsScreen({ state, actions }: Props) {
           <span className="text-toxic-100/30 text-xs">&rsaquo;</span>
         </button>
       </div>
-
       {/* Danger zone */}
       <div className="grunge-panel p-4 border-hazard-red/30">
         <h3 className="font-display font-bold text-sm text-hazard-red mb-2">Danger Zone</h3>
@@ -121,7 +169,6 @@ export function SettingsScreen({ state, actions }: Props) {
           </div>
         )}
       </div>
-
       <p className="text-center text-[10px] text-toxic-100/20 font-mono pt-2">
         Built with ☢️ in Puke Town
       </p>
