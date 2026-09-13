@@ -53,19 +53,18 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       {/* Hero / logo panel */}
       <div className="relative grunge-panel overflow-hidden">
         <div className="absolute inset-0 hazard-stripes opacity-[0.03]" />
-        <div className="relative p-5 text-center">
-          <div className="flex justify-center">
-            <img 
-              src="/logo.png" 
-              alt="Logo" 
-              style={{ 
-                height: '180px', 
-                width: 'auto',
-                objectFit: 'contain',
-                display: 'block'
-              }} 
-            />
-          </div>
+        <div className="relative p-3 text-center flex items-center justify-center min-h-[140px]">
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+            style={{ 
+              height: 'calc(100% - 16px)',
+              width: 'auto',
+              maxWidth: 'calc(100% - 16px)',
+              objectFit: 'contain',
+              display: 'block'
+            }} 
+          />
         </div>
       </div>
       {/* Balance overview */}
