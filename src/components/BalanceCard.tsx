@@ -2,24 +2,18 @@ import { ppToUsd, formatPP } from '../constants';
 export function BalanceCard({
   lockedPP,
   withdrawablePP,
-  tierBadge,
-  tierLabel,
-  potCap,
   xp,
   nextXp,
   compact,
 }: {
   lockedPP: number;
   withdrawablePP: number;
-  tierBadge: string;
-  tierLabel: string;
-  potCap: number;
   xp: number;
   nextXp: number | null;
   compact?: boolean;
 }) {
-  const potPct = Math.min(100, (lockedPP / potCap) * 100);
-  const potFull = lockedPP >= potCap;
+  const potPct = Math.min(100, (lockedPP / 500000) * 100);
+  const potFull = lockedPP >= 500000;
   return (
     <div className="grunge-panel p-4 space-y-3">
       {/* Contagion Vault */}
@@ -41,7 +35,7 @@ export function BalanceCard({
             style={{ width: `${potPct}%` }}
           />
         </div>
-        <p className="text-[9px] font-mono text-toxic-100/30 mt-1">{formatPP(lockedPP)} / {formatPP(potCap)} Puke Points</p>
+        <p className="text-[9px] font-mono text-toxic-100/30 mt-1">{formatPP(lockedPP)} / 500,000 Puke Points</p>
       </div>
       {/* Contagion Cache */}
       <div className="rounded-lg p-3 border border-radioactive-600/40 bg-radioactive-500/5">
@@ -54,16 +48,11 @@ export function BalanceCard({
           ${ppToUsd(withdrawablePP).toFixed(2)} Contagion Value
         </div>
       </div>
+      {/* Radiation Exposure */}
       {!compact && (
-        <div className="grid grid-cols-2 gap-2 text-center">
-          <div className="stat-chip">
-            <div className="text-[9px] text-toxic-100/40 uppercase">{tierBadge} Exposure Tier</div>
-            <div className="text-toxic-300 font-display text-xs">{tierLabel}</div>
-          </div>
-          <div className="stat-chip">
-            <div className="text-[9px] text-toxic-100/40 uppercase">Radiation Exposure</div>
-            <div className="text-toxic-300 font-display text-xs">{xp.toLocaleString()}{nextXp !== null ? `/${nextXp.toLocaleString()}` : ''}</div>
-          </div>
+        <div className="stat-chip text-center">
+          <div className="text-[9px] text-toxic-100/40 uppercase">Radiation Exposure</div>
+          <div className="text-toxic-300 font-display text-xs">{xp.toLocaleString()}{nextXp !== null ? ` / ${nextXp.toLocaleString()}` : ''}</div>
         </div>
       )}
     </div>
