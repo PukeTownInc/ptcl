@@ -10,28 +10,9 @@ interface Props {
   state: GameState;
   actions: GameActions;
 }
-function useMonthlyCountdown() {
-  const [remaining, setRemaining] = useState('');
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-      const diff = nextMonth.getTime() - now.getTime();
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      setRemaining(`${d}d ${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`);
-    };
-    update();
-    const interval = setInterval(update, 60000);
-    return () => clearInterval(interval);
-  }, []);
-  return remaining;
-}
 export function ProfileScreen({ state, actions }: Props) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
-  const monthlyCountdown = useMonthlyCountdown();
   const [referralCode] = useState(() => {
     try {
       const stored = localStorage.getItem('puketown_refcode');
@@ -77,15 +58,6 @@ export function ProfileScreen({ state, actions }: Props) {
         <div className="mt-3">
           <h4 className="font-display font-bold text-xs text-toxic-300 mb-2 px-1">Lifetime Stats</h4>
           <StatsGrid state={state} />
-        </div>
-      </div>
-      {/* Monthly reset countdown */}
-      <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50">
-        <div className="flex items-center justify-between">
-          <div className="text-[11px] text-toxic-100/60 font-mono">
-            <span className="text-radioactive-400 font-bold">Monthly Reset</span> — 1st of next month 00:00 UTC
-          </div>
-          <span className="font-mono text-sm font-bold text-radioactive-400 neon-text-yellow tabular-nums">{monthlyCountdown}</span>
         </div>
       </div>
       {/* Referral section */}
@@ -146,34 +118,6 @@ export function ProfileScreen({ state, actions }: Props) {
           XP = progress only • never converts to cash • all limits reset midnight UTC
         </p>
       </div>
-      {/* Preferences */}
-      <div className="grunge-panel divide-y divide-toxic-900/30">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-toxic-200">Sound Effects</span>
-          </div>
-          <Toggle on={true} onChange={() => {}} />
-        </div>
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-toxic-200">Haptic Feedback</span>
-          </div>
-          <Toggle on={true} onChange={() => {}} />
-        </div>
-      </div>
     </div>
-  );
-}
-function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      onClick={() => onChange(!on)}
-      className={`relative w-11 h-6 rounded-full transition-all ${on ? 'bg-toxic-500/30 border border-toxic-400' : 'bg-ink-700 border border-toxic-900/40'}`}
-    >
-      <span
-        className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${on ? 'left-6 bg-toxic-400' : 'left-0.5 bg-toxic-100/40'}`}
-        style={on ? { boxShadow: '0 0 8px #39ff14' } : undefined}
-      />
-    </button>
   );
 }
