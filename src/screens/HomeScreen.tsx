@@ -1,21 +1,23 @@
 import { useState } from 'react';
-import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target } from 'lucide-react';
+import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Wallet } from 'lucide-react';
 import type { GameState, Screen } from '../types';
-import { getTier } from '../constants';
+import { getTier, formatPP, ppToUsd } from '../constants';
 import type { GameActions } from '../useGameState';
-import { BalanceCard } from '../components/BalanceCard';
 import { XPBar } from '../components/XPBar';
 import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
+
 interface Props {
   state: GameState;
   actions: GameActions;
   onNavigate: (s: Screen, target?: string) => void;
 }
+
 export function HomeScreen({ state, actions, onNavigate }: Props) {
   const toast = useToast();
   const tier = getTier(state.xp);
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
+
   const handleDailyBonus = () => {
     if (state.freeSpinsClaimed) {
       toast('info', 'Already Contaminated', 'Return tomorrow for more');
@@ -32,6 +34,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       },
     });
   };
+
   const handleDailyBoost = () => {
     if (state.dailyBoostClaimed) {
       toast('info', 'Already Exposed', 'Return tomorrow for more');
@@ -49,6 +52,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       },
     });
   };
+
   return (
     <div className="space-y-4">
       {/* Logo panel */}
@@ -68,19 +72,32 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
           />
         </div>
       </div>
-      {/* Balance overview */}
-      <BalanceCard
-        lockedPP={state.lockedPotPP}
-        withdrawablePP={state.withdrawablePP}
-        tierBadge={tier.badge}
-        tierLabel={tier.label}
-        potCap={tier.potCap}
-        xp={state.xp}
-        nextXp={null}
-        compact
-      />
+
+      {/* ✅ REPLACED: Exact same two-box layout from Withdraw Screen */}
+      <div className="grunge-panel p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Wallet size={20} className="text-radioactive-400" />
+          <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {/* LEFT — CONTAGION VAULT */}
+          <div className="rounded-lg bg-ink-700/50 border border-toxic-900/40 p-3">
+            <div className="text-[10px] text-toxic-100/40 uppercase">CONTAGION VAULT</div>
+            <div className="font-mono text-xl font-bold text-toxic-300">{formatPP(state.lockedPotPP)}</div>
+            <div className="text-[10px] text-toxic-100/30 font-mono">Watch video to unlock</div>
+          </div>
+          {/* RIGHT — CONTAGION CACHE */}
+          <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
+            <div className="text-[10px] text-radioactive-400/60 uppercase">CONTAGION CACHE</div>
+            <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
+            <div className="text-[10px] text-radioactive-300/40 font-mono">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
+          </div>
+        </div>
+      </div>
+
       {/* Radiation Exposure Bar */}
       <XPBar xp={state.xp} nextXp={null} />
+
       {/* Twists banner */}
       <button
         onClick={() => onNavigate('slots')}
@@ -95,6 +112,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         </div>
         <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
       </button>
+
       {/* Daily buttons */}
       <div className="grid grid-cols-2 gap-3">
         <button
@@ -118,12 +136,14 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
           <div className="ad-badge mt-1.5"><Tv size={8} /> Contagion Feed</div>
         </button>
       </div>
+
       {/* Quick links */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
         <QuickLink icon={<Target />} label="Contagion Goals" sub="Complete → 200 Exposure + 20 Twists" onClick={() => onNavigate('missions')} />
         <QuickLink icon={<Play />} label="Enter Contagion" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
         <QuickLink icon={<Users />} label="Spread Infection" sub="+30 Twists + 100 Exposure each" onClick={() => onNavigate('profile', 'referral-box')} />
       </div>
+
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
@@ -135,6 +155,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
     </div>
   );
 }
+
 function QuickLink({ icon, label, sub, onClick }: { icon: React.ReactNode; label: string; sub: string; onClick: () => void }) {
   return (
     <button onClick={onClick} className="flex items-center gap-3 px-4 py-3 w-full hover:bg-toxic-500/5 transition-colors text-left">
