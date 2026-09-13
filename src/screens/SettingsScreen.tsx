@@ -27,7 +27,6 @@ export function SettingsScreen({ state, actions }: Props) {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [sound, setSound] = useState(true);
   const [haptic, setHaptic] = useState(true);
-
   if (showTerms) {
     return (
       <div className="space-y-4">
@@ -38,12 +37,12 @@ export function SettingsScreen({ state, actions }: Props) {
             <h2 className="font-display font-bold text-sm text-toxic-300">Terms of Service</h2>
           </div>
           <div className="text-[11px] text-toxic-100/60 space-y-3 font-mono leading-relaxed">
-            <p><span className="text-toxic-400 font-bold">1. Eligibility.</span> Puke Town Cash Lab is a free-to-play rewards game. You must be 18+ to withdraw earnings.</p>
+            <p><span className="text-toxic-400 font-bold">1. Eligibility.</span> Puke Town Cash Lab is a free-to-play rewards game. You must be 13 or older to use this app. If under 18, use only with parent or guardian consent.</p>
             <p><span className="text-toxic-400 font-bold">2. Currency.</span> All in-game currency is Puke Points (PP). Conversion: 10,000 PP = $0.25 USD. Platform fee: 10% per withdrawal.</p>
-            <p><span className="text-toxic-400 font-bold">3. Withdrawals.</span> Min 50,000 PP, max 500,000 PP per withdrawal. 24h cooldown between withdrawals. Payouts via FaucetPay only.</p>
-            <p><span className="text-toxic-400 font-bold">4. Monthly Reset.</span> Leaderboards and monthly stats reset on the 1st of each month at 00:00 UTC.</p>
+            <p><span className="text-toxic-400 font-bold">3. Withdrawals.</span> Min 50,000 PP, max 500,000 PP per withdrawal. 24h cooldown between withdrawals, resetting at midnight UTC. Payouts via FaucetPay only.</p>
+            <p><span className="text-toxic-400 font-bold">4. Resets.</span> Daily limits, free spins, and daily rewards reset automatically at midnight UTC every day. Monthly tiers, XP streaks, and monthly caps reset on the 1st of each month at 00:00 UTC. These are intentional design features — not bugs.</p>
             <p><span className="text-toxic-400 font-bold">5. Fair Play.</span> Botting, multi-accounting, or exploiting bugs results in permanent ban and forfeiture of all earnings.</p>
-            <p><span className="text-toxic-400 font-bold">6. Ads.</span> Rewarded video ads power the economy. Ad availability depends on your region and tier.</p>
+            <p><span className="text-toxic-400 font-bold">6. Ads.</span> Rewarded video ads power the economy. The Puke Points you earn and the withdrawal system itself are made possible entirely by advertiser support. Ad availability and rewards depend on region and supply.</p>
             <p><span className="text-toxic-400 font-bold">7. Changes.</span> We may update rewards, fees, and rules at any time. Continued use means acceptance.</p>
           </div>
         </div>
@@ -115,7 +114,7 @@ export function SettingsScreen({ state, actions }: Props) {
           <span className="text-toxic-100/30 text-xs">&rsaquo;</span>
         </button>
       </div>
-      {/* Danger zone */}
+      {/* Danger Zone */}
       <div className="grunge-panel p-4 border-hazard-red/30">
         <h3 className="font-display font-bold text-sm text-hazard-red mb-2">Danger Zone</h3>
         {!confirmReset ? (
