@@ -6,6 +6,7 @@ import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { Logo } from '../components/Logo';
 import { StatsGrid } from '../components/StatsGrid';
+import { XPBar } from '../components/XPBar';
 interface Props {
   state: GameState;
   actions: GameActions;
@@ -51,9 +52,10 @@ export function ProfileScreen({ state, actions }: Props) {
           </div>
           <div className="flex-1">
             <h2 className="font-display font-bold text-sm text-toxic-300">Player Account</h2>
-            <p className="text-[11px] text-toxic-100/50 font-mono">{state.xp.toLocaleString()} XP</p>
           </div>
         </div>
+        {/* Radiation Exposure Bar */}
+        <XPBar xp={state.xp} nextXp={null} />
         {/* Lifetime stats */}
         <div className="mt-3">
           <h4 className="font-display font-bold text-xs text-toxic-300 mb-2 px-1">Lifetime Stats</h4>
