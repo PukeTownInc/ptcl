@@ -5,12 +5,14 @@ import {
   DAILY_XP_FREE_CAP,
   FREE_SPINS_BASE,
   FREE_SPINS_DAILY_BONUS,
-  getTier,
   MIN_UNLOCK_PP,
 } from './constants';
 import { supabase } from './lib/supabase';
 
 const STORAGE_KEY = 'puketown_cashlab_v1';
+const FIXED_MULTIPLIER = 1.0;
+const FIXED_POT_CAP = 500000;
+const FIXED_DAILY_UNLOCKS = 5;
 
 function todayUTC(): string {
   return new Date().toISOString().slice(0, 10);
@@ -100,8 +102,6 @@ function loadState(): GameState {
 function dailyResetIfNeeded(state: GameState): GameState {
   const today = todayUTC();
   if (state.lastReset === today) return state;
-
-  // carry login streak forward only if consecutive day
   const todayDate = today;
   let loginStreak = state.loginStreak;
   let lastLogin = state.lastLogin;
@@ -109,7 +109,6 @@ function dailyResetIfNeeded(state: GameState): GameState {
     const gap = daysBetween(state.lastLogin, todayDate);
     if (gap > 1) loginStreak = 0;
   }
-
   return {
     ...state,
     spinsRemaining: FREE_SPINS_BASE,
@@ -156,12 +155,10 @@ export function useGameState(userId: string | null) {
   stateRef.current = state;
   const skipCloudSaveRef = useRef(false);
 
-  // Load from cloud when user logs in
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
     setCloudLoading(true);
-
     (async () => {
       try {
         const { data, error } = await supabase
@@ -169,23 +166,18 @@ export function useGameState(userId: string | null) {
           .select('data')
           .eq('id', userId)
           .maybeSingle();
-
         if (cancelled) return;
-
         if (error) {
           console.error('Cloud load error:', error);
           setCloudLoading(false);
           return;
         }
-
         if (data?.data) {
-          // Cloud data exists — merge with defaults and apply daily reset
           const cloudState = { ...defaultState(), ...(data.data as Partial<GameState>) };
           const reset = dailyResetIfNeeded(cloudState);
           skipCloudSaveRef.current = true;
           setState(reset);
         } else {
-          // New user — create profile with current local state
           await supabase.from('user_profiles').upsert({
             id: userId,
             data: stateRef.current,
@@ -197,20 +189,15 @@ export function useGameState(userId: string | null) {
         if (!cancelled) setCloudLoading(false);
       }
     })();
-
     return () => { cancelled = true; };
   }, [userId]);
 
-  // Save to localStorage on every change
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      // storage full — non-fatal
-    }
+    } catch {}
   }, [state]);
 
-  // Debounced cloud save (skip when loading from cloud)
   useEffect(() => {
     if (!userId) return;
     if (skipCloudSaveRef.current) {
@@ -236,13 +223,11 @@ export function useGameState(userId: string | null) {
 
   const addXP = useCallback((baseXp: number, viaAd: boolean) => {
     setState((prev) => {
-      const tier = getTier(prev.xp);
-      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
+      const multiplier = FIXED_MULTIPLIER * (isXPBoostActive(prev) ? 1.5 : 1);
       let xpToAdd = Math.round(baseXp * multiplier);
       let freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       let bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
       if (viaAd) {
-        const fromBonus = Math.min(xpToAdd - Math.min(xpToAdd, freeRemaining), bonusRemaining);
         const freePart = Math.min(xpToAdd, freeRemaining);
         const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
         return {
@@ -264,14 +249,13 @@ export function useGameState(userId: string | null) {
 
   const addPP = useCallback((pp: number) => {
     setState((prev) => {
-      const tier = getTier(prev.xp);
       const hotStreak = prev.hotStreakUntil && prev.hotStreakUntil > Date.now() ? 1.5 : 1;
       const streakBoost = prev.streakPPBoostUntil && prev.streakPPBoostUntil > Date.now() ? 1.2 : 1;
       const accelerated = prev.potAccelUntil && prev.potAccelUntil > Date.now() ? pp * 2 : pp;
-      const final = Math.round(accelerated * tier.multiplier * hotStreak * streakBoost);
-      const potFull = prev.lockedPotPP >= tier.potCap;
-      if (potFull) return prev; // wins pause when pot full
-      const newPot = Math.min(prev.lockedPotPP + final, tier.potCap);
+      const final = Math.round(accelerated * FIXED_MULTIPLIER * hotStreak * streakBoost);
+      const potFull = prev.lockedPotPP >= FIXED_POT_CAP;
+      if (potFull) return prev;
+      const newPot = Math.min(prev.lockedPotPP + final, FIXED_POT_CAP);
       return {
         ...prev,
         lockedPotPP: newPot,
@@ -283,14 +267,12 @@ export function useGameState(userId: string | null) {
 
   const isPotFull = useCallback((s?: GameState) => {
     const cur = s ?? stateRef.current;
-    const tier = getTier(cur.xp);
-    return cur.lockedPotPP >= tier.potCap;
+    return cur.lockedPotPP >= FIXED_POT_CAP;
   }, []);
 
   const unlockPot = useCallback(() => {
     setState((prev) => {
-      const tier = getTier(prev.xp);
-      if (prev.dailyUnlocksUsed >= tier.dailyUnlocks) return prev;
+      if (prev.dailyUnlocksUsed >= FIXED_DAILY_UNLOCKS) return prev;
       if (prev.lockedPotPP < MIN_UNLOCK_PP) return prev;
       const moved = prev.lockedPotPP;
       return {
@@ -350,19 +332,13 @@ export function useGameState(userId: string | null) {
     setState((prev) => {
       const today = todayUTC();
       if (prev.lastLogin === today) return prev;
-
-      // Check if streak was missed (last claim was >1 day ago)
       let streakDay = prev.streakDay;
       if (prev.lastStreakClaimDate) {
         const gap = daysBetween(prev.lastStreakClaimDate, today);
-        if (gap >= 2) {
-          streakDay = 0;
-        }
+        if (gap >= 2) streakDay = 0;
       }
-
       const loginStreak = prev.loginStreak;
       const bestStreak = Math.max(prev.bestStreak, streakDay);
-
       return {
         ...prev,
         loginStreak,
@@ -474,25 +450,19 @@ export function useGameState(userId: string | null) {
   const claimStreakRewardViaAd = useCallback((reward: { spins: number; xp: number; ppBoost?: boolean }) => {
     setState((prev) => {
       if (prev.streakClaimedToday) return prev;
-
-      // Increment streak day: 0→1, 1→2, ..., 6→7, 7→1 (cycle after max)
       let newStreakDay: number;
       if (prev.streakDay >= 7) {
         newStreakDay = 1;
       } else {
         newStreakDay = prev.streakDay + 1;
       }
-
-      const tier = getTier(prev.xp);
-      const xpMultiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
+      const xpMultiplier = FIXED_MULTIPLIER * (isXPBoostActive(prev) ? 1.5 : 1);
       const xpToAdd = Math.round(reward.xp * xpMultiplier);
       const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
       const freePart = Math.min(xpToAdd, freeRemaining);
       const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
-
       const bestStreak = Math.max(prev.bestStreak, newStreakDay);
-
       return {
         ...prev,
         streakDay: newStreakDay,
@@ -522,7 +492,6 @@ export function useGameState(userId: string | null) {
   const claimLeaderboardPrize = useCallback((key: string, xp: number, pp: number, rewardType: 'xp' | 'pp') => {
     setState((prev) => {
       if (prev.leaderboardClaims[key]) return prev;
-      const tier = getTier(prev.xp);
       if (rewardType === 'xp') {
         const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
         const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
@@ -536,7 +505,7 @@ export function useGameState(userId: string | null) {
           leaderboardClaims: { ...prev.leaderboardClaims, [key]: true },
         };
       }
-      const newPot = Math.min(prev.lockedPotPP + pp, tier.potCap);
+      const newPot = Math.min(prev.lockedPotPP + pp, FIXED_POT_CAP);
       return {
         ...prev,
         lockedPotPP: newPot,
