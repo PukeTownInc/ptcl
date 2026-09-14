@@ -28,12 +28,10 @@ const roadmapData = [
     borderColor: 'border-red-500/40',
     bgColor: 'bg-red-500/5',
     items: [
-      '✅ ☀️ Radiation Modes — Light & Dark themes',
       '✅ 📈 Exposure Meter — Visual XP progress bar',
       '✅ 🔒 Secure Rewards — Claim once daily, fair for all',
       '✅ 📊 Extended Leaderboards — Total Spins & Referral Ranks',
       '✅ ⏳ Monthly Countdowns — Know exactly when ranks reset',
-      '✅ 🔔 Update Alerts — Never miss when new features drop',
     ],
   },
   {
@@ -59,6 +57,8 @@ const roadmapData = [
     borderColor: 'border-orange-500/40',
     bgColor: 'bg-orange-500/5',
     items: [
+      '☀️ Radiation Modes — Light & Dark themes',
+      '🔔 Update Alerts — Never miss when new features drop',
       '🦠 Puke Chaotic Tap — Tap fast, earn fast!',
       '🎲 Radioactive Dice — Bet, roll, win multipliers',
       '🎟️ Contamination Raffle Tickets — Instant wins daily',
