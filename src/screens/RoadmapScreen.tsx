@@ -16,7 +16,6 @@ const roadmapData = [
       '☢️ Account & Cloud Sync — Save progress across all devices',
       '🎰 Reactor Reels — Spin the wheel, earn Puke Points',
       '🎯 Hazard Duties — Daily missions, earn rewards',
-      '💰 Waste Withdrawal — Cash out via FaucetPay',
       '🔥 Contamination Streak — Daily login bonuses, 7-day cycle',
       '📊 Spin History — See your last 20 spins & results',
       '⚖️ Radioactive Risk Wheel — Random spins trigger, risk it for bigger wins',
@@ -45,6 +44,7 @@ const roadmapData = [
     borderColor: 'border-yellow-500/40',
     bgColor: 'bg-yellow-500/5',
     items: [
+      '💰 Waste Withdrawal — Cash out via FaucetPay',
       '🎟️ Contamination Pass — Battle Pass, Free + Premium tiers',
       '📦 Contagion Cache — Mystery Boxes: Common → Legendary',
       '🎡 Wheel of Misfortune — Daily mini-game, spins & rewards',
