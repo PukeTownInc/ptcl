@@ -38,26 +38,18 @@ export function getNextTier(xp: number): TierInfo | null {
   return TIERS.find((t) => t.minXp > xp) ?? null;
 }
 export const SYMBOLS: Record<SymbolId, SlotSymbol> = {
-  cashlab:    { id: 'cashlab',    emoji: '🤑', label: 'Cash Lab',      pays: [12, 35, 130], weight: 2.5 },
-  puketown:   { id: 'puketown',   emoji: '🤮', label: 'Puke Town',     pays: [18, 55, 220], weight: 1.5 },
-
-  gasMask:          { id: 'gasMask',          emoji: '😷', label: 'Gas Mask',           pays: [7, 20, 64],   weight: 4 },
-  geigerCounter:    { id: 'geigerCounter',    emoji: '📻', label: 'Geiger Counter',     pays: [6, 16, 48],   weight: 6 },
-  radiationSign:    { id: 'radiationSign',    emoji: '☢️', label: 'Radiation Sign',     pays: [5, 12, 37],   weight: 8 },
-  radioactiveSkull: { id: 'radioactiveSkull', emoji: '💀', label: 'Toxic Skull',        pays: [4, 10, 30],   weight: 10 },
-
-  mutantBeetle:  { id: 'mutantBeetle',  emoji: '🪲', label: 'Mutant Beetle',   pays: [3, 8, 23],    weight: 13 },
-  mutantRat:     { id: 'mutantRat',     emoji: '🐀', label: 'Mutant Rat',      pays: [3, 7, 19],    weight: 15 },
-  testTube:      { id: 'testTube',      emoji: '🧪', label: 'Test Tube',       pays: [3, 6, 16],    weight: 18 },
-  toxicCauldron: { id: 'toxicCauldron', emoji: '🫕', label: 'Toxic Cauldron',  pays: [2, 5, 13],    weight: 21 },
-  wasteDrum:     { id: 'wasteDrum',     emoji: '🛢️', label: 'Waste Drum',      pays: [2, 4, 11],    weight: 24 },
-  wastePit:      { id: 'wastePit',      emoji: '🕳️', label: 'Waste Pit',       pays: [2, 3, 9],     weight: 26 },
-
-  slimeBlob:  { id: 'slimeBlob',  emoji: '🟢', label: 'Slime Blob',   pays: [2, 3, 9],     weight: 26 },
-  slimeGuy:   { id: 'slimeGuy',   emoji: '👽', label: 'Slime Guy',    pays: [2, 4, 11],    weight: 24 },
-  virus:      { id: 'virus',      emoji: '🦠', label: 'Virus',        pays: [2, 5, 13],    weight: 21 },
-  toxicCloud: { id: 'toxicCloud', emoji: '☁️', label: 'Toxic Cloud',  pays: [3, 6, 16],    weight: 18 },
-
+  puke:    { id: 'puke',    emoji: '🤢', label: 'Nausea',  pays: [2, 3, 9],     weight: 26 },
+  slime:   { id: 'slime',   emoji: '🟡', label: 'Slime',   pays: [2, 4, 11],    weight: 24 },
+  sneeze:  { id: 'sneeze',  emoji: '🤧', label: 'Sneeze',  pays: [2, 5, 13],    weight: 21 },
+  tp:      { id: 'tp',      emoji: '🧻', label: 'TP Roll',  pays: [3, 6, 16],    weight: 18 },
+  pill:    { id: 'pill',    emoji: '💊', label: 'Pill',     pays: [3, 7, 19],    weight: 15 },
+  germ:    { id: 'germ',    emoji: '🦠', label: 'Germ',     pays: [3, 8, 23],    weight: 13 },
+  beaker:  { id: 'beaker',  emoji: '🧪', label: 'Beaker',  pays: [4, 10, 30],   weight: 10 },
+  vomit:   { id: 'vomit',   emoji: '🤮', label: 'Vomit',   pays: [5, 12, 37],   weight: 8 },
+  toxic:   { id: 'toxic',   emoji: '☢️', label: 'Toxic',   pays: [6, 16, 48],   weight: 6 },
+  barrel:  { id: 'barrel',  emoji: '🛢️', label: 'Barrel',  pays: [7, 20, 64],   weight: 4 },
+  warn:    { id: 'warn',    emoji: '⚠️', label: 'Warning', pays: [12, 35, 130], weight: 2.5 },
+  rich:    { id: 'rich',    emoji: '🤑', label: 'Jackpot Guy', pays: [18, 55, 220], weight: 1.5 },
   wild:    { id: 'wild',    emoji: '🤮', label: 'Puke Wild',  pays: [0, 0, 0], weight: 3.5, special: 'wild', isSpecial: true },
   scatter: { id: 'scatter', emoji: '🤒', label: 'Sick Scatter', pays: [0, 0, 0], weight: 2, special: 'scatter', isSpecial: true },
   bonus:   { id: 'bonus',   emoji: '☢️', label: 'Toxic Bonus', pays: [0, 0, 0], weight: 1.5, special: 'bonus', isSpecial: true },
