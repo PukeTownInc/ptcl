@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Check, Zap, Radio, AlertTriangle, Globe, Gift, FlaskConical } from 'lucide-react';
+import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 import type { Screen } from '../types';
 
 interface Props {
@@ -96,7 +96,7 @@ const roadmapData = [
     bgColor: 'bg-amber-500/5',
     items: [
       '💎 VIP Contamination Club — Monthly perks & bonuses',
-      '🚫 Ad-Free Mode — Play uninterrupted',
+      '🚫 Ad-Free Experience — Play uninterrupted',
       '🛍️ Premium Contamination Shop — Exclusive skins & effects',
       '👕 Real-World Merch — Wear the contamination!',
       '🎁 Limited-Time Events — Seasonal exclusive rewards',
@@ -118,7 +118,7 @@ const roadmapData = [
   },
 ];
 
-export function RoadmapScreen({ onNavigate }: Props) {
+export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
     0: true,
     1: true,
@@ -138,7 +138,10 @@ export function RoadmapScreen({ onNavigate }: Props) {
       <div className="grunge-panel p-5 text-center space-y-2">
         <h1 className="font-display font-black text-2xl text-toxic-400 neon-text">☢️ FALLOUT FORECAST</h1>
         <p className="text-radioactive-300 text-sm">Contamination Roadmap • Updated 14 September 2026</p>
-        <p className="text-toxic-200/70 text-xs">80+ Features Planned • Help us prioritise — vote for what you want next!</p>
+        <p className="text-toxic-200 text-sm font-semibold">☢️ OVER 80+ CONTAMINATED FEATURES INCOMING ☢️</p>
+        <p className="text-toxic-300/90 text-sm">☣️ A one-of-a-kind toxic digital ecosystem ☣️</p>
+        <p className="text-toxic-300/90 text-sm">☣️ Created for YOUR benefit ☣️</p>
+        <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere! 🌍</p>
       </div>
 
       {roadmapData.map((section, idx) => (
