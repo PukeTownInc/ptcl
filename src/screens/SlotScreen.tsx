@@ -26,28 +26,34 @@ const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
 
-// ✅ HELPER: Render symbol image or emoji fallback
+// ✅ FIXED SYMBOL RENDERER — Shows PNG OR FALLBACKS TO EMOJI IF MISSING
 function SymbolImage({ symId, size = 'w-8 h-8' }: { symId: SymbolId; size?: string }) {
   const symbol = SYMBOLS[symId];
-  if (!symbol) return <span>?</span>;
-  if ((symbol as any).image) {
+  if (!symbol) return <span className="text-lg">?</span>;
+
+  // Use PNG image if defined
+  if (symbol.image) {
     return (
       <img
-        src={(symbol as any).image}
+        src={symbol.image}
         alt={symbol.label}
         className={`${size} object-contain`}
         onError={(e) => {
+          // ❌ PNG failed → hide it AND SHOW THE EMOJI INSTEAD
           e.currentTarget.style.display = 'none';
         }}
       />
     );
   }
-  return <span>{symbol.emoji}</span>;
+
+  // ✅ NO IMAGE PATH → SHOW EMOJI DIRECTLY
+  return <span className="text-lg">{symbol.emoji}</span>;
 }
 
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const tier = getTier(state.xp);
+
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
     const init: SymbolId[][] = [];
     for (let r = 0; r < 5; r++) {
@@ -57,6 +63,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
     return init;
   });
+
   const [spinning, setSpinning] = useState(false);
   const [lastResult, setLastResult] = useState<SpinResult | null>(null);
   const [winPositions, setWinPositions] = useState<Set<string>>(new Set());
@@ -75,6 +82,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     for (let r = 0; r < 5; r++) init.push(engine.randomReelStrip(REEL_DISPLAY));
     return init;
   });
+
   const cycleInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [autoSpin, setAutoSpin] = useState(false);
@@ -144,12 +152,15 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     setLastResult(null);
     setSpinId((n) => n + 1);
     setReelPhases(['spinning', 'spinning', 'spinning', 'spinning', 'spinning']);
+
     const result = engine.spin();
+
     cycleInterval.current = setInterval(() => {
       const next: SymbolId[][] = [];
       for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
       setCyclingSymbols(next);
     }, 70);
+
     const baseDelay = 1000;
     const stagger = 320;
     for (let r = 0; r < 5; r++) {
@@ -174,15 +185,19 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, baseDelay + r * stagger);
       stopTimers.current.push(t);
     }
+
     function finishSpin(res: SpinResult) {
       setSpinning(false);
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
       setLastResult(res);
+
       const posSet = new Set<string>();
       res.wins.forEach((w) => w.positions.forEach(([r, row]) => posSet.add(`${r}-${row}`)));
       res.jackpot && res.grid.forEach((col, r) => col.forEach((s, row) => s === 'jackpot' && posSet.add(`${r}-${row}`)));
       setWinPositions(posSet);
+
       const eligibleDoubleUp = res.totalPP >= 6 && !potFull && state.dailyDoubleUps < 3;
+
       if (res.totalPP > 0 && !potFull) {
         if (eligibleDoubleUp) {
           doubleUpResolvedRef.current = false;
@@ -195,8 +210,10 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       } else if (potFull) {
         toast('info', 'VAT OVERFLOWETH!', 'Absorb radiation to breach containment — +1 XP only');
       }
+
       actions.addXP(res.xpGained, false);
       actions.recordSpin();
+
       if (freeSpinsLeft > 0) {
         setFreeSpinsLeft((n) => n - 1);
       }
@@ -209,6 +226,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         actions.recordJackpot();
         setTimeout(() => setShowJackpot(null), 3000);
       }
+
       const winSymbols = res.wins.length > 0
         ? [...new Set(res.wins.map((w) => engine.getSymbol(w.symbols[0]).emoji))]
         : [];
@@ -366,7 +384,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
 
-      {/* ✅ REELS — ALL symbols auto-use PNGs with emoji fallback */}
+      {/* ✅ REELS — Symbols show PNG or FALLBACK to EMOJI */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -381,9 +399,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                   return (
                     <div
                       key={row}
-                      className={`aspect-square flex items-center justify-center reel-symbol ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
+                      className="aspect-square flex items-center justify-center reel-symbol"
                     >
-                      <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
+                      <span className={isWin ? 'win-symbol-pop text-2xl' : 'text-xl'} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
                         <SymbolImage symId={symId} size="w-8 h-8" />
                       </span>
                     </div>
@@ -393,6 +411,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             );
           })}
         </div>
+
         <div className="mt-3 min-h-[60px] flex items-center justify-center">
           {spinning ? (
             <div className="text-center">
@@ -420,11 +439,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </div>
           )}
         </div>
+
         <div className="flex items-center justify-center mb-2 mt-2">
           <span className="font-display font-bold text-sm text-toxic-300">
             Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
           </span>
         </div>
+
         <button
           onClick={doSpin}
           disabled={!canSpin || spinning}
@@ -436,6 +457,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             <><Play size={22} /> CONTAMINATE</>
           )}
         </button>
+
         <div className="mt-2 flex items-center gap-2">
           <button
             onClick={toggleAutoSpin}
@@ -451,7 +473,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       </div>
 
-      {/* ✅ PAYTABLE — ALL symbols auto-use PNGs with emoji fallback */}
+      {/* ✅ PAYTABLE — Symbols show PNG or EMOJI */}
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
