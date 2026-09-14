@@ -136,7 +136,7 @@ export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
       <div className="grunge-panel p-5 text-center space-y-2">
-        <h1 className="font-display font-black text-2xl text-toxic-400 neon-text">☢️ FALLOUT FORECAST</h1>
+        <h1 className="font-display font-black text-2xl text-toxic-400 neon-text">☢️ FALLOUT FORECAST ☢️</h1>
         <p className="text-radioactive-300 text-sm">Contamination Roadmap • Updated 14 September 2026</p>
         <p className="text-toxic-200 text-sm font-semibold">☢️ OVER 80+ CONTAMINATED FEATURES INCOMING ☢️</p>
         <p className="text-toxic-300/90 text-sm">☣️ A one-of-a-kind toxic digital ecosystem ☣️</p>
