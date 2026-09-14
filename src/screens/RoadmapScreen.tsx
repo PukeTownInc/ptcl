@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 import type { Screen } from '../types';
-
 interface Props {
   onNavigate: (s: Screen) => void;
 }
-
 const roadmapData = [
   {
     title: '✅ CONTAMINATED — ALREADY LIVE',
@@ -25,7 +23,7 @@ const roadmapData = [
     ],
   },
   {
-    title: '🔴 INFECTING — COMING VERY SOON',
+    title: '🔴 INFECTING — PHASE 1',
     color: 'text-red-400',
     borderColor: 'border-red-500/40',
     bgColor: 'bg-red-500/5',
@@ -117,7 +115,6 @@ const roadmapData = [
     ],
   },
 ];
-
 export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
     0: true,
@@ -128,11 +125,9 @@ export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void 
     5: false,
     6: false,
   });
-
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
-
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
       <div className="grunge-panel p-5 text-center space-y-2">
@@ -143,7 +138,6 @@ export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void 
         <p className="text-toxic-300/90 text-sm">☣️ Created for YOUR benefit ☣️</p>
         <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere!</p>
       </div>
-
       {roadmapData.map((section, idx) => (
         <div
           key={idx}
@@ -160,7 +154,6 @@ export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void 
               <ChevronDown size={18} className="text-toxic-300" />
             )}
           </button>
-
           {openSections[idx] && (
             <div className="px-4 pb-4 space-y-2 border-t border-toxic-900/30 pt-3">
               {section.items.map((item, i) => (
@@ -173,7 +166,6 @@ export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void 
           )}
         </div>
       ))}
-
       <div className="grunge-panel p-4 text-center space-y-2 mt-4">
         <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
         <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
