@@ -12,26 +12,23 @@ import { WithdrawScreen } from './screens/WithdrawScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { RoadmapScreen } from './screens/RoadmapScreen';
 import { LoginScreen, UserStatusBadge } from './components/LoginScreen';
 import { Logo } from './components/Logo';
 import { PwaInstallButton } from './components/PwaInstallButton';
-
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const actions = useGameState(user?.id ?? null);
   const [screen, setScreen] = useState<Screen>('home');
   const [skipLogin, setSkipLogin] = useState(false);
   const [scrollTarget, setScrollTarget] = useState<string | null>(null);
-
   useEffect(() => {
     if (authLoading) return;
     actions.loginCheck();
   }, [authLoading, user]);
-
   useEffect(() => {
     if (user) setSkipLogin(false);
   }, [user]);
-
   const navigate = (s: Screen, target?: string) => {
     setScreen(s);
     setScrollTarget(target ?? null);
@@ -39,7 +36,6 @@ function AppContent() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
-
   useEffect(() => {
     if (!scrollTarget) return;
     const el = document.getElementById(scrollTarget);
@@ -48,7 +44,6 @@ function AppContent() {
     }
     setScrollTarget(null);
   }, [scrollTarget, screen]);
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-ink-900 gap-4 animate-fade-in">
@@ -62,11 +57,9 @@ function AppContent() {
       </div>
     );
   }
-
   if (!user && !skipLogin) {
     return <LoginScreen onSkip={() => setSkipLogin(true)} />;
   }
-
   return (
     <ToastProvider>
       <div className="min-h-screen flex flex-col">
@@ -79,6 +72,7 @@ function AppContent() {
           {screen === 'missions' && <MissionsScreen state={actions.state} actions={actions} />}
           {screen === 'leaderboards' && <LeaderboardsScreen state={actions.state} actions={actions} />}
           {screen === 'withdraw' && <WithdrawScreen state={actions.state} actions={actions} isLoggedIn={!!user} />}
+          {screen === 'roadmap' && <RoadmapScreen onNavigate={navigate} />}
           {screen === 'profile' && <ProfileScreen state={actions.state} actions={actions} />}
           {screen === 'settings' && <SettingsScreen state={actions.state} actions={actions} />}
         </main>
@@ -87,7 +81,6 @@ function AppContent() {
     </ToastProvider>
   );
 }
-
 function App() {
   return (
     <ErrorBoundary>
@@ -97,5 +90,4 @@ function App() {
     </ErrorBoundary>
   );
 }
-
 export default App;
