@@ -18,23 +18,6 @@ type SpinHistoryEntry =
   | { kind: 'lose'; pp: number }
   | { kind: 'safe'; pp: number };
 const MAX_HISTORY = 20;
-
-// ✅ SAFE PNG RENDERER — PNG if exists, else EMOJI
-function renderSymbol(symId: SymbolId, sizeClass = 'w-8 h-8') {
-  const sym = engine.getSymbol(symId);
-  if ((sym as any).image) {
-    return (
-      <img
-        src={(sym as any).image}
-        alt={sym.label}
-        className={`${sizeClass} object-contain`}
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-      />
-    );
-  }
-  return <span className="text-xl">{sym.emoji}</span>;
-}
-
 // ✅ PAYTABLE — auto-generated from SYMBOLS, sorted highest payout first
 const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
@@ -342,7 +325,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      {/* ✅ REELS — PNG or EMOJI */}
+      {/* ✅ REELS */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -360,7 +343,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                       className={`aspect-square flex items-center justify-center reel-symbol ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
                     >
                       <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
-                        {renderSymbol(symId)}
+                        {engine.getSymbol(symId).emoji}
                       </span>
                     </div>
                   );
@@ -426,7 +409,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </button>
         </div>
       </div>
-      {/* ✅ PAYTABLE — PNG or EMOJI */}
+      {/* ✅ PAYTABLE */}
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -447,16 +430,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </div>
             {PAYTABLE.map((sym, i) => (
               <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
-                <span className="col-span-5 font-mono text-sm flex items-center gap-2">
-                  {(() => {
-                    const s = SYMBOLS[sym.id];
-                    if ((s as any).image) {
-                      return <img src={(s as any).image} alt={s.label} className="w-6 h-6 object-contain" />;
-                    }
-                    return <span className="text-lg">{s.emoji}</span>;
-                  })()}
-                  {sym.label}
-                </span>
+                <span className="col-span-5 font-mono text-sm">{sym.emoji} {sym.label}</span>
                 <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
                 <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
                 <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
