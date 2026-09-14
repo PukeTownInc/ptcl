@@ -38,6 +38,7 @@ export function getNextTier(xp: number): TierInfo | null {
   return TIERS.find((t) => t.minXp > xp) ?? null;
 }
 export const SYMBOLS: Record<SymbolId, SlotSymbol> = {
+  cashlab: { id: 'cashlab', emoji: '🤑', label: 'Cash Lab', pays: [12, 35, 130], weight: 2.5 },
   puke:    { id: 'puke',    emoji: '🤢', label: 'Nausea',  pays: [2, 3, 9],     weight: 26 },
   slime:   { id: 'slime',   emoji: '🟡', label: 'Slime',   pays: [2, 4, 11],    weight: 24 },
   sneeze:  { id: 'sneeze',  emoji: '🤧', label: 'Sneeze',  pays: [2, 5, 13],    weight: 21 },
