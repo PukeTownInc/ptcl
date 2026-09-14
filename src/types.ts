@@ -2,19 +2,16 @@ export type Tier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type Screen = 'home' | 'slots' | 'missions' | 'leaderboards' | 'withdraw' | 'roadmap' | 'settings' | 'profile' | 'vialmixer';
 export type LeaderboardCategory = 'xp' | 'pp' | 'spins' | 'referrals';
 export type LeaderboardPeriod = 'monthly';
-
 export interface PrizeTier {
   minRank: number;
   maxRank: number;
   xp: number;
   pp: number;
 }
-
 export interface LeaderboardPrizes {
   xp: { minRank: number; maxRank: number; amount: number }[];
   pp: { minRank: number; maxRank: number; amount: number }[];
 }
-
 export interface LeaderboardEntry {
   id: string;
   name: string;
@@ -22,18 +19,13 @@ export interface LeaderboardEntry {
   rank: number;
   isPlayer: boolean;
 }
-
 export interface LeaderboardClaimState {
   claimed: boolean;
 }
-
 export type SymbolId =
-  | 'cashlab' | 'puketown'
-  | 'gasMask' | 'geigerCounter' | 'radiationSign' | 'radioactiveSkull'
-  | 'mutantBeetle' | 'mutantRat' | 'testTube' | 'toxicCauldron' | 'wasteDrum' | 'wastePit'
-  | 'slimeBlob' | 'slimeGuy' | 'virus' | 'toxicCloud'
+  | 'puke' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
+  | 'beaker' | 'vomit' | 'toxic' | 'barrel' | 'warn' | 'rich'
   | 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
-
 export interface SlotSymbol {
   id: SymbolId;
   emoji: string;
@@ -43,14 +35,12 @@ export interface SlotSymbol {
   special?: 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
   isSpecial?: boolean;
 }
-
 export interface MissionState {
   spins: number;
   adsWatched: number;
   wheelSpins: number;
   allClaimed: boolean;
 }
-
 export interface GameState {
   xp: number;
   lockedPotPP: number;
@@ -100,7 +90,6 @@ export interface GameState {
   flagsClaimedOn: string;
   monthlyResetDate: string;
 }
-
 export interface WithdrawalRecord {
   id: string;
   date: number;
@@ -111,7 +100,6 @@ export interface WithdrawalRecord {
   usd: number;
   status: 'pending' | 'sent' | 'failed' | 'refunded';
 }
-
 export interface SpinResult {
   grid: SymbolId[][];
   wins: WinLine[];
@@ -123,7 +111,6 @@ export interface SpinResult {
   scatterCount: number;
   potFull: boolean;
 }
-
 export interface WinLine {
   symbols: SymbolId[];
   pp: number;
