@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Lock, Tv, Zap, Package, RefreshCw, Layers, Play, X, Coins, Flame, Square, History, Timer, Wallet } from 'lucide-react';
+import { Lock, Tv, Zap, Package, RefreshCw, Layers, Play, X, Coins, Flame, Square, History, Timer, Wallet, Table } from 'lucide-react';
 import type { GameState, SpinResult, SymbolId, WinLine } from '../types';
-import { getTier, MIN_UNLOCK_PP, formatPP, ppToUsd } from '../constants';
+import { getTier, MIN_UNLOCK_PP, formatPP, ppToUsd, SYMBOLS } from '../constants';
 import * as engine from '../slotEngine';
 import type { GameActions } from '../useGameState';
 import { isHotStreakActive, isPotAccelActive } from '../useGameState';
@@ -18,6 +18,12 @@ type SpinHistoryEntry =
   | { kind: 'lose'; pp: number }
   | { kind: 'safe'; pp: number };
 const MAX_HISTORY = 20;
+
+// ✅ PAYTABLE — auto-generated from SYMBOLS, sorted by highest payout first
+const PAYTABLE = Object.values(SYMBOLS)
+  .filter(s => !s.special) // exclude wild/scatter/bonus etc.
+  .sort((a, b) => b.pays[2] - a.pays[2]); // highest payout at top
+
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const tier = getTier(state.xp);
@@ -55,6 +61,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const doubleUpResolvedRef = useRef(false);
   const [spinHistory, setSpinHistory] = useState<SpinHistoryEntry[]>([]);
   const [potAccelCountdown, setPotAccelCountdown] = useState('');
+  const [showPaytable, setShowPaytable] = useState(false); // ✅ Paytable toggle
+
   useEffect(() => {
     return () => {
       if (cycleInterval.current) clearInterval(cycleInterval.current);
@@ -279,22 +287,21 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 600);
     return () => clearTimeout(t);
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
+
   return (
     <div className="space-y-4">
-      {/* ✅ REPLACED: Exact same two-box balance layout from Home/Withdraw Screen */}
+      {/* ✅ BALANCE BOXES */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet size={20} className="text-radioactive-400" />
           <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {/* LEFT — CONTAGION VAULT */}
           <div className="rounded-lg bg-ink-700/50 border border-toxic-900/40 p-3">
             <div className="text-[10px] text-toxic-100/40 uppercase">CONTAGION VAULT</div>
             <div className="font-mono text-xl font-bold text-toxic-300">{formatPP(state.lockedPotPP)}</div>
             <div className="text-[10px] text-toxic-100/30 font-mono">Watch video to unlock</div>
           </div>
-          {/* RIGHT — CONTAGION CACHE */}
           <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
             <div className="text-[10px] text-radioactive-400/60 uppercase">CONTAGION CACHE</div>
             <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
@@ -302,7 +309,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         </div>
       </div>
+
       <XPBar xp={state.xp} nextXp={null} />
+
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
         <div className="flex flex-wrap gap-2">
           {freeSpinsLeft > 0 && (
@@ -322,6 +331,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
+
+      {/* ✅ REELS */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -405,6 +416,42 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </button>
         </div>
       </div>
+
+      {/* ✅ PAYTABLE — Auto-updating! */}
+      <div className="grunge-panel overflow-hidden">
+        <button
+          onClick={() => setShowPaytable((o) => !o)}
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5"
+        >
+          <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2">
+            <Table size={16} /> ☢️ GOOP PAYTABLE
+          </span>
+          <span className="text-toxic-100/40 text-xs">{showPaytable ? 'Collapse' : 'Reveal'}</span>
+        </button>
+        {showPaytable && (
+          <div className="px-3 pb-3 space-y-1.5 animate-slide-up">
+            <div className="grid grid-cols-12 gap-1 text-[10px] font-mono text-toxic-100/40 border-b border-toxic-900/30 pb-1">
+              <span className="col-span-3">SYMBOL</span>
+              <span className="col-span-3 text-center">3</span>
+              <span className="col-span-3 text-center">4</span>
+              <span className="col-span-3 text-center">5</span>
+            </div>
+            {PAYTABLE.map((sym, i) => (
+              <div key={i} className="grid grid-cols-12 gap-1 text-sm items-center px-1 py-1 rounded bg-ink-700/30">
+                <span className="col-span-3 font-mono">{sym.emoji} {sym.label}</span>
+                <span className="col-span-3 text-center font-mono text-toxic-300">{sym.pays[0]}</span>
+                <span className="col-span-3 text-center font-mono text-toxic-300">{sym.pays[1]}</span>
+                <span className="col-span-3 text-center font-mono text-toxic-400 font-bold">{sym.pays[2]}</span>
+              </div>
+            ))}
+            <div className="mt-2 pt-2 border-t border-toxic-900/30 text-[10px] font-mono text-toxic-100/40 space-y-0.5">
+              <div>🤮 Wild — substitutes any symbol</div>
+              <div>🤒 Scatter = Free Twists • ☢️ Bonus = Contamination Wheel • ☣️ Hazard = Mystery • 🧪 = Jackpot</div>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 gap-2">
         <BonusBtn
           icon={<Package size={16} />}
@@ -423,7 +470,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           disabled={state.dailyPotAccel >= 2 || spinning}
         />
       </div>
+
       <SpinHistory entries={spinHistory} />
+
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
           stake={state.doubleUpPending}
@@ -432,6 +481,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           onForfeit={handleWheelForfeit}
         />
       )}
+
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
@@ -446,6 +496,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     </div>
   );
 }
+
 function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { icon: React.ReactNode; label: string; sub: string; ad?: boolean; onClick: () => void; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
@@ -458,6 +509,7 @@ function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { icon: React.Rea
     </button>
   );
 }
+
 function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
   const [open, setOpen] = useState(true);
   return (
