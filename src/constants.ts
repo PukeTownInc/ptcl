@@ -1,105 +1,183 @@
-import type { SlotSymbol, SymbolId, Tier } from './types';
-export const COLORS = {
-  toxic: '#39FF14',
-  radioactive: '#FFFF00',
-  black: '#000000',
-};
-export const PP_TO_USD = 0.000025; // 10,000 PP = $0.25 USD
-export const PLATFORM_FEE = 0.10;
-export const MIN_UNLOCK_PP = 5000;
-export const MIN_WITHDRAW_PP = 50000;
-export const MAX_WITHDRAW_PP = 500000;
-export const WITHDRAW_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-export const DAILY_XP_FREE_CAP = 150;
-export const DAILY_XP_BONUS_CAP = 100;
-export const DAILY_XP_MAX = 250;
-export interface TierInfo {
-  id: Tier;
-  label: string;
-  badge: string;
-  minXp: number;
-  maxXp: number;
-  potCap: number;
-  dailyUnlocks: number;
-  multiplier: number;
-  dailySpinsBase: number;
-  dailyMissions: number;
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, Check } from 'lucide-react';
+import type { Screen } from '../types';
+
+interface Props {
+  onNavigate: (s: Screen) => void;
 }
-export const TIERS: TierInfo[] = [
-  { id: 'bronze',   label: 'Bronze',   badge: '🥉', minXp: 0,      maxXp: 500,    potCap: 15000,  dailyUnlocks: 1, multiplier: 1.0,  dailySpinsBase: 25, dailyMissions: 3 },
-  { id: 'silver',   label: 'Silver',   badge: '🥈', minXp: 500,    maxXp: 2500,   potCap: 30000,  dailyUnlocks: 2, multiplier: 1.05, dailySpinsBase: 40, dailyMissions: 5 },
-  { id: 'gold',     label: 'Gold',     badge: '🥇', minXp: 2500,   maxXp: 10000,  potCap: 60000,  dailyUnlocks: 3, multiplier: 1.1,  dailySpinsBase: 55, dailyMissions: 8 },
-  { id: 'platinum', label: 'Platinum', badge: '💎', minXp: 10000,  maxXp: Infinity, potCap: 150000, dailyUnlocks: 5, multiplier: 1.2,  dailySpinsBase: 85, dailyMissions: 12 },
+
+const roadmapData = [
+  {
+    title: '✅ CONTAMINATED — ALREADY LIVE',
+    color: 'text-green-400',
+    borderColor: 'border-green-500/40',
+    bgColor: 'bg-green-500/5',
+    items: [
+      '☢️ Account & Cloud Sync — Save progress across all devices',
+      '🎰 Reactor Reels — Spin the wheel, earn Puke Points',
+      '🎯 Hazard Duties — Daily missions, earn rewards',
+      '🔥 Contamination Streak — Daily login bonuses, 7-day cycle',
+      '📊 Spin History — See your last 20 spins & results',
+      '⚖️ Radioactive Risk Wheel — Random spins trigger, risk it for bigger wins',
+      '🏆 Toxicity Ranks — Monthly leaderboards & prizes',
+      '👤 Radiation Profile — Track your stats & progress',
+      '📜 Terms & Privacy — Safe, fair, & fully compliant',
+    ],
+  },
+  {
+    title: '🔴 INFECTING — PHASE 1',
+    color: 'text-red-400',
+    borderColor: 'border-red-500/40',
+    bgColor: 'bg-red-500/5',
+    items: [
+      '☀️ Radiation Modes — Light & Dark themes',
+      '📈 Exposure Meter — Visual XP progress bar',
+      '🔒 Secure Rewards — Claim once daily, fair for all',
+      '📊 Extended Leaderboards — Total Spins & Referral Ranks',
+      '⏳ Monthly Countdowns — Know exactly when ranks reset',
+      '🔔 Update Alerts — Never miss when new features drop',
+    ],
+  },
+  {
+    title: '🟡 SPREADING — PHASE 2',
+    color: 'text-yellow-400',
+    borderColor: 'border-yellow-500/40',
+    bgColor: 'bg-yellow-500/5',
+    items: [
+      '💰 Waste Withdrawal — Cash out via FaucetPay',
+      '🎟️ Contamination Pass — Battle Pass, Free + Premium tiers',
+      '📦 Contagion Cache — Mystery Boxes: Common → Legendary',
+      '🎡 Wheel of Misfortune — Daily mini-game, spins & rewards',
+      '🛒 Toxic Shop — Boosts, perks, & exclusive items',
+      '🎨 Profile Customisation — Avatars, frames, colours',
+      '🏅 Long-Term Achievements — Badges, titles & hidden rewards',
+      '🤝 Referral Rewards — Earn from friends you invite',
+      '🗳️ Vote — Help us pick what comes next!',
+    ],
+  },
+  {
+    title: '🟠 TOXIC SPREAD — PHASE 3',
+    color: 'text-orange-400',
+    borderColor: 'border-orange-500/40',
+    bgColor: 'bg-orange-500/5',
+    items: [
+      '🦠 Puke Chaotic Tap — Tap fast, earn fast!',
+      '🎲 Radioactive Dice — Bet, roll, win multipliers',
+      '🎟️ Contamination Raffle Tickets — Instant wins daily',
+      '🟩 Bingo — Contamination cards, complete lines for big rewards',
+      '🧪 Scratch Cards — Scratch → reveal → win instantly',
+      '🎯 Mini-Jackpot Wheel — Mini • Minor • Major • Mega wins',
+      '👟 Step-to-Earn — Walk, earn, get contaminated',
+      '⛏️ Contamination Cloud Mining — Claim every few hours',
+      '📻 Radioactive Audio — Earn PP while you listen!',
+      '📈 Toxic Surge Mode — 2× PP & 2× XP, activate & ride!',
+      '🤖 Hazard Crane — Grab contaminated loot daily',
+    ],
+  },
+  {
+    title: '🟢 FULL CONTAMINATION — PHASE 4',
+    color: 'text-emerald-400',
+    borderColor: 'border-emerald-500/40',
+    bgColor: 'bg-emerald-500/5',
+    items: [
+      '☣️ FACTIONS — Pick your side, compete together',
+      '🏆 Faction Wars — Weekly competitions, shared rewards',
+      '🌍 Global Community Jackpot — Every win feeds the pot!',
+      '📱 Contamination Notifications — Stay in the loop',
+      '📲 Toxic Widgets — Check status from your home screen',
+      '📤 Share the Contamination — Show off your wins',
+      '📊 Advanced Stats Dashboard — Deep dive into your numbers',
+    ],
+  },
+  {
+    title: '⚠️ GLOBAL OUTBREAK — PHASE 5',
+    color: 'text-amber-400',
+    borderColor: 'border-amber-500/40',
+    bgColor: 'bg-amber-500/5',
+    items: [
+      '💎 VIP Contamination Club — Monthly perks & bonuses',
+      '🚫 Ad-Free Experience — Play uninterrupted',
+      '🛍️ Premium Contamination Shop — Exclusive skins & effects',
+      '👕 Real-World Merch — Wear the contamination!',
+      '🎁 Limited-Time Events — Seasonal exclusive rewards',
+      '📅 Quarterly Contamination Pass — Fresh content every season',
+    ],
+  },
+  {
+    title: '☠️ TOTAL CONTAMINATION — BEYOND',
+    color: 'text-rose-400',
+    borderColor: 'border-rose-500/40',
+    bgColor: 'bg-rose-500/5',
+    items: [
+      '🎭 Custom Contamination Themes — Build your own look',
+      '📦 Player-to-Player Gifting — Send to friends',
+      '📈 Personal Contamination Dashboard — Your full journey',
+      '🌐 Global Contamination Map — See where it spreads',
+      '🎮 More Mini-Games — Forever expanding!',
+    ],
+  },
 ];
-export function getTier(xp: number): TierInfo {
-  return [...TIERS].reverse().find((t) => xp >= t.minXp) ?? TIERS[0];
+
+export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
+  const [openSections, setOpenSections] = useState<Record<number, boolean>>({
+    0: true,
+    1: true,
+    2: false,
+    3: false,
+    4: false,
+    5: false,
+    6: false,
+  });
+
+  const toggle = (i: number) => {
+    setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
+  };
+
+  return (
+    <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
+      <div className="grunge-panel p-5 text-center space-y-2">
+        <h1 className="font-display font-black text-2xl text-toxic-400 neon-text">☢️ FALLOUT FORECAST</h1>
+        <p className="text-radioactive-300 text-sm">Contamination Roadmap • Updated 14 September 2026</p>
+        <p className="text-toxic-200 text-sm font-semibold">☢️ OVER 80+ CONTAMINATED FEATURES INCOMING ☢️</p>
+        <p className="text-toxic-300/90 text-sm">☣️ A one-of-a-kind toxic digital ecosystem ☣️</p>
+        <p className="text-toxic-300/90 text-sm">☣️ Created for YOUR benefit ☣️</p>
+        <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere!</p>
+      </div>
+
+      {roadmapData.map((section, idx) => (
+        <div
+          key={idx}
+          className={`grunge-panel border-l-4 ${section.borderColor} ${section.bgColor} overflow-hidden`}
+        >
+          <button
+            onClick={() => toggle(idx)}
+            className="w-full flex items-center justify-between p-4 text-left"
+          >
+            <h2 className={`font-bold text-base ${section.color}`}>{section.title}</h2>
+            {openSections[idx] ? (
+              <ChevronUp size={18} className="text-toxic-300" />
+            ) : (
+              <ChevronDown size={18} className="text-toxic-300" />
+            )}
+          </button>
+
+          {openSections[idx] && (
+            <div className="px-4 pb-4 space-y-2 border-t border-toxic-900/30 pt-3">
+              {section.items.map((item, i) => (
+                <div key={i} className="flex items-start gap-2 text-sm text-gray-200">
+                  <Check size={14} className="text-green-400 mt-0.5 shrink-0 opacity-60" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      <div className="grunge-panel p-4 text-center space-y-2 mt-4">
+        <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
+        <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
+      </div>
+    </div>
+  );
 }
-export function getNextTier(xp: number): TierInfo | null {
-  return TIERS.find((t) => t.minXp > xp) ?? null;
-}
-export const SYMBOLS: Record<SymbolId, SlotSymbol> = {
-  puke:    { id: 'puke',    emoji: '🤢', label: 'Nausea',  pays: [2, 3, 9],     weight: 26 },
-  slime:   { id: 'slime',   emoji: '🟡', label: 'Slime',   pays: [2, 4, 11],    weight: 24 },
-  sneeze:  { id: 'sneeze',  emoji: '🤧', label: 'Sneeze',  pays: [2, 5, 13],    weight: 21 },
-  tp:      { id: 'tp',      emoji: '🧻', label: 'TP Roll',  pays: [3, 6, 16],    weight: 18 },
-  pill:    { id: 'pill',    emoji: '💊', label: 'Pill',     pays: [3, 7, 19],    weight: 15 },
-  germ:    { id: 'germ',    emoji: '🦠', label: 'Germ',     pays: [3, 8, 23],    weight: 13 },
-  beaker:  { id: 'beaker',  emoji: '🧪', label: 'Beaker',  pays: [4, 10, 30],   weight: 10 },
-  vomit:   { id: 'vomit',   emoji: '🤮', label: 'Vomit',   pays: [5, 12, 37],   weight: 8 },
-  toxic:   { id: 'toxic',   emoji: '☢️', label: 'Toxic',   pays: [6, 16, 48],   weight: 6 },
-  barrel:  { id: 'barrel',  emoji: '🛢️', label: 'Barrel',  pays: [7, 20, 64],   weight: 4 },
-  warn:    { id: 'warn',    emoji: '⚠️', label: 'Warning', pays: [12, 35, 130], weight: 2.5 },
-  rich:    { id: 'rich',    emoji: '🤑', label: 'Jackpot Guy', pays: [18, 55, 220], weight: 1.5 },
-  wild:    { id: 'wild',    emoji: '🤮', label: 'Puke Wild',  pays: [0, 0, 0], weight: 3.5, special: 'wild', isSpecial: true },
-  scatter: { id: 'scatter', emoji: '🤒', label: 'Sick Scatter', pays: [0, 0, 0], weight: 2, special: 'scatter', isSpecial: true },
-  bonus:   { id: 'bonus',   emoji: '☢️', label: 'Toxic Bonus', pays: [0, 0, 0], weight: 1.5, special: 'bonus', isSpecial: true },
-  hazard:  { id: 'hazard',  emoji: '☣️', label: 'Hazard Mystery', pays: [0, 0, 0], weight: 1.2, special: 'hazard', isSpecial: true },
-  jackpot: { id: 'jackpot', emoji: '🧪', label: 'Toxic Jackpot', pays: [0, 0, 0], weight: 1, special: 'jackpot', isSpecial: true },
-};
-export const JACKPOT_TYPES = [
-  { type: 'mini' as const,  amount: 30,  label: 'Mini' },
-  { type: 'minor' as const, amount: 60,  label: 'Minor' },
-  { type: 'major' as const, amount: 120, label: 'Major' },
-  { type: 'grand' as const, amount: 300, label: 'Grand' },
-];
-export const JACKPOT_WEIGHTS = [50, 30, 15, 5];
-export const REEL_COUNT = 5;
-export const ROW_COUNT = 3;
-export const FREE_SPINS_BASE = 5;
-export const FREE_SPINS_DAILY_BONUS = 10;
-export const MISSIONS = [
-  { id: 'spins',     label: 'Spin 20 Times',      target: 20,  baseXp: 50,  adXp: 75,  icon: '🎰', adSpins: 5 },
-  { id: 'ads',       label: 'Watch 5 Ads',        target: 5,   baseXp: 50,  adXp: 75,  icon: '📺', adSpins: 5 },
-  { id: 'wheel',     label: 'Spin the Radioactive Risk Wheel 3 Times', target: 3, baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
-  { id: 'claistreak',label: 'Claim Daily Streak',  target: 1,  baseXp: 50,  adXp: 75,  icon: '📅', adSpins: 5 },
-  { id: 'earnpp',    label: 'Earn 100 Puke Points', target: 100, baseXp: 50, adXp: 75,  icon: '🎯', adSpins: 5 },
-];
-export const ALL_MISSIONS_BONUS = { baseXp: 100, adXp: 150, baseSpins: 0, adSpins: 10 };
-export interface StreakDayReward {
-  day: number;
-  spins: number;
-  xp: number;
-  ppBoost?: boolean;
-  label: string;
-}
-export const STREAK_REWARDS: StreakDayReward[] = [
-  { day: 1, spins: 2, xp: 10, label: 'Day 1' },
-  { day: 2, spins: 3, xp: 15, label: 'Day 2' },
-  { day: 3, spins: 4, xp: 20, label: 'Day 3' },
-  { day: 4, spins: 5, xp: 30, label: 'Day 4' },
-  { day: 5, spins: 7, xp: 35, label: 'Day 5' },
-  { day: 6, spins: 8, xp: 40, label: 'Day 6' },
-  { day: 7, spins: 15, xp: 75, ppBoost: true, label: 'Day 7 — MAX!' },
-];
-export const MAX_STREAK_DAY = 7;
-export const ppToUsd = (pp: number) => pp * PP_TO_USD;
-export function formatPP(pp: number): string {
-  return pp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-export const CRYPTO_OPTIONS = [
-  { id: 'BTC', label: 'Bitcoin (BTC)',  network: 'bitcoin' },
-  { id: 'LTC', label: 'Litecoin (LTC)', network: 'litecoin' },
-  { id: 'DOGE', label: 'Dogecoin (DOGE)', network: 'dogecoin' },
-  { id: 'TRX', label: 'Tron (TRX)',     network: 'tron' },
-  { id: 'SOL', label: 'Solana (SOL)',   network: 'solana' },
-];
