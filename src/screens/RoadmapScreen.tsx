@@ -1,0 +1,180 @@
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, Check, Zap, Radio, AlertTriangle, Globe, Gift, FlaskConical } from 'lucide-react';
+import type { Screen } from '../types';
+
+interface Props {
+  onNavigate: (s: Screen) => void;
+}
+
+const roadmapData = [
+  {
+    title: '✅ CONTAMINATED — ALREADY LIVE',
+    color: 'text-green-400',
+    borderColor: 'border-green-500/40',
+    bgColor: 'bg-green-500/5',
+    items: [
+      '☢️ Account & Cloud Sync — Save progress across all devices',
+      '🎰 Reactor Reels — Spin the wheel, earn Puke Points',
+      '🎯 Hazard Duties — Daily missions, earn rewards',
+      '💰 Waste Withdrawal — Cash out via FaucetPay',
+      '🔥 Contamination Streak — Daily login bonuses, 7-day cycle',
+      '📊 Spin History — See your last 20 spins & results',
+      '⚖️ Double-or-Nothing Wheel — Risk it for bigger wins (≥6 PP)',
+      '🏆 Toxicity Ranks — Monthly leaderboards & prizes',
+      '👤 Radiation Profile — Track your stats & progress',
+      '📜 Terms & Privacy — Safe, fair, & fully compliant',
+    ],
+  },
+  {
+    title: '🔴 INFECTING — COMING VERY SOON',
+    color: 'text-red-400',
+    borderColor: 'border-red-500/40',
+    bgColor: 'bg-red-500/5',
+    items: [
+      '☀️ Radiation Modes — Light & Dark themes',
+      '📈 Exposure Meter — Visual XP progress bar',
+      '🔒 Secure Rewards — Claim once daily, fair for all',
+      '📊 Extended Leaderboards — Total Spins & Referral Ranks',
+      '⏳ Monthly Countdowns — Know exactly when ranks reset',
+      '🔔 Update Alerts — Never miss when new features drop',
+    ],
+  },
+  {
+    title: '🟡 SPREADING — PHASE 2',
+    color: 'text-yellow-400',
+    borderColor: 'border-yellow-500/40',
+    bgColor: 'bg-yellow-500/5',
+    items: [
+      '🎟️ Contamination Pass — Battle Pass, Free + Premium tiers',
+      '📦 Contagion Cache — Mystery Boxes: Common → Legendary',
+      '🎡 Wheel of Misfortune — Daily mini-game, spins & rewards',
+      '🛒 Toxic Shop — Boosts, perks, & exclusive items',
+      '🎨 Profile Customisation — Avatars, frames, colours',
+      '🏅 Long-Term Achievements — Badges, titles & hidden rewards',
+      '🤝 Referral Rewards — Earn from friends you invite',
+      '🗳️ Vote — Help us pick what comes next!',
+    ],
+  },
+  {
+    title: '🟠 TOXIC SPREAD — PHASE 3',
+    color: 'text-orange-400',
+    borderColor: 'border-orange-500/40',
+    bgColor: 'bg-orange-500/5',
+    items: [
+      '🦠 Puke Chaotic Tap — Tap fast, earn fast!',
+      '🎲 Radioactive Dice — Bet, roll, win multipliers',
+      '🎟️ Contamination Raffle Tickets — Instant wins daily',
+      '🟩 Bingo — Contamination cards, complete lines for big rewards',
+      '🧪 Scratch Cards — Scratch → reveal → win instantly',
+      '🎯 Mini-Jackpot Wheel — Mini • Minor • Major • Mega wins',
+      '👟 Step-to-Earn — Walk, earn, get contaminated',
+      '⛏️ Contamination Cloud Mining — Claim every few hours',
+      '📻 Radioactive Audio — Earn PP while you listen!',
+      '📈 Toxic Surge Mode — 2× PP & 2× XP, activate & ride!',
+      '🤖 Hazard Crane — Grab contaminated loot daily',
+    ],
+  },
+  {
+    title: '🟢 FULL CONTAMINATION — PHASE 4',
+    color: 'text-emerald-400',
+    borderColor: 'border-emerald-500/40',
+    bgColor: 'bg-emerald-500/5',
+    items: [
+      '☣️ FACTIONS — Pick your side, compete together',
+      '🏆 Faction Wars — Weekly competitions, shared rewards',
+      '🌍 Global Community Jackpot — Every win feeds the pot!',
+      '📱 Contamination Notifications — Stay in the loop',
+      '📲 Toxic Widgets — Check status from your home screen',
+      '📤 Share the Contamination — Show off your wins',
+      '📊 Advanced Stats Dashboard — Deep dive into your numbers',
+    ],
+  },
+  {
+    title: '⚠️ GLOBAL OUTBREAK — PHASE 5',
+    color: 'text-amber-400',
+    borderColor: 'border-amber-500/40',
+    bgColor: 'bg-amber-500/5',
+    items: [
+      '💎 VIP Contamination Club — Monthly perks & bonuses',
+      '🚫 Ad-Free Mode — Play uninterrupted',
+      '🛍️ Premium Contamination Shop — Exclusive skins & effects',
+      '👕 Real-World Merch — Wear the contamination!',
+      '🎁 Limited-Time Events — Seasonal exclusive rewards',
+      '📅 Quarterly Contamination Pass — Fresh content every season',
+    ],
+  },
+  {
+    title: '☠️ TOTAL CONTAMINATION — BEYOND',
+    color: 'text-rose-400',
+    borderColor: 'border-rose-500/40',
+    bgColor: 'bg-rose-500/5',
+    items: [
+      '🎭 Custom Contamination Themes — Build your own look',
+      '📦 Player-to-Player Gifting — Send to friends',
+      '📈 Personal Contamination Dashboard — Your full journey',
+      '🌐 Global Contamination Map — See where it spreads',
+      '🎮 More Mini-Games — Forever expanding!',
+    ],
+  },
+];
+
+export function RoadmapScreen({ onNavigate }: Props) {
+  const [openSections, setOpenSections] = useState<Record<number, boolean>>({
+    0: true,
+    1: true,
+    2: false,
+    3: false,
+    4: false,
+    5: false,
+    6: false,
+  });
+
+  const toggle = (i: number) => {
+    setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
+  };
+
+  return (
+    <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
+      <div className="grunge-panel p-5 text-center space-y-2">
+        <h1 className="font-display font-black text-2xl text-toxic-400 neon-text">☢️ FALLOUT FORECAST</h1>
+        <p className="text-radioactive-300 text-sm">Contamination Roadmap • Updated 14 September 2026</p>
+        <p className="text-toxic-200/70 text-xs">80+ Features Planned • Help us prioritise — vote for what you want next!</p>
+      </div>
+
+      {roadmapData.map((section, idx) => (
+        <div
+          key={idx}
+          className={`grunge-panel border-l-4 ${section.borderColor} ${section.bgColor} overflow-hidden`}
+        >
+          <button
+            onClick={() => toggle(idx)}
+            className="w-full flex items-center justify-between p-4 text-left"
+          >
+            <h2 className={`font-bold text-base ${section.color}`}>{section.title}</h2>
+            {openSections[idx] ? (
+              <ChevronUp size={18} className="text-toxic-300" />
+            ) : (
+              <ChevronDown size={18} className="text-toxic-300" />
+            )}
+          </button>
+
+          {openSections[idx] && (
+            <div className="px-4 pb-4 space-y-2 border-t border-toxic-900/30 pt-3">
+              {section.items.map((item, i) => (
+                <div key={i} className="flex items-start gap-2 text-sm text-gray-200">
+                  <Check size={14} className="text-green-400 mt-0.5 shrink-0 opacity-60" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      <div className="grunge-panel p-4 text-center space-y-2 mt-4">
+        <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
+        <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
+      </div>
+    </div>
+  );
+}
