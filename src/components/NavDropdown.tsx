@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Radioactive, Gamepad2, Zap, Trophy, Wallet, Settings, User, Check } from 'lucide-react';
+import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check } from 'lucide-react';
 import type { Screen } from '../types';
-const NAV: { id: Screen; label: string; icon: typeof Radioactive }[] = [
-  { id: 'home', label: 'Contamination Zone', icon: Radioactive },
+const NAV: { id: Screen; label: string; icon: typeof Home }[] = [
+  { id: 'home', label: 'Contamination Zone', icon: Home },
   { id: 'slots', label: 'Reactor Reels', icon: Gamepad2 },
-  { id: 'missions', label: 'Hazard Duties', icon: Zap },
+  { id: 'missions', label: 'Hazard Duties', icon: Target },
   { id: 'leaderboards', label: 'Toxicity Ranks', icon: Trophy },
   { id: 'withdraw', label: 'Waste Withdrawal', icon: Wallet },
   { id: 'profile', label: 'Radiation Profile', icon: User },
