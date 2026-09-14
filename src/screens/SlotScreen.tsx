@@ -19,11 +19,26 @@ type SpinHistoryEntry =
   | { kind: 'safe'; pp: number };
 const MAX_HISTORY = 20;
 
+// ✅ SAFE PNG RENDERER — PNG if exists, else EMOJI
+function renderSymbol(symId: SymbolId, sizeClass = 'w-8 h-8') {
+  const sym = engine.getSymbol(symId);
+  if ((sym as any).image) {
+    return (
+      <img
+        src={(sym as any).image}
+        alt={sym.label}
+        className={`${sizeClass} object-contain`}
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      />
+    );
+  }
+  return <span className="text-xl">{sym.emoji}</span>;
+}
+
 // ✅ PAYTABLE — auto-generated from SYMBOLS, sorted highest payout first
 const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
-
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const tier = getTier(state.xp);
@@ -62,7 +77,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [spinHistory, setSpinHistory] = useState<SpinHistoryEntry[]>([]);
   const [potAccelCountdown, setPotAccelCountdown] = useState('');
   const [showPaytable, setShowPaytable] = useState(false);
-
   useEffect(() => {
     return () => {
       if (cycleInterval.current) clearInterval(cycleInterval.current);
@@ -287,7 +301,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 600);
     return () => clearTimeout(t);
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
-
   return (
     <div className="space-y-4">
       {/* ✅ BALANCE BOXES */}
@@ -309,9 +322,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         </div>
       </div>
-
       <XPBar xp={state.xp} nextXp={null} />
-
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
         <div className="flex flex-wrap gap-2">
           {freeSpinsLeft > 0 && (
@@ -325,14 +336,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </span>
           )}
           {isPotAccelActive(state) && potAccelCountdown && (
-            <span className="px-2 py-1 rounded-full bg-radioactive-500/15 border border-radioactive-600/40 text-radioactive-400 text-[10px] font-display font-bold flex items-center gap-1">
+            <span className="px-2 py-1 rounded-full bg-radioactive-500/15 border border-radioactive-600/30 text-radioactive-400 text-[10px] font-display font-bold flex items-center gap-1">
               <Timer size={10} /> VAT FLOW x2 • {potAccelCountdown}
             </span>
           )}
         </div>
       )}
-
-      {/* ✅ REELS */}
+      {/* ✅ REELS — PNG or EMOJI */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -350,7 +360,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                       className={`aspect-square flex items-center justify-center reel-symbol ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
                     >
                       <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
-                        {engine.getSymbol(symId).emoji}
+                        {renderSymbol(symId)}
                       </span>
                     </div>
                   );
@@ -416,8 +426,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </button>
         </div>
       </div>
-
-      {/* ✅ SUPER CLEAR PAYTABLE — Labels explain EVERYTHING */}
+      {/* ✅ PAYTABLE — PNG or EMOJI */}
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -430,23 +439,29 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </button>
         {showPaytable && (
           <div className="px-3 pb-3 space-y-2 animate-slide-up">
-            {/* CLEAR HEADER — Exactly what each number means */}
             <div className="grid grid-cols-12 gap-2 text-[10px] font-mono text-toxic-100/50 border-b border-toxic-900/40 pb-2">
               <span className="col-span-5">SYMBOL</span>
               <span className="col-span-2 text-center">MATCH 3</span>
               <span className="col-span-2 text-center">MATCH 4</span>
               <span className="col-span-3 text-center">MATCH 5 ☢️</span>
             </div>
-            {/* Symbol Rows — Values clearly aligned under headers */}
             {PAYTABLE.map((sym, i) => (
               <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
-                <span className="col-span-5 font-mono text-sm">{sym.emoji} {sym.label}</span>
+                <span className="col-span-5 font-mono text-sm flex items-center gap-2">
+                  {(() => {
+                    const s = SYMBOLS[sym.id];
+                    if ((s as any).image) {
+                      return <img src={(s as any).image} alt={s.label} className="w-6 h-6 object-contain" />;
+                    }
+                    return <span className="text-lg">{s.emoji}</span>;
+                  })()}
+                  {sym.label}
+                </span>
                 <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
                 <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
                 <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
               </div>
             ))}
-            {/* Simple Legend */}
             <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
               <div>🤮 WILD = substitutes for any symbol</div>
               <div>🤒 SCATTER = Free Toxic Twists</div>
@@ -457,7 +472,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         )}
       </div>
-
       <div className="grid grid-cols-2 gap-2">
         <BonusBtn
           icon={<Package size={16} />}
@@ -476,9 +490,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           disabled={state.dailyPotAccel >= 2 || spinning}
         />
       </div>
-
       <SpinHistory entries={spinHistory} />
-
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
           stake={state.doubleUpPending}
@@ -487,7 +499,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           onForfeit={handleWheelForfeit}
         />
       )}
-
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
@@ -502,7 +513,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     </div>
   );
 }
-
 function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { icon: React.ReactNode; label: string; sub: string; ad?: boolean; onClick: () => void; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
@@ -515,7 +525,6 @@ function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { icon: React.Rea
     </button>
   );
 }
-
 function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
   const [open, setOpen] = useState(true);
   return (
@@ -562,7 +571,7 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                     <span className={`text-[11px] font-mono ${info.color}`}>{info.label}</span>
                   </div>
                   <span className={`text-xs font-mono font-bold shrink-0 ${entry.pp > 0 ? 'text-toxic-400' : 'text-toxic-100/30'}`}>
-                    {formatPP(entry.pp)} PP
+                    {formatPP(entry.pp)}
                   </span>
                 </div>
               );
