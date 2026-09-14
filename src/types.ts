@@ -23,6 +23,7 @@ export interface LeaderboardClaimState {
   claimed: boolean;
 }
 export type SymbolId =
+  | 'cashlab'
   | 'puke' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
   | 'beaker' | 'vomit' | 'toxic' | 'barrel' | 'warn' | 'rich'
   | 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
