@@ -11,15 +11,15 @@ const roadmapData = [
     borderColor: 'border-green-500/40',
     bgColor: 'bg-green-500/5',
     items: [
-      '☢️ Account & Cloud Sync — Save progress across all devices',
-      '🎰 Reactor Reels — Spin the wheel, earn Puke Points',
-      '🎯 Hazard Duties — Daily missions, earn rewards',
-      '🔥 Contamination Streak — Daily login bonuses, 7-day cycle',
-      '📊 Spin History — See your last 20 spins & results',
-      '⚖️ Radioactive Risk Wheel — Random spins trigger, risk it for bigger wins',
-      '🏆 Toxicity Ranks — Monthly leaderboards & prizes',
-      '👤 Radiation Profile — Track your stats & progress',
-      '📜 Terms & Privacy — Safe, fair, & fully compliant',
+      '✅ ☢️ Account & Cloud Sync — Save progress across all devices',
+      '✅ 🎰 Reactor Reels — Spin the wheel, earn Puke Points',
+      '✅ 🎯 Hazard Duties — Daily missions, earn rewards',
+      '✅ 🔥 Contamination Streak — Daily login bonuses, 7-day cycle',
+      '✅ 📊 Spin History — See your last 20 spins & results',
+      '✅ ⚖️ Radioactive Risk Wheel — Random spins trigger, risk it for bigger wins',
+      '✅ 🏆 Toxicity Ranks — Monthly leaderboards & prizes',
+      '✅ 👤 Radiation Profile — Track your stats & progress',
+      '✅ 📜 Terms & Privacy — Safe, fair, & fully compliant',
     ],
   },
   {
@@ -28,12 +28,12 @@ const roadmapData = [
     borderColor: 'border-red-500/40',
     bgColor: 'bg-red-500/5',
     items: [
-      '☀️ Radiation Modes — Light & Dark themes',
-      '📈 Exposure Meter — Visual XP progress bar',
-      '🔒 Secure Rewards — Claim once daily, fair for all',
-      '📊 Extended Leaderboards — Total Spins & Referral Ranks',
-      '⏳ Monthly Countdowns — Know exactly when ranks reset',
-      '🔔 Update Alerts — Never miss when new features drop',
+      '✅ ☀️ Radiation Modes — Light & Dark themes',
+      '✅ 📈 Exposure Meter — Visual XP progress bar',
+      '✅ 🔒 Secure Rewards — Claim once daily, fair for all',
+      '✅ 📊 Extended Leaderboards — Total Spins & Referral Ranks',
+      '✅ ⏳ Monthly Countdowns — Know exactly when ranks reset',
+      '✅ 🔔 Update Alerts — Never miss when new features drop',
     ],
   },
   {
@@ -158,7 +158,6 @@ export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void 
             <div className="px-4 pb-4 space-y-2 border-t border-toxic-900/30 pt-3">
               {section.items.map((item, i) => (
                 <div key={i} className="flex items-start gap-2 text-sm text-gray-200">
-                  <Check size={14} className="text-green-400 mt-0.5 shrink-0 opacity-60" />
                   <span>{item}</span>
                 </div>
               ))}
