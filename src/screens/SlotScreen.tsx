@@ -9,6 +9,7 @@ import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
 import { XPBar } from '../components/XPBar';
 import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
+
 const REEL_DISPLAY = 3;
 type ReelPhase = 'idle' | 'spinning' | 'stopped';
 type SpinHistoryEntry =
@@ -17,6 +18,7 @@ type SpinHistoryEntry =
   | { kind: 'half'; pp: number }
   | { kind: 'lose'; pp: number }
   | { kind: 'safe'; pp: number };
+
 const MAX_HISTORY = 20;
 
 // ✅ PAYTABLE — auto-generated from SYMBOLS, sorted highest payout first
@@ -24,7 +26,24 @@ const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
 
-const CASH_LAB_IMG = '/symbols/symbol-cash-lab.png';
+// ✅ HELPER: Render symbol image or emoji fallback
+function SymbolImage({ symId, size = 'w-8 h-8' }: { symId: SymbolId; size?: string }) {
+  const symbol = SYMBOLS[symId];
+  if (!symbol) return <span>?</span>;
+  if ((symbol as any).image) {
+    return (
+      <img
+        src={(symbol as any).image}
+        alt={symbol.label}
+        className={`${size} object-contain`}
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+        }}
+      />
+    );
+  }
+  return <span>{symbol.emoji}</span>;
+}
 
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
@@ -71,6 +90,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       stopTimers.current.forEach(clearTimeout);
     };
   }, []);
+
   useEffect(() => {
     if (!state.potAccelUntil) return;
     const update = () => {
@@ -87,6 +107,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [state.potAccelUntil]);
+
   useEffect(() => {
     const measure = () => {
       if (reelsRef.current) {
@@ -98,6 +119,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, []);
+
   useEffect(() => {
     if (spinning || !lastResult || lastResult.wins.length === 0) return;
     setActiveWinIndex(0);
@@ -107,7 +129,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 900);
     return () => clearInterval(interval);
   }, [spinning, lastResult]);
+
   const potFull = state.lockedPotPP >= tier.potCap;
+
   const doSpin = useCallback(() => {
     if (spinning) return;
     if (state.spinsRemaining <= 0 && freeSpinsLeft <= 0) {
@@ -191,6 +215,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       setSpinHistory((prev) => [{ kind: 'spin', pp: res.totalPP, symbols: winSymbols }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, potFull, actions, toast]);
+
   const handleWheelClaim = (result: WheelResult) => {
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
@@ -214,6 +239,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     const kind = result.outcome === 'double' ? 'double' : result.outcome === 'half' ? 'half' : 'safe';
     setSpinHistory((prev) => [{ kind, pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
   };
+
   const handleWheelLose = () => {
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
@@ -222,6 +248,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     toast('error', '☠️ GOOPS SPILLED!', 'All washed away — better containment next time!');
     setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
   };
+
   const handleWheelForfeit = () => {
     const original = state.doubleUpPending ?? 0;
     doubleUpResolvedRef.current = true;
@@ -231,6 +258,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     toast('info', '🧪 GOOPS BANKED', `+${formatPP(original)} Puke Points secured — wheel result purged`);
     setSpinHistory((prev) => [{ kind: 'safe', pp: original }, ...prev].slice(0, MAX_HISTORY));
   };
+
   const handleMysteryPack = () => {
     if (state.spinsRemaining > 0) {
       toast('info', 'TWISTS STILL AVAILABLE', 'Mystery Goop Vat only empty when contaminated');
@@ -247,6 +275,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       },
     });
   };
+
   const handlePotAccel = () => {
     if (state.dailyPotAccel >= 2) {
       toast('info', 'ACCELERATOR OVERHEATED', 'Return after radiation cools');
@@ -267,7 +296,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       },
     });
   };
+
   const canSpin = state.spinsRemaining > 0 || freeSpinsLeft > 0;
+
   const toggleAutoSpin = useCallback(() => {
     setAutoSpin((prev) => {
       const next = !prev;
@@ -275,6 +306,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       return next;
     });
   }, []);
+
   useEffect(() => {
     if (!autoSpin) return;
     if (spinning || showDoubleUp || showJackpot || adModal) return;
@@ -327,14 +359,14 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </span>
           )}
           {isPotAccelActive(state) && potAccelCountdown && (
-            <span className="px-2 py-1 rounded-full bg-radioactive-500/15 border border-radioactive-600/40 text-radioactive-400 text-[10px] font-display font-bold flex items-center gap-1">
+            <span className="px-2 py-1 rounded-full bg-radioactive-500/15 border border-radioactive-600/30 text-radioactive-400 text-[10px] font-display font-bold flex items-center gap-1">
               <Timer size={10} /> VAT FLOW x2 • {potAccelCountdown}
             </span>
           )}
         </div>
       )}
 
-      {/* ✅ REELS — Cash Lab image on reels too */}
+      {/* ✅ REELS — ALL symbols auto-use PNGs with emoji fallback */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -346,25 +378,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div key={ri} className={`relative overflow-hidden rounded-md bg-ink-850 border border-toxic-900/30 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`}>
                 {displayReel.map((symId, row) => {
                   const isWin = winPositions.has(`${ri}-${row}`);
-                  const symbol = engine.getSymbol(symId);
                   return (
                     <div
                       key={row}
                       className={`aspect-square flex items-center justify-center reel-symbol ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
                     >
                       <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
-                        {symId === 'cashlab' ? (
-                          <img
-                            src={CASH_LAB_IMG}
-                            alt="Cash Lab"
-                            className="w-8 h-8 object-contain"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          symbol.emoji
-                        )}
+                        <SymbolImage symId={symId} size="w-8 h-8" />
                       </span>
                     </div>
                   );
@@ -431,7 +451,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       </div>
 
-      {/* ✅ PAYTABLE — Correct image path! */}
+      {/* ✅ PAYTABLE — ALL symbols auto-use PNGs with emoji fallback */}
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -453,19 +473,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             {PAYTABLE.map((sym, i) => (
               <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
                 <span className="col-span-5 font-mono text-sm flex items-center gap-2">
-                  {sym.id === 'cashlab' ? (
-                    <img
-                      src={CASH_LAB_IMG}
-                      alt="Cash Lab"
-                      className="w-6 h-6 object-contain"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.insertAdjacentHTML('afterend', '🤑');
-                      }}
-                    />
-                  ) : (
-                    sym.emoji
-                  )}
+                  <SymbolImage symId={sym.id} size="w-6 h-6" />
                   {sym.label}
                 </span>
                 <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
