@@ -6,7 +6,7 @@ interface Props {
 }
 const roadmapData = [
   {
-    title: '✅ CONTAMINATED — ALREADY LIVE',
+    title: '✅ CONTAMINATED — PHASE 0',
     color: 'text-green-400',
     borderColor: 'border-green-500/40',
     bgColor: 'bg-green-500/5',
