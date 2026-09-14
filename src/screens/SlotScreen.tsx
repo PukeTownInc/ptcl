@@ -24,6 +24,8 @@ const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
 
+const CASH_LAB_IMG = '/symbols/symbol-cash-lab.png';
+
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const tier = getTier(state.xp);
@@ -332,7 +334,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
 
-      {/* ✅ REELS */}
+      {/* ✅ REELS — Cash Lab image on reels too */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -344,13 +346,25 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div key={ri} className={`relative overflow-hidden rounded-md bg-ink-850 border border-toxic-900/30 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`}>
                 {displayReel.map((symId, row) => {
                   const isWin = winPositions.has(`${ri}-${row}`);
+                  const symbol = engine.getSymbol(symId);
                   return (
                     <div
                       key={row}
                       className={`aspect-square flex items-center justify-center reel-symbol ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
                     >
                       <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
-                        {engine.getSymbol(symId).emoji}
+                        {symId === 'cashlab' ? (
+                          <img
+                            src={CASH_LAB_IMG}
+                            alt="Cash Lab"
+                            className="w-8 h-8 object-contain"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          symbol.emoji
+                        )}
                       </span>
                     </div>
                   );
@@ -417,7 +431,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       </div>
 
-      {/* ✅ SUPER CLEAR PAYTABLE — Labels explain EVERYTHING */}
+      {/* ✅ PAYTABLE — Correct image path! */}
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -430,23 +444,35 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </button>
         {showPaytable && (
           <div className="px-3 pb-3 space-y-2 animate-slide-up">
-            {/* CLEAR HEADER — Exactly what each number means */}
             <div className="grid grid-cols-12 gap-2 text-[10px] font-mono text-toxic-100/50 border-b border-toxic-900/40 pb-2">
               <span className="col-span-5">SYMBOL</span>
               <span className="col-span-2 text-center">MATCH 3</span>
               <span className="col-span-2 text-center">MATCH 4</span>
               <span className="col-span-3 text-center">MATCH 5 ☢️</span>
             </div>
-            {/* Symbol Rows — Values clearly aligned under headers */}
             {PAYTABLE.map((sym, i) => (
               <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
-                <span className="col-span-5 font-mono text-sm">{sym.emoji} {sym.label}</span>
+                <span className="col-span-5 font-mono text-sm flex items-center gap-2">
+                  {sym.id === 'cashlab' ? (
+                    <img
+                      src={CASH_LAB_IMG}
+                      alt="Cash Lab"
+                      className="w-6 h-6 object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.insertAdjacentHTML('afterend', '🤑');
+                      }}
+                    />
+                  ) : (
+                    sym.emoji
+                  )}
+                  {sym.label}
+                </span>
                 <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
                 <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
                 <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
               </div>
             ))}
-            {/* Simple Legend */}
             <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
               <div>🤮 WILD = substitutes for any symbol</div>
               <div>🤒 SCATTER = Free Toxic Twists</div>
