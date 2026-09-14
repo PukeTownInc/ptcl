@@ -12,20 +12,20 @@ const VIAL_TIERS = [
   { id: 'legendary', label: 'Pure Radiation', minVal: 350, maxVal: 1000, weight: 4, successBonus: 0.60 },
 ];
 
-// ✅ PERFECTLY TUNED for THIS exact background image
+// 🎯 PERFECTLY TUNED for THIS exact background image
 const HOTSPOTS = {
   vials: [
-    { id: 'v1', left: 0.16, top: 0.20, width: 0.20, height: 0.20 }, // Top Left - Green
-    { id: 'v2', left: 0.40, top: 0.20, width: 0.20, height: 0.20 }, // Top Mid - Orange
-    { id: 'v3', left: 0.64, top: 0.20, width: 0.20, height: 0.20 }, // Top Right - Orange
-    { id: 'v4', left: 0.16, top: 0.38, width: 0.20, height: 0.20 }, // Bot Left - Purple
-    { id: 'v5', left: 0.40, top: 0.38, width: 0.20, height: 0.20 }, // Bot Mid - Yellow
-    { id: 'v6', left: 0.64, top: 0.38, width: 0.20, height: 0.20 }, // Bot Right - Blue
+    { id: 'v1', left: 0.18, top: 0.14, width: 0.18, height: 0.18 }, // Top Left - Green
+    { id: 'v2', left: 0.41, top: 0.14, width: 0.18, height: 0.18 }, // Top Mid - Orange
+    { id: 'v3', left: 0.64, top: 0.14, width: 0.18, height: 0.18 }, // Top Right - Orange
+    { id: 'v4', left: 0.18, top: 0.32, width: 0.18, height: 0.18 }, // Bot Left - Purple
+    { id: 'v5', left: 0.41, top: 0.32, width: 0.18, height: 0.18 }, // Bot Mid - Yellow
+    { id: 'v6', left: 0.64, top: 0.32, width: 0.18, height: 0.18 }, // Bot Right - Blue
   ],
-  refresh: { left: 0.06, top: 0.74, width: 0.44, height: 0.10 },
-  watchAd: { left: 0.50, top: 0.74, width: 0.44, height: 0.10 },
-  mix: { left: 0.06, top: 0.86, width: 0.44, height: 0.11 },
-  dump: { left: 0.50, top: 0.86, width: 0.44, height: 0.11 },
+  refresh: { left: 0.08, top: 0.76, width: 0.40, height: 0.09 },
+  watchAd: { left: 0.52, top: 0.76, width: 0.40, height: 0.09 },
+  mix: { left: 0.08, top: 0.87, width: 0.40, height: 0.10 },
+  dump: { left: 0.52, top: 0.87, width: 0.40, height: 0.10 },
 };
 
 type Vial = { id: string; tier: typeof VIAL_TIERS[number]; value: number; hotspotId: string };
@@ -197,11 +197,11 @@ export function VialMixerScreen({ onNavigate, balancePP, onEarnPP, onWatchAd }: 
         .hotspot-btn:active{transform:scale(.96)}
         .mix-ripple{position:absolute;left:50%;top:52%;width:45%;height:18%;border-radius:50%;border:3px solid rgba(57,255,20,.8);animation:ripple 1s ease-out forwards;pointer-events:none}
         .confetti-piece{position:fixed;z-index:9999;width:10px;height:10px;animation:confetti-fall 1.4s ease-in forwards}
-        .back-btn{position:absolute;top:4%;left:5%;z-index:40;background:rgba(0,0,0,.5);border-radius:50%;padding:8px;color:#39FF14}
-        .status-text{position:absolute;top:4%;left:50%;transform:translateX(-50%);z-index:40;color:white;font-size:14px;font-weight:bold;background:rgba(0,0,0,.5);padding:6px 16px;border-radius:999px}
-        .vial-label{position:absolute;z-index:35;text-align:center;pointer-events:none}
-        .vial-value{background:rgba(0,0,0,.8);color:white;font-size:13px;font-weight:bold;padding:3px 8px;border-radius:4px;display:inline-block;min-width:70px}
-        .vial-tier{color:#39FF14;font-size:10px;margin-top:2px;text-shadow:0 0 4px rgba(57,255,20,.5)}
+        .back-btn{position:absolute;top:3%;left:4%;z-index:40;background:rgba(0,0,0,.5);border-radius:50%;padding:8px;color:#39FF14}
+        .status-text{position:absolute;top:3%;left:50%;transform:translateX(-50%);z-index:40;color:white;font-size:14px;font-weight:bold;background:rgba(0,0,0,.5);padding:6px 16px;border-radius:999px}
+        .vial-label{position:absolute;z-index:35;text-align:center;pointer-events:none;white-space:nowrap}
+        .vial-value{background:rgba(0,0,0,.85);color:white;font-size:13px;font-weight:bold;padding:3px 10px;border-radius:4px;display:inline-block;min-width:75px;box-shadow:0 2px 4px rgba(0,0,0,.5)}
+        .vial-tier{color:#39FF14;font-size:11px;margin-top:3px;text-shadow:0 0 4px rgba(57,255,20,.5)}
         .result-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:45;font-size:32px;font-weight:900;text-shadow:0 0 20px currentColor}
       `}</style>
 
@@ -235,14 +235,19 @@ export function VialMixerScreen({ onNavigate, balancePP, onEarnPP, onWatchAd }: 
         {selected.length === 0 ? 'TAP 3 VIALS TO SELECT' : `${selected.length}/3 SELECTED`}
       </div>
 
-      {/* ✅ Vial Hotspots — Perfectly Aligned */}
+      {/* ✅ Vial Hotspots — Perfectly Aligned + Labels BELOW */}
       {HOTSPOTS.vials.map((spot, idx) => {
         const vial = vials[idx];
         if (!vial) return null;
         const isSel = !!selected.find(v => v.id === vial.id);
 
+        // Calculate label position — directly below each vial, no overlap
+        const labelLeft = (spot.left + spot.width / 2) * 100;
+        const labelTop = (spot.top + spot.height + 0.015) * 100; // 1.5% below vial
+
         return (
           <div key={vial.id}>
+            {/* Tap Area — exactly on the bottle */}
             <div
               className={`hotspot hotspot-vial ${isSel ? 'selected' : ''} ${result !== 'idle' ? 'pointer-events-none' : ''}`}
               style={{
@@ -254,13 +259,13 @@ export function VialMixerScreen({ onNavigate, balancePP, onEarnPP, onWatchAd }: 
               onClick={() => toggleVial(vial)}
             />
 
-            {/* Value & Tier Labels — Positioned BELOW each vial */}
+            {/* ✅ Value & Tier — Cleanly BELOW each vial, NOT overlapping mix chamber */}
             {result === 'idle' && (
               <div
                 className="vial-label"
                 style={{
-                  left: `${(spot.left + spot.width / 2) * 100}%`,
-                  top: `${(spot.top + spot.height + 0.02) * 100}%`,
+                  left: `${labelLeft}%`,
+                  top: `${labelTop}%`,
                   transform: 'translateX(-50%)',
                 }}
               >
@@ -308,7 +313,7 @@ export function VialMixerScreen({ onNavigate, balancePP, onEarnPP, onWatchAd }: 
         onClick={performMix}
       />
 
-      {/* Dump Waste Button (placeholder — can wire up later) */}
+      {/* Dump Waste Button */}
       <div
         className={`hotspot hotspot-btn ${result !== 'idle' ? 'pointer-events-none' : ''}`}
         style={{
@@ -319,13 +324,13 @@ export function VialMixerScreen({ onNavigate, balancePP, onEarnPP, onWatchAd }: 
         }}
       />
 
-      {/* Mix Chamber Effects */}
+      {/* Mix Chamber Effects — Centered on the green liquid */}
       {result === 'mixing' && <div className="mix-ripple" style={{ borderColor: 'rgba(57,255,20,0.8)' }} />}
       {result === 'success' && <div className="mix-ripple" />}
       {result === 'critical' && <div className="mix-ripple" style={{ borderColor: 'rgba(255,215,0,0.9)' }} />}
       {result === 'fail' && <div className="mix-ripple" style={{ borderColor: 'rgba(255,0,0,0.8)' }} />}
 
-      {/* Result Text */}
+      {/* Result Text — Over mix chamber */}
       {result !== 'idle' && (
         <div className={`result-text ${
           result === 'success' ? 'text-green-400' :
