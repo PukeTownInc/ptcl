@@ -19,7 +19,7 @@ const roadmapData = [
       '💰 Waste Withdrawal — Cash out via FaucetPay',
       '🔥 Contamination Streak — Daily login bonuses, 7-day cycle',
       '📊 Spin History — See your last 20 spins & results',
-      '⚖️ RADIOACTIVE RISK WHEEL — Random spins trigger, risk it for bigger wins',
+      '⚖️ Radioactive Risk Wheel — Random spins trigger, risk it for bigger wins',
       '🏆 Toxicity Ranks — Monthly leaderboards & prizes',
       '👤 Radiation Profile — Track your stats & progress',
       '📜 Terms & Privacy — Safe, fair, & fully compliant',
