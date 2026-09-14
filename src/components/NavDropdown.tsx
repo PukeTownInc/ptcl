@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check } from 'lucide-react';
+import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap } from 'lucide-react';
 import type { Screen } from '../types';
 const NAV: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'home', label: 'Contamination Zone', icon: Home },
@@ -7,6 +7,7 @@ const NAV: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'missions', label: 'Hazard Duties', icon: Target },
   { id: 'leaderboards', label: 'Toxicity Ranks', icon: Trophy },
   { id: 'withdraw', label: 'Waste Withdrawal', icon: Wallet },
+  { id: 'roadmap', label: 'Fallout Forecast', icon: Zap },
   { id: 'profile', label: 'Radiation Profile', icon: User },
   { id: 'settings', label: 'Lab Controls', icon: Settings },
 ];
