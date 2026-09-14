@@ -31,12 +31,12 @@ export type SymbolId =
   | 'cashlab' | 'puketown'
   | 'gasMask' | 'geigerCounter' | 'radiationSign' | 'radioactiveSkull'
   | 'mutantBeetle' | 'mutantRat' | 'testTube' | 'toxicCauldron' | 'wasteDrum' | 'wastePit'
-  | 'slimeBlob' | 'slimeGuy' | 'virus' | 'toxicCloud';
+  | 'slimeBlob' | 'slimeGuy' | 'virus' | 'toxicCloud'
+  | 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
 
 export interface SlotSymbol {
   id: SymbolId;
-  image?: string;
-  emoji?: string;
+  emoji: string;
   label: string;
   pays: [number, number, number];
   weight: number;
