@@ -13,6 +13,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { RoadmapScreen } from './screens/RoadmapScreen';
+import { VialMixerScreen } from './components/VialMixerScreen';
 import { LoginScreen, UserStatusBadge } from './components/LoginScreen';
 import { Logo } from './components/Logo';
 import { PwaInstallButton } from './components/PwaInstallButton';
@@ -75,6 +76,14 @@ function AppContent() {
           {screen === 'roadmap' && <RoadmapScreen onNavigate={navigate} />}
           {screen === 'profile' && <ProfileScreen state={actions.state} actions={actions} />}
           {screen === 'settings' && <SettingsScreen state={actions.state} actions={actions} />}
+          {screen === 'vialmixer' && (
+            <VialMixerScreen
+              onNavigate={navigate}
+              balancePP={actions.state.withdrawablePP + actions.state.lockedPotPP}
+              onEarnPP={actions.earnPP}
+              onWatchAd={actions.watchAd}
+            />
+          )}
         </main>
         <PwaInstallButton />
       </div>
