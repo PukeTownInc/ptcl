@@ -43,11 +43,14 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
     : 100;
 
   return (
-    <header className="sticky top-0 z-30 safe-top">
-      {/* Top Nav Bar */}
-      <div className="bg-ink-900/80 backdrop-blur-md border-b border-toxic-900/40">
+    <header className="sticky top-0 z-40 safe-top">
+      {/* ✅ TOP NAV BAR — z-index 40, dropdown will be higher */}
+      <div className="bg-ink-900/80 backdrop-blur-md border-b border-toxic-900/40 relative z-40">
         <div className="mx-auto max-w-md px-4 py-3 flex items-center justify-between">
-          <NavDropdown active={active} onChange={onChange} />
+          {/* ✅ NavDropdown — ensure it pops OVER the sub-header */}
+          <div className="relative z-50">
+            <NavDropdown active={active} onChange={onChange} />
+          </div>
           <div className="flex items-center gap-3">
             {children}
             <div className="text-right">
@@ -58,8 +61,8 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
         </div>
       </div>
 
-      {/* ✅ PERMANENT BALANCE SUB-HEADER */}
-      <div className="bg-ink-800/60 backdrop-blur-sm border-b border-toxic-900/30">
+      {/* ✅ BALANCE SUB-HEADER — z-index LOWER so it goes UNDER the dropdown */}
+      <div className="bg-ink-800/60 backdrop-blur-sm border-b border-toxic-900/30 relative z-30">
         <div className="mx-auto max-w-md px-3 py-2 space-y-2">
           {/* Vault Row */}
           <div className="grid grid-cols-2 gap-3">
