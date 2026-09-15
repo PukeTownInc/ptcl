@@ -27,22 +27,23 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
   const [amountStr, setAmountStr] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
-  const [pendingWithdraw, setPendingWithdraw] = useState<null | { amount: number; fee: number; payoutUsd: number }>(null);
 
   const cooldownActive = state.lastWithdraw && Date.now() - state.lastWithdraw < WITHDRAW_COOLDOWN_MS;
   const cooldownMs = cooldownActive ? (WITHDRAW_COOLDOWN_MS - (Date.now() - (state.lastWithdraw as number))) : 0;
   const cooldownHrs = Math.ceil(cooldownMs / 3600000);
   const amount = parseInt(amountStr, 10) || 0;
   const fee = Math.floor(amount * PLATFORM_FEE);
+  const totalDeducted = amount + fee; // ✅ TOTAL = USER AMOUNT + FEE
   const payoutPP = amount - fee;
   const payoutUsd = ppToUsd(payoutPP);
 
+  // ✅ CHECK BALANCE AGAINST TOTAL DEDUCTED (amount + fee)
   const canPrepareWithdraw =
     isLoggedIn &&
     email.trim().length > 0 &&
     amount >= MIN_WITHDRAW_PP &&
     amount <= MAX_WITHDRAW_PP &&
-    amount <= state.withdrawablePP &&
+    totalDeducted <= state.withdrawablePP && // ✅ ENSURE BALANCE COVERS BOTH
     !cooldownActive &&
     !submitting;
 
@@ -59,7 +60,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     setAdModal({
       title: '☢️ RELEASE THE CONTAGION',
       subtitle: 'Watch video — absorb radiation to unlock the vault',
-      reward: `Unlock ${formatPP(amountToUnlock)} Puke Points`,
+      reward: `Unlock ${formatPP(state.lockedPotPP)} Puke Points`,
       onComplete: () => {
         const amountToUnlock = state.lockedPotPP;
         actions.unlockPot();
@@ -83,8 +84,8 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       toast('error', 'DOSE TOO HIGH', `Maximum release: ${formatPP(MAX_WITHDRAW_PP)} Puke Points`);
       return;
     }
-    if (amount > state.withdrawablePP) {
-      toast('error', 'INSUFFICIENT BALANCE', `Only ${formatPP(state.withdrawablePP)} Puke Points available`);
+    if (totalDeducted > state.withdrawablePP) {
+      toast('error', 'INSUFFICIENT BALANCE', `Need ${formatPP(totalDeducted)} total (incl. fee). Only ${formatPP(state.withdrawablePP)} PP available`);
       return;
     }
     if (cooldownActive) {
@@ -97,25 +98,26 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     }
 
     // ✅ ALL VALID — SHOW AD GATE BEFORE WITHDRAW
-    setPendingWithdraw({ amount, fee, payoutUsd });
     setAdModal({
       title: '☢️ ACTIVATE RELEASE PERMIT',
       subtitle: 'Watch one quick video to authorise your withdrawal',
-      reward: `Release ${formatPP(amount)} Puke Points → $${payoutUsd.toFixed(2)} USD`,
+      reward: `Release ${formatPP(amount)} PP + ${formatPP(fee)} PP fee = ${formatPP(totalDeducted)} PP total`,
       onComplete: () => {
-        // ✅ AD WATCHED → NOW PROCESS THE WITHDRAWAL
-        executeWithdrawal(amount, fee, payoutUsd);
+        executeWithdrawal(amount, fee, totalDeducted, payoutUsd);
       },
     });
   };
 
-  // Step 2: AFTER AD COMPLETES → Deduct Balance + Record Transaction
-  const executeWithdrawal = (amountVal: number, feeVal: number, usdVal: number) => {
+  // Step 2: AFTER AD COMPLETES → Deduct FULL amount + fee
+  const executeWithdrawal = (amountVal: number, feeVal: number, totalVal: number, usdVal: number) => {
     setSubmitting(true);
     actions.setFaucetpayEmail(email.trim());
     actions.watchAd();
 
     setTimeout(() => {
+      // ✅ DEDUCTS USER'S REQUESTED AMOUNT + FEE FROM UNLOCKED BALANCE
+      actions.adjustWithdrawablePP(-totalVal);
+
       const rec: WithdrawalRecord = {
         id: Math.random().toString(36).slice(2),
         date: Date.now(),
@@ -127,30 +129,29 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         status: Math.random() > 0.1 ? 'sent' : 'pending',
       };
 
-      // ✅ DEDUCTS FROM UNLOCKED BALANCE AUTOMATICALLY
       actions.recordWithdrawal(rec);
 
       setSubmitting(false);
-      setPendingWithdraw(null);
       setAmountStr('');
-      toast('success', '☢️ SUPPLY RELEASED!', `-${formatPP(amountVal)} PP • $${usdVal.toFixed(2)} USD sent to ${email}`);
+      toast('success', '☢️ SUPPLY RELEASED!', `-${formatPP(totalVal)} PP total (incl. fee) • $${usdVal.toFixed(2)} USD sent to ${email}`);
     }, 1800);
   };
 
   const showInsufficientToast = () => {
-    toast('info', 'NOT YET CONTAMINATED ENOUGH', `Need ${formatPP(MIN_WITHDRAW_PP)} PP unlocked for release — keep earning!`);
+    toast('info', 'NOT ENOUGH PP', `Need ${formatPP(MIN_WITHDRAW_PP)} PP to release + fee — keep earning!`);
   };
 
   const handleMax = () => {
     if (state.withdrawablePP >= MIN_WITHDRAW_PP) {
-      setAmountStr(String(Math.min(MAX_WITHDRAW_PP, state.withdrawablePP)));
+      const maxAfterFee = Math.floor(state.withdrawablePP / (1 + PLATFORM_FEE));
+      setAmountStr(String(Math.min(MAX_WITHDRAW_PP, maxAfterFee)));
     } else {
       showInsufficientToast();
     }
   };
 
   const handleMin = () => {
-    if (state.withdrawablePP >= MIN_WITHDRAW_PP) {
+    if (state.withdrawablePP >= MIN_WITHDRAW_PP + Math.floor(MIN_WITHDRAW_PP * PLATFORM_FEE)) {
       setAmountStr(String(MIN_WITHDRAW_PP));
     } else {
       showInsufficientToast();
@@ -235,7 +236,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         <div className="text-[11px] text-toxic-100/60">
           <p>Minimum release: <span className="text-radioactive-400 font-bold">{formatPP(MIN_WITHDRAW_PP)} Puke Points</span> • Maximum: <span className="text-radioactive-400 font-bold">{formatPP(MAX_WITHDRAW_PP)} Puke Points</span></p>
           <p className="mt-1">Platform fee: <span className="text-hazard-amber">{(PLATFORM_FEE * 100).toFixed(0)}%</span> • Cooldown: 24h between withdrawals</p>
-          <p className="mt-1 text-toxic-100/40">⚠️ One quick video required to authorise every release</p>
+          <p className="mt-1 text-toxic-100/40">⚠️ Total deducted = Your amount + {(PLATFORM_FEE * 100).toFixed(0)}% fee • Ad required to release</p>
         </div>
       </div>
 
@@ -297,13 +298,16 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         {amount > 0 && (
           <div className="rounded-lg bg-ink-700/50 p-3 space-y-1.5 text-xs font-mono">
             <div className="flex justify-between text-toxic-100/60">
-              <span>Amount</span><span className="text-toxic-300">{formatPP(amount)} Puke Points</span>
+              <span>Release Amount</span><span className="text-toxic-300">{formatPP(amount)} Puke Points</span>
             </div>
             <div className="flex justify-between text-toxic-100/60">
-              <span>Platform fee (10%)</span><span className="text-hazard-amber">-{formatPP(fee)} Puke Points</span>
+              <span>Platform Fee (10%)</span><span className="text-hazard-amber">-{formatPP(fee)} Puke Points</span>
             </div>
             <div className="flex justify-between text-toxic-100/60 border-t border-toxic-900/40 pt-1.5">
-              <span className="text-radioactive-400">You receive</span><span className="text-radioactive-400 font-bold">${payoutUsd.toFixed(2)} USD</span>
+              <span className="text-radioactive-400">TOTAL DEDUCTED</span><span className="text-radioactive-400 font-bold">-{formatPP(totalDeducted)} PP</span>
+            </div>
+            <div className="flex justify-between text-toxic-100/60">
+              <span>You Receive</span><span className="text-toxic-300 font-bold">${payoutUsd.toFixed(2)} USD</span>
             </div>
           </div>
         )}
@@ -314,7 +318,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         )}
 
-        {/* ✅ BUTTON OPENS AD MODAL FIRST → THEN PROCESSES */}
         <button
           onClick={handlePrepareWithdraw}
           disabled={!canPrepareWithdraw || submitting}
@@ -340,7 +343,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
                 <div className="min-w-0">
                   <div className="font-mono text-xs text-toxic-200">${w.usd.toFixed(2)} USD → {w.username}</div>
                   <div className="text-[10px] text-toxic-100/40 font-mono">
-                    {new Date(w.date).toLocaleDateString()} {new Date(w.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {w.crypto}
+                    {new Date(w.date).toLocaleDateString()} {new Date(w.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {w.crypto} • Fee: {formatPP(w.feePP)} PP
                   </div>
                 </div>
                 <StatusBadge status={w.status} />
@@ -353,17 +356,15 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       <div className="grunge-panel p-3 flex items-start gap-2">
         <Lock size={14} className="text-toxic-400 shrink-0 mt-0.5" />
         <p className="text-[10px] text-toxic-100/40">
-          All payouts processed via FaucetPay server-side API. Puke Points deducted IMMEDIATELY after ad verification.
+          Total deducted from your balance = release amount + platform fee. Payout sent via FaucetPay.
         </p>
       </div>
 
-      {/* ✅ AD GATE MODAL — SHOWN BEFORE EVERY WITHDRAWAL */}
       {adModal && (
         <AdModal
           open={!!adModal}
           onClose={() => {
             setAdModal(null);
-            setPendingWithdraw(null);
           }}
           onComplete={() => {
             adModal.onComplete();
