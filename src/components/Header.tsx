@@ -44,7 +44,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP }:
         </div>
       </div>
 
-      {/* ✅ PERMANENT BALANCE SUB-HEADER — bar & helper text removed */}
+      {/* ✅ PERMANENT BALANCE SUB-HEADER */}
       <div className="bg-ink-800/60 backdrop-blur-sm border-b border-toxic-900/30">
         <div className="mx-auto max-w-md px-3 py-2">
           <div className="grid grid-cols-2 gap-3">
@@ -63,16 +63,13 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP }:
               )}
             </div>
 
-            {/* UNLOCKED CONTAGION VAULT */}
+            {/* UNLOCKED CONTAGION VAULT — USD now next to PP */}
             <div className="text-right">
               <div className="text-[9px] font-display uppercase tracking-wider text-radioactive-400/70">
                 ⚡ UNLOCKED CONTAGION VAULT
               </div>
               <div className="font-mono text-sm font-bold text-radioactive-400 neon-text-yellow">
-                {formatPP(withdrawablePP)} PP
-              </div>
-              <div className="text-[8px] font-mono text-radioactive-300/40 mt-1">
-                ${ppToUsd(withdrawablePP).toFixed(2)} USD
+                {formatPP(withdrawablePP)} PP <span className="text-radioactive-300/60 font-normal">${ppToUsd(withdrawablePP).toFixed(2)}</span>
               </div>
             </div>
           </div>
