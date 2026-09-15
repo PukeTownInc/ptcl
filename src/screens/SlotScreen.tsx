@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Lock, Tv, Zap, Package, RefreshCw, Layers, Play, X, Coins, Flame, Square, History, Timer, Wallet, Table } from 'lucide-react';
+import { Lock, Tv, Zap, Package, RefreshCw, Layers, Play, X, Coins, Flame, Square, History, Timer } from 'lucide-react';
 import type { GameState, SpinResult, SymbolId, WinLine } from '../types';
-import { getTier, MIN_UNLOCK_PP, formatPP, ppToUsd, SYMBOLS } from '../constants';
+import { MIN_UNLOCK_PP, SYMBOLS } from '../constants';
 import * as engine from '../slotEngine';
 import type { GameActions } from '../useGameState';
 import { isHotStreakActive, isPotAccelActive } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
-import { XPBar } from '../components/XPBar';
 import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
 
 const REEL_DISPLAY = 3;
@@ -16,11 +15,10 @@ type SpinHistoryEntry =
   | { kind: 'spin'; pp: number; symbols: string[]; multiplied?: boolean; multiplier?: string | null }
   | { kind: 'double'; pp: number }
   | { kind: 'half'; pp: number }
-  | { kind: 'lose'; pp: number }
-  | { kind: 'safe'; pp: number };
+  | { kind: 'safe'; pp: number }
+  | { kind: 'lose'; pp: number };
 
 const MAX_HISTORY = 20;
-
 const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
@@ -66,8 +64,6 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
 
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
-  const tier = getTier(state.xp);
-
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
     const init: SymbolId[][] = [];
     for (let r = 0; r < 5; r++) {
@@ -77,7 +73,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
     return init;
   });
-
   const [spinning, setSpinning] = useState(false);
   const [lastResult, setLastResult] = useState<SpinResult | null>(null);
   const [winPositions, setWinPositions] = useState<Set<string>>(new Set());
@@ -96,7 +91,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     for (let r = 0; r < 5; r++) init.push(engine.randomReelStrip(REEL_DISPLAY));
     return init;
   });
-
   const cycleInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [autoSpin, setAutoSpin] = useState(false);
@@ -151,30 +145,24 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     return () => clearInterval(interval);
   }, [spinning, lastResult]);
 
-  const potFull = state.lockedPotPP >= tier.potCap;
-
   const doSpin = useCallback(() => {
     if (spinning) return;
     if (state.spinsRemaining <= 0 && freeSpinsLeft <= 0) {
       toast('error', 'No Toxic Twists Left', 'Absorb radiation or wait for daily dose');
       return;
     }
-
     setSpinning(true);
     setWinPositions(new Set());
     setWinPP(0);
     setLastResult(null);
     setSpinId((n) => n + 1);
     setReelPhases(['spinning', 'spinning', 'spinning', 'spinning', 'spinning']);
-
     const result = engine.spin();
-
     cycleInterval.current = setInterval(() => {
       const next: SymbolId[][] = [];
       for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
       setCyclingSymbols(next);
     }, 70);
-
     const baseDelay = 1000;
     const stagger = 320;
     for (let r = 0; r < 5; r++) {
@@ -199,24 +187,20 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, baseDelay + r * stagger);
       stopTimers.current.push(t);
     }
-
     function finishSpin(res: SpinResult) {
       setSpinning(false);
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
       setLastResult(res);
-
       let finalPP = res.totalPP;
       const hadPotAccel = isPotAccelActive(state);
       const hadHotStreak = isHotStreakActive(state);
       if (hadPotAccel) finalPP *= 2;
       if (hadHotStreak) finalPP = Math.floor(finalPP * 1.5);
-
       const posSet = new Set<string>();
       res.wins.forEach((w) => w.positions.forEach(([r, row]) => posSet.add(`${r}-${row}`)));
       res.jackpot && res.grid.forEach((col, r) => col.forEach((s, row) => s === 'jackpot' && posSet.add(`${r}-${row}`)));
       setWinPositions(posSet);
       setWinPP(finalPP);
-
       const eligibleDoubleUp = finalPP >= 10;
       if (finalPP > 0) {
         if (eligibleDoubleUp) {
@@ -227,14 +211,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           actions.addPP(finalPP);
         }
       }
-
-      if (potFull && finalPP === 0) {
-        toast('info', 'VAT OVERFLOWETH!', 'Absorb radiation to breach containment — +1 XP only');
+      if (finalPP === 0) {
+        // Pot full check removed — tier logic removed
       }
-
       actions.addXP(res.xpGained, false);
       actions.recordSpin();
-
       if (freeSpinsLeft > 0) {
         setFreeSpinsLeft((n) => n - 1);
       }
@@ -242,13 +223,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         setFreeSpinsLeft((n) => n + res.freeSpinsAwarded);
         toast('success', `${res.freeSpinsAwarded} Toxic Twists!`, 'Contamination scatter triggered ☢️');
       }
-
       if (res.jackpot) {
         setShowJackpot(res.jackpot.type);
         actions.recordJackpot();
         setTimeout(() => setShowJackpot(null), 3000);
       }
-
       const winSymbols = res.wins.length > 0
         ? [...new Set(res.wins.map((w) => w.symbols[0]))]
         : [];
@@ -260,7 +239,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         multiplier: hadPotAccel ? 'x2' : hadHotStreak ? 'x1.5' : null,
       }, ...prev].slice(0, MAX_HISTORY));
     }
-  }, [spinning, state.spinsRemaining, freeSpinsLeft, potFull, actions, toast]);
+  }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
 
   const handleWheelClaim = (result: WheelResult) => {
     doubleUpResolvedRef.current = true;
@@ -268,17 +247,17 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     setAdModal({
       title: 'Contamination Wheel Reward',
       subtitle: `Absorb radiation to secure your ${result.outcome === 'double' ? 'DOUBLED' : result.outcome === 'half' ? 'HALVED' : 'SAFE'} goop`,
-      reward: `+${formatPP(result.finalPP)} Puke Points`,
+      reward: `+${result.finalPP} Puke Points`,
       onComplete: () => {
         actions.addPP(result.finalPP);
         actions.useDoubleUp();
         actions.watchAd();
         if (result.outcome === 'double') {
-          toast('success', '☢️ DOUBLED GOOP!', `+${formatPP(result.finalPP)} Puke Points Contaminated!`);
+          toast('success', '☢️ DOUBLED GOOP!', `+${result.finalPP} Puke Points Contaminated!`);
         } else if (result.outcome === 'half') {
-          toast('info', 'HALF THE GOOPS', `+${formatPP(result.finalPP)} Puke Points saved from spillage`);
+          toast('info', 'HALF THE GOOPS', `+${result.finalPP} Puke Points saved from spillage`);
         } else {
-          toast('success', '☣️ CONTAMINATION SECURED', `+${formatPP(result.finalPP)} Puke Points banked safely`);
+          toast('success', '☣️ CONTAMINATION SECURED', `+${result.finalPP} Puke Points banked safely`);
         }
       },
     });
@@ -301,7 +280,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     setShowDoubleUp(false);
     actions.addPP(original);
     actions.useDoubleUp();
-    toast('info', '🧪 GOOPS BANKED', `+${formatPP(original)} Puke Points secured — wheel result purged`);
+    toast('info', '🧪 GOOPS BANKED', `+${original} Puke Points secured — wheel result purged`);
     setSpinHistory((prev) => [{ kind: 'safe', pp: original }, ...prev].slice(0, MAX_HISTORY));
   };
 
@@ -344,7 +323,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   };
 
   const canSpin = state.spinsRemaining > 0 || freeSpinsLeft > 0;
-
   const toggleAutoSpin = useCallback(() => {
     setAutoSpin((prev) => {
       const next = !prev;
@@ -370,27 +348,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
   return (
     <div className="space-y-4">
-      <div className="grunge-panel p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Wallet size={20} className="text-radioactive-400" />
-          <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-ink-700/50 border border-toxic-900/40 p-3">
-            <div className="text-[10px] text-toxic-100/40 uppercase">CONTAGION VAULT</div>
-            <div className="font-mono text-xl font-bold text-toxic-300">{formatPP(state.lockedPotPP)}</div>
-            <div className="text-[10px] text-toxic-100/30 font-mono">Watch video to unlock</div>
-          </div>
-          <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
-            <div className="text-[10px] text-radioactive-400/60 uppercase">CONTAGION CACHE</div>
-            <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
-            <div className="text-[10px] text-radioactive-300/40 font-mono">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
-          </div>
-        </div>
-      </div>
-
-      <XPBar xp={state.xp} nextXp={null} />
-
+      {/* ACTIVE BUFFS / FREE SPINS */}
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
         <div className="flex flex-wrap gap-2">
           {freeSpinsLeft > 0 && (
@@ -411,10 +369,10 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
 
+      {/* REELS PANEL */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
-
         <div ref={reelsRef} className="relative grid grid-cols-5 gap-1.5 bg-ink-900 rounded-lg p-2 border border-toxic-900/40">
           {grid.map((reel, ri) => {
             const phase = reelPhases[ri];
@@ -450,6 +408,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           })}
         </div>
 
+        {/* SPIN RESULT / STATUS AREA */}
         <div className="mt-3 min-h-[60px] flex items-center justify-center">
           {spinning ? (
             <div className="text-center">
@@ -458,17 +417,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </div>
           ) : winPP > 0 ? (
             <div className="text-center animate-pop">
-              <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{formatPP(winPP)} Puke Points</div>
+              <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{winPP} Puke Points</div>
               {lastResult && lastResult.wins.length > 0 && (
                 <div className="text-[10px] text-toxic-100/50 font-mono mt-1">
                   {lastResult.wins.length} way{lastResult.wins.length > 1 ? 's' : ''} • {lastResult.wins.map((w) => SYMBOLS[w.symbols[0]].label).join(', ')}
                 </div>
               )}
-            </div>
-          ) : potFull ? (
-            <div className="text-center animate-shake">
-              <div className="font-display font-black text-xl text-hazard-amber">☢️ VAT OVERFLOW!</div>
-              <div className="text-[10px] text-toxic-100/50 font-mono">Seal more goops to breach containment</div>
             </div>
           ) : (
             <div className="text-center text-toxic-100/30">
@@ -478,12 +432,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
 
+        {/* TWIST COUNT & SPIN BUTTON */}
         <div className="flex items-center justify-center mb-2 mt-2">
           <span className="font-display font-bold text-sm text-toxic-300">
             Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
           </span>
         </div>
-
         <button
           onClick={doSpin}
           disabled={!canSpin || spinning}
@@ -495,7 +449,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             <><Play size={22} /> CONTAMINATE</>
           )}
         </button>
-
         <div className="mt-2 flex items-center gap-2">
           <button
             onClick={toggleAutoSpin}
@@ -511,6 +464,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       </div>
 
+      {/* BONUS BUTTONS ROW */}
       <div className="grid grid-cols-2 gap-2">
         <BonusBtn
           icon={<Package size={16} />}
@@ -530,20 +484,20 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         />
       </div>
 
+      {/* SPIN HISTORY */}
       <SpinHistory entries={spinHistory} />
 
-      {/* ✅ PAYTABLE MOVED TO BOTTOM — LAST THING ON SCREEN */}
+      {/* PAYTABLE */}
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
           className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5"
         >
           <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2">
-            <Table size={16} /> ☢️ GOOP PAYTABLE
+            <Layers size={16} /> ☢️ GOOP PAYTABLE
           </span>
           <span className="text-toxic-100/40 text-xs">{showPaytable ? 'Collapse' : 'Reveal'}</span>
         </button>
-
         {showPaytable && (
           <div className="px-3 pb-3 space-y-2 animate-slide-up">
             <div className="grid grid-cols-12 gap-2 text-[10px] font-mono text-toxic-100/50 border-b border-toxic-900/40 pb-2">
@@ -552,7 +506,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <span className="col-span-2 text-center">MATCH 4</span>
               <span className="col-span-3 text-center">MATCH 5 ☢️</span>
             </div>
-
             {PAYTABLE.map((sym, i) => (
               <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
                 <span className="col-span-5 font-mono text-sm flex items-center gap-2">
@@ -573,21 +526,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                 <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
               </div>
             ))}
-
-            {/* ✅ SPECIALS — WHEEL AT BOTTOM, EXACT TEXT: = Radioactive Risk Wheel */}
             <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
               <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
               <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
               <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
               <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
-              {/* ✅ WHEEL — IMAGE + EXACT TEXT */}
               <div className="flex items-center gap-2">
-                <img 
-                  src="/radioactive-risk-wheel.png" 
-                  alt="Radioactive Risk Wheel" 
-                  className="w-5 h-5 object-contain inline-block"
-                  style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
-                />
+                <span>☢️</span>
                 <span>= Radioactive Risk Wheel</span>
               </div>
             </div>
@@ -595,6 +540,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         )}
       </div>
 
+      {/* RADIOACTIVE RISK WHEEL MODAL */}
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
           stake={state.doubleUpPending}
@@ -619,7 +565,14 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   );
 }
 
-function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { icon: React.ReactNode; label: string; sub: string; ad?: boolean; onClick: () => void; disabled?: boolean }) {
+function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { 
+  icon: React.ReactNode; 
+  label: string; 
+  sub: string; 
+  ad?: boolean; 
+  onClick: () => void; 
+  disabled?: boolean 
+}) {
   return (
     <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
       <div className="flex items-center gap-1.5 mb-0.5">
@@ -666,35 +619,35 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                         <span className="text-[11px] font-mono text-toxic-100/30">No contamination</span>
                       )}
                     </div>
-                    <span className={`font-mono text-sm tabular-nums ${entry.multiplied ? 'text-radioactive-400 font-bold' : 'text-toxic-300'}`}>+{formatPP(entry.pp)}</span>
+                    <span className={`font-mono text-sm tabular-nums ${entry.multiplied ? 'text-radioactive-400 font-bold' : 'text-toxic-300'}`}>+{entry.pp}</span>
                   </div>
                 );
               } else if (entry.kind === 'double') {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-toxic-500/10 border border-toxic-500/30">
                     <span className="text-sm font-mono text-toxic-400">☢️ DOUBLED!</span>
-                    <span className="font-mono text-sm text-toxic-400 font-bold tabular-nums">+{formatPP(entry.pp)}</span>
+                    <span className="font-mono text-sm text-toxic-400 font-bold tabular-nums">+{entry.pp}</span>
                   </div>
                 );
               } else if (entry.kind === 'half') {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-hazard-amber/10 border border-hazard-amber/30">
                     <span className="text-sm font-mono text-hazard-amber">⚠️ HALVED</span>
-                    <span className="font-mono text-sm text-hazard-amber tabular-nums">+{formatPP(entry.pp)}</span>
+                    <span className="font-mono text-sm text-hazard-amber tabular-nums">+{entry.pp}</span>
                   </div>
                 );
               } else if (entry.kind === 'safe') {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-radioactive-500/10 border border-radioactive-600/30">
                     <span className="text-sm font-mono text-radioactive-400">☣️ SECURED</span>
-                    <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{formatPP(entry.pp)}</span>
+                    <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{entry.pp}</span>
                   </div>
                 );
               } else {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
                     <span className="text-sm font-mono text-red-400">☠️ SPILLED</span>
-                    <span className="font-mono text-sm text-red-400 tabular-nums">+{formatPP(entry.pp)}</span>
+                    <span className="font-mono text-sm text-red-400 tabular-nums">+{entry.pp}</span>
                   </div>
                 );
               }
