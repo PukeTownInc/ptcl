@@ -59,7 +59,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         const amountToUnlock = state.lockedPotPP;
         actions.unlockPot();
         actions.watchAd();
-        toast('success', '☢️ VAULT UNLEASHED!', `+${formatPP(amountToUnlock)} PP released to Contagion Cache!`);
+        toast('success', '☢️ VAULT UNLEASHED!', `+${formatPP(amountToUnlock)} PP released to Unlocked Contagion Vault!`);
       },
     });
   };
@@ -160,6 +160,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
         </div>
         <div className="grid grid-cols-2 gap-2">
+          {/* LEFT — LOCKED CONTAGION VAULT */}
           <div
             className={`rounded-lg border p-3 transition-all ${
               vaultFull
@@ -169,7 +170,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             onClick={vaultFull ? handleUnlockVault : undefined}
           >
             <div className="text-[10px] uppercase mb-0.5" style={{ color: vaultFull ? '#9aff9a' : '#6b7280' }}>
-              CONTAGION VAULT
+              🔒 LOCKED CONTAGION VAULT
             </div>
             {!vaultFull && (
               <div className="text-[9px] font-bold uppercase tracking-widest text-ink-400 mb-1.5">
@@ -195,8 +196,9 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
               </div>
             )}
           </div>
+          {/* RIGHT — UNLOCKED CONTAGION VAULT */}
           <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
-            <div className="text-[10px] text-radioactive-400/60 uppercase mb-1.5">CONTAGION CACHE</div>
+            <div className="text-[10px] text-radioactive-400/60 uppercase mb-1.5">🔓 UNLOCKED CONTAGION VAULT</div>
             <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
             <div className="text-[10px] text-radioactive-300/40 font-mono mt-1">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
           </div>
@@ -299,7 +301,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </button>
       </div>
 
-      {/* ✅ WITHDRAWAL HISTORY — ALWAYS VISIBLE */}
+      {/* ☢️ RELEASE HISTORY — ALWAYS VISIBLE */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
           <History size={16} className="text-toxic-300" />
