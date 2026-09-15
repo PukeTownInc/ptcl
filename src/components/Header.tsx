@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Screen } from '../types';
 import { NavDropdown } from './NavDropdown';
-import { formatPP, ppToUsd } from '../constants';
+import { formatPP, ppToUsd, getLevel, getNextLevelXp } from '../constants';
 
 interface HeaderProps {
   active: Screen;
@@ -10,10 +10,9 @@ interface HeaderProps {
   lockedPP: number;
   withdrawablePP: number;
   xp: number;
-  nextXp: number | null;
 }
 
-export function Header({ active, onChange, children, lockedPP, withdrawablePP, xp, nextXp }: HeaderProps) {
+export function Header({ active, onChange, children, lockedPP, withdrawablePP, xp }: HeaderProps) {
   const [time, setTime] = useState('');
   useEffect(() => {
     const tick = () => {
@@ -30,12 +29,18 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
   const progressPct = Math.min(100, (lockedPP / UNLOCK_THRESHOLD) * 100);
   const isUnlocked = lockedPP >= UNLOCK_THRESHOLD;
 
-  // XP progress calculation
-  const xpStart = 0;
-  const xpTarget = nextXp ?? xp;
-  const xpProgressPct = xpTarget > 0 
-    ? Math.min(100, Math.round(((xp - xpStart) / (xpTarget - xpStart)) * 100)) 
-    : 0;
+  // ✅ LEVEL CALCULATIONS
+  const currentLevel = getLevel(xp);
+  const nextLevelXp = getNextLevelXp(xp);
+  const prevLevelXp = currentLevel === 1 ? 0
+    : currentLevel === 2 ? 500
+    : currentLevel === 3 ? 2500
+    : 10000;
+  const xpIntoLevel = xp - prevLevelXp;
+  const xpNeededForLevel = nextLevelXp - prevLevelXp;
+  const xpProgressPct = xpNeededForLevel > 0 
+    ? Math.min(100, Math.round((xpIntoLevel / xpNeededForLevel) * 100)) 
+    : 100;
 
   return (
     <header className="sticky top-0 z-30 safe-top">
@@ -84,15 +89,16 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
             </div>
           </div>
 
-          {/* ✅ RADIATION EXPOSURE — ALL ON ONE LINE, label on LEFT */}
+          {/* ✅ RADIATION EXPOSURE — ALL ON ONE LINE */}
           <div className="flex items-center gap-3 pt-1 border-t border-toxic-900/20">
-            {/* Label — LEFT SIDE */}
             <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70 whitespace-nowrap">
               ☢️ RADIATION EXPOSURE
             </div>
-            {/* XP Amount + Bar + % — ALL IN ONE ROW */}
-            <span className="font-mono text-sm font-bold text-toxic-300 whitespace-nowrap">
-              {xp.toLocaleString()}
+            <span className="font-mono text-xs font-bold text-radioactive-400 whitespace-nowrap">
+              LVL {currentLevel}
+            </span>
+            <span className="font-mono text-xs font-bold text-toxic-300 whitespace-nowrap">
+              {xp.toLocaleString()}/{nextLevelXp.toLocaleString()}
             </span>
             <div className="flex-1 h-2 rounded-full bg-ink-900 overflow-hidden">
               <div
