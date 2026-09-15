@@ -184,19 +184,19 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             />
           </div>
 
-          {/* ✅ CENTER HUB — LOGO MADE BIGGER */}
+          {/* ✅ CENTER HUB — INCREASED TO 96px TO COVER BLACK */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center overflow-hidden"
             style={{
-              width: 80,
-              height: 80,
+              width: 96,
+              height: 96,
               boxShadow: '0 0 15px #39ff14, 0 0 30px #39ff1444',
             }}
           >
             <img
               src="/logo-192.png"
               alt="Puke Town"
-              className="w-16 h-16 object-contain"
+              className="w-20 h-20 object-contain"
             />
           </div>
         </div>
