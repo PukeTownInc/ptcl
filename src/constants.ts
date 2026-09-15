@@ -38,27 +38,26 @@ export function getTier(xp: number): TierInfo {
 export function getNextTier(xp: number): TierInfo | null {
   return TIERS.find((t) => t.minXp > xp) ?? null;
 }
-// ✅ ALL SYMBOLS — with image paths!
-// Image file naming convention: symbol-[id].png → e.g. symbol-cashlab.png
+// ✅ ALL SYMBOLS — PATHS MATCH YOUR ACTUAL FILES EXACTLY!
 export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
-  cashlab: { id: 'cashlab', emoji: '🤑', label: 'Cash Lab',  pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cashlab.png` },
-  puke:    { id: 'puke',    emoji: '🤢', label: 'Nausea',   pays: [2, 3, 9],     weight: 26,  image: `${SYMBOL_IMAGE_PATH}symbol-puke.png` },
-  slime:   { id: 'slime',   emoji: '🟡', label: 'Slime',    pays: [2, 4, 11],    weight: 24,  image: `${SYMBOL_IMAGE_PATH}symbol-slime.png` },
-  sneeze:  { id: 'sneeze',  emoji: '🤧', label: 'Sneeze',   pays: [2, 5, 13],    weight: 21,  image: `${SYMBOL_IMAGE_PATH}symbol-sneeze.png` },
-  tp:      { id: 'tp',      emoji: '🧻', label: 'TP Roll',  pays: [3, 6, 16],    weight: 18,  image: `${SYMBOL_IMAGE_PATH}symbol-tp.png` },
-  pill:    { id: 'pill',    emoji: '💊', label: 'Pill',     pays: [3, 7, 19],    weight: 15,  image: `${SYMBOL_IMAGE_PATH}symbol-pill.png` },
-  germ:    { id: 'germ',    emoji: '🦠', label: 'Germ',     pays: [3, 8, 23],    weight: 13,  image: `${SYMBOL_IMAGE_PATH}symbol-germ.png` },
-  beaker:  { id: 'beaker',  emoji: '🧪', label: 'Beaker',   pays: [4, 10, 30],   weight: 10,  image: `${SYMBOL_IMAGE_PATH}symbol-beaker.png` },
-  vomit:   { id: 'vomit',   emoji: '🤮', label: 'Vomit',    pays: [5, 12, 37],   weight: 8,   image: `${SYMBOL_IMAGE_PATH}symbol-vomit.png` },
-  toxic:   { id: 'toxic',   emoji: '☢️', label: 'Toxic',    pays: [6, 16, 48],   weight: 6,   image: `${SYMBOL_IMAGE_PATH}symbol-toxic.png` },
-  barrel:  { id: 'barrel',  emoji: '🛢️', label: 'Barrel',   pays: [7, 20, 64],   weight: 4,   image: `${SYMBOL_IMAGE_PATH}symbol-barrel.png` },
-  warn:    { id: 'warn',    emoji: '⚠️', label: 'Warning',  pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-warn.png` },
-  rich:    { id: 'rich',    emoji: '🤑', label: 'Jackpot Guy', pays: [18, 55, 220], weight: 1.5, image: `${SYMBOL_IMAGE_PATH}symbol-rich.png` },
-  wild:    { id: 'wild',    emoji: '🤮', label: 'Puke Wild', pays: [0, 0, 0], weight: 3.5, special: 'wild', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-wild.png` },
-  scatter: { id: 'scatter', emoji: '🤒', label: 'Sick Scatter', pays: [0, 0, 0], weight: 2, special: 'scatter', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-scatter.png` },
-  bonus:   { id: 'bonus',   emoji: '☢️', label: 'Toxic Bonus', pays: [0, 0, 0], weight: 1.5, special: 'bonus', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-bonus.png` },
-  hazard:  { id: 'hazard',  emoji: '☣️', label: 'Hazard Mystery', pays: [0, 0, 0], weight: 1.2, special: 'hazard', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-hazard.png` },
-  jackpot: { id: 'jackpot', emoji: '🧪', label: 'Toxic Jackpot', pays: [0, 0, 0], weight: 1, special: 'jackpot', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-jackpot.png` },
+  cashlab: { id: 'cashlab', emoji: '🤑', label: 'Cash Lab',    pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cash-lab.png` },
+  puke:    { id: 'puke',    emoji: '🤢', label: 'Puke Town',   pays: [2, 3, 9],     weight: 26,  image: `${SYMBOL_IMAGE_PATH}symbol-puke-town.jpeg` },
+  slime:   { id: 'slime',   emoji: '🟡', label: 'Slime Blob',  pays: [2, 4, 11],    weight: 24,  image: `${SYMBOL_IMAGE_PATH}symbol-slime-blob.png` },
+  sneeze:  { id: 'sneeze',  emoji: '🤧', label: 'Sneeze',      pays: [2, 5, 13],    weight: 21 },
+  tp:      { id: 'tp',      emoji: '🧻', label: 'TP Roll',     pays: [3, 6, 16],    weight: 18 },
+  pill:    { id: 'pill',    emoji: '💊', label: 'Test Tube',   pays: [3, 7, 19],    weight: 15,  image: `${SYMBOL_IMAGE_PATH}symbol-test-tube.png` },
+  germ:    { id: 'germ',    emoji: '🦠', label: 'Virus',       pays: [3, 8, 23],    weight: 13,  image: `${SYMBOL_IMAGE_PATH}symbol-virus.png` },
+  beaker:  { id: 'beaker',  emoji: '🧪', label: 'Cauldron',    pays: [4, 10, 30],   weight: 10,  image: `${SYMBOL_IMAGE_PATH}symbol-toxic-cauldron.png` },
+  vomit:   { id: 'vomit',   emoji: '🤮', label: 'Slime Guy',   pays: [5, 12, 37],   weight: 8,   image: `${SYMBOL_IMAGE_PATH}symbol-slime-guy.png` },
+  toxic:   { id: 'toxic',   emoji: '☢️', label: 'Radiation',   pays: [6, 16, 48],   weight: 6,   image: `${SYMBOL_IMAGE_PATH}symbol-radiation-sign.png` },
+  barrel:  { id: 'barrel',  emoji: '🛢️', label: 'Waste Drum',   pays: [7, 20, 64],   weight: 4,   image: `${SYMBOL_IMAGE_PATH}symbol-waste-drum.png` },
+  warn:    { id: 'warn',    emoji: '⚠️', label: 'Skull',       pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-radioactive-skull.png` },
+  rich:    { id: 'rich',    emoji: '🤑', label: 'Jackpot Guy', pays: [18, 55, 220],  weight: 1.5 },
+  wild:    { id: 'wild',    emoji: '🤮', label: 'Puke Wild',   pays: [0, 0, 0], weight: 3.5, special: 'wild', isSpecial: true },
+  scatter: { id: 'scatter', emoji: '🤒', label: 'Sick Scatter', pays: [0, 0, 0], weight: 2, special: 'scatter', isSpecial: true },
+  bonus:   { id: 'bonus',   emoji: '☢️', label: 'Toxic Bonus',  pays: [0, 0, 0], weight: 1.5, special: 'bonus', isSpecial: true },
+  hazard:  { id: 'hazard',  emoji: '☣️', label: 'Hazard Mystery', pays: [0, 0, 0], weight: 1.2, special: 'hazard', isSpecial: true },
+  jackpot: { id: 'jackpot', emoji: '🧪', label: 'Toxic Jackpot', pays: [0, 0, 0], weight: 1, special: 'jackpot', isSpecial: true },
 };
 export const JACKPOT_TYPES = [
   { type: 'mini' as const,  amount: 30,  label: 'Mini' },
