@@ -123,11 +123,21 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     }
   };
 
-  // ✅ CLAMPED INPUT: Prevent negatives & values over unlocked balance
+  // ✅ Fixed: Allow arrows to work, then clamp after change
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = parseFloat(e.target.value) || 0;
+    const raw = e.target.value;
+    if (raw === '' || raw === '-') {
+      setAmountStr('');
+      return;
+    }
+    let val = parseFloat(raw);
+    if (isNaN(val)) {
+      setAmountStr('');
+      return;
+    }
+    // Clamp to valid range
     val = Math.max(0, Math.min(val, state.withdrawablePP, MAX_WITHDRAW_PP));
-    setAmountStr(val > 0 ? String(val) : '');
+    setAmountStr(String(val));
   };
 
   return (
@@ -205,7 +215,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       </div>
 
-      {/* Withdraw Form — ✅ Input arrows clamped: 0 → unlocked balance */}
+      {/* Withdraw Form — ✅ Arrows work + clamped range */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -244,6 +254,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             placeholder={`Min ${formatPP(MIN_WITHDRAW_PP)}`}
             min={0}
             max={Math.min(state.withdrawablePP, MAX_WITHDRAW_PP)}
+            step={100}
             className="w-full bg-ink-900 border border-toxic-900/50 rounded-lg px-3 py-2.5 font-mono text-sm text-toxic-200 focus:border-toxic-400 focus:outline-none focus:neon-border transition-all"
           />
           <div className="flex gap-1.5 mt-1.5">
