@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, FlaskConical } from 'lucide-react';
+import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Zap } from 'lucide-react';
 import type { Screen } from '../types';
+
 const NAV: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'home', label: 'Contamination Zone', icon: Home },
-  { id: 'slots', label: 'Reactor Reels', icon: Gamepad2 },
+  { id: 'profile', label: 'Radiation Profile', icon: User },
   { id: 'missions', label: 'Hazard Duties', icon: Target },
   { id: 'leaderboards', label: 'Toxicity Ranks', icon: Trophy },
-  { id: 'withdraw', label: 'Waste Withdrawal', icon: Wallet },
-  { id: 'vialmixer', label: 'Contamination Lab', icon: FlaskConical },
+  { id: 'slots', label: 'Reactor Reels', icon: Gamepad2 },
   { id: 'roadmap', label: 'Fallout Forecast', icon: Zap },
-  { id: 'profile', label: 'Radiation Profile', icon: User },
+  { id: 'withdraw', label: 'Waste Withdrawal', icon: Wallet },
   { id: 'settings', label: 'Lab Controls', icon: Settings },
 ];
+
 export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s: Screen, target?: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
