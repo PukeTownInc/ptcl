@@ -18,7 +18,6 @@ type SpinHistoryEntry =
   | { kind: 'lose'; pp: number }
   | { kind: 'safe'; pp: number };
 const MAX_HISTORY = 20;
-// ✅ PAYTABLE — auto-generated from SYMBOLS, sorted highest payout first
 const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
@@ -286,7 +285,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
   return (
     <div className="space-y-4">
-      {/* ✅ BALANCE BOXES */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet size={20} className="text-radioactive-400" />
@@ -325,7 +323,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      {/* ✅ REELS — FULLY TRANSPARENT, NO LAG */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -345,7 +342,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                     >
                       <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
                         {sym.image ? (
-                          <img src={sym.image} alt={sym.label} className="w-10 h-10 object-contain bg-transparent border-0" style={{ background: 'transparent' }} />
+                          <img 
+                            src={sym.image} 
+                            alt={sym.label} 
+                            className="w-10 h-10 object-contain"
+                            style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important' }}
+                          />
                         ) : (
                           sym.emoji
                         )}
@@ -414,7 +416,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </button>
         </div>
       </div>
-      {/* ✅ PAYTABLE */}
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -437,7 +438,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
                 <span className="col-span-5 font-mono text-sm flex items-center gap-2">
                   {sym.image ? (
-                    <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain bg-transparent border-0" style={{ background: 'transparent' }} />
+                    <img 
+                      src={sym.image} 
+                      alt={sym.label} 
+                      className="w-6 h-6 object-contain"
+                      style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important' }}
+                    />
                   ) : (
                     sym.emoji
                   )}
@@ -536,31 +542,38 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                         <span className="text-[11px] font-mono text-toxic-100/30">No contamination</span>
                       )}
                     </div>
-                    <span className={`text-xs font-mono font-bold shrink-0 ${entry.pp > 0 ? 'text-toxic-400' : 'text-toxic-100/30'}`}>
-                      {formatPP(entry.pp)} PP
-                    </span>
+                    <span className="font-mono text-sm text-toxic-300 tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'double') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-toxic-500/10 border border-toxic-500/30">
+                    <span className="text-sm font-mono text-toxic-400">☢️ DOUBLED!</span>
+                    <span className="font-mono text-sm text-toxic-400 font-bold tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'half') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-hazard-amber/10 border border-hazard-amber/30">
+                    <span className="text-sm font-mono text-hazard-amber">⚠️ HALVED</span>
+                    <span className="font-mono text-sm text-hazard-amber tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'safe') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-radioactive-500/10 border border-radioactive-500/30">
+                    <span className="text-sm font-mono text-radioactive-400">☣️ SECURED</span>
+                    <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
+                    <span className="text-sm font-mono text-red-400">☠️ SPILLED</span>
+                    <span className="font-mono text-sm text-red-400 tabular-nums">+{formatPP(entry.pp)}</span>
                   </div>
                 );
               }
-              const labels: Record<typeof entry.kind, { icon: string; label: string; color: string }> = {
-                double: { icon: '☢️', label: 'DOUBLED', color: 'text-toxic-400' },
-                half:   { icon: '☣️', label: 'HALVED', color: 'text-hazard-amber' },
-                lose:   { icon: '☠️', label: 'SPILLED', color: 'text-red-400' },
-                safe:   { icon: '🛡️', label: 'SECURED', color: 'text-toxic-100/60' },
-              };
-              const info = labels[entry.kind];
-              return (
-                <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-ink-700/40 border-l-2 border-l-radioactive-500/30">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] font-mono text-toxic-100/30 shrink-0">#{entries.length - i}</span>
-                    <span className="text-sm">{info.icon}</span>
-                    <span className={`text-[11px] font-mono ${info.color}`}>{info.label}</span>
-                  </div>
-                  <span className={`text-xs font-mono font-bold shrink-0 ${entry.pp > 0 ? 'text-toxic-400' : 'text-toxic-100/30'}`}>
-                    {formatPP(entry.pp)}
-                  </span>
-                </div>
-              );
             })
           )}
         </div>
