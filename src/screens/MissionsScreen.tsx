@@ -1,355 +1,139 @@
-import { useState, useEffect } from 'react';
-import { Tv, CheckCircle2, Gift, Trophy, Calendar, Target, Lock, Flame, Zap } from 'lucide-react';
-import type { GameState } from '../types';
-import { MISSIONS, ALL_MISSIONS_BONUS, STREAK_REWARDS, MAX_STREAK_DAY } from '../constants';
+import { useState } from 'react';
+import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Wallet } from 'lucide-react';
+import type { GameState, Screen } from '../types';
+import { getTier, formatPP, ppToUsd } from '../constants';
 import type { GameActions } from '../useGameState';
-import { isStreakPPBoostActive } from '../useGameState';
-import { useToast } from '../components/Toast';
+import { XPBar } from '../components/XPBar';
 import { AdModal } from '../components/AdModal';
-
+import { useToast } from '../components/Toast';
 interface Props {
   state: GameState;
   actions: GameActions;
+  onNavigate: (s: Screen, target?: string) => void;
 }
-
-function isMissionComplete(state: GameState, id: string): boolean {
-  switch (id) {
-    case 'spins': return state.missions.spins >= 20;
-    case 'ads': return state.missions.adsWatched >= 5;
-    case 'wheel': return state.missions.wheelSpins >= 3;
-    case 'claistreak': return state.streakClaimedToday;
-    case 'earnpp': return state.ppEarnedToday >= 100;
-    default: return false;
-  }
-}
-
-function missionProgress(state: GameState, id: string): number {
-  switch (id) {
-    case 'spins': return Math.min(state.missions.spins, 20);
-    case 'ads': return Math.min(state.missions.adsWatched, 5);
-    case 'wheel': return Math.min(state.missions.wheelSpins, 3);
-    case 'claistreak': return state.streakClaimedToday ? 1 : 0;
-    case 'earnpp': return Math.min(state.ppEarnedToday, 100);
-    default: return 0;
-  }
-}
-
-function useResetCountdown() {
-  const [remaining, setRemaining] = useState('');
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-      const diff = tomorrow.getTime() - now.getTime();
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setRemaining(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, []);
-  return remaining;
-}
-
-export function MissionsScreen({ state, actions }: Props) {
+export function HomeScreen({ state, actions, onNavigate }: Props) {
   const toast = useToast();
+  const tier = getTier(state.xp);
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
-  const countdown = useResetCountdown();
-  const claimsUsed = state.dailyMissionClaims.length;
-  const completedCount = MISSIONS.filter((m) => isMissionComplete(state, m.id)).length;
-  const allComplete = completedCount === MISSIONS.length;
-  const allMissionsClaimed = MISSIONS.every((m) => state.dailyMissionClaims.includes(m.id));
-  const claimedDays = state.streakDay;
-  const nextDay = claimedDays >= 7 ? 1 : claimedDays + 1;
-  const streakReward = STREAK_REWARDS[nextDay - 1];
-  const isDay7 = nextDay === MAX_STREAK_DAY;
-  const streakBoostActive = isStreakPPBoostActive(state);
-
-  const handleStreakClaim = () => {
-    if (state.streakClaimedToday) {
-      toast('info', 'Already Contaminated', 'Return tomorrow for your next dose');
+  const handleDailyBonus = () => {
+    if (state.freeSpinsClaimed) {
+      toast('info', 'Already Contaminated', 'Return tomorrow for more');
       return;
     }
     setAdModal({
-      title: `☢️ Daily Contamination — Dose ${nextDay}/7`,
-      subtitle: 'Absorb radiation to receive your supply',
-      reward: `+${streakReward.spins} Twists +${streakReward.xp} Exposure${streakReward.ppBoost ? ' + ×1.2 Goops for 24h' : ''}`,
+      title: 'Daily Contagion Bonus',
+      subtitle: 'Absorb radiation to claim reward',
+      reward: '+150 Exposure + 15 Twists',
       onComplete: () => {
-        actions.claimStreakRewardViaAd(streakReward);
-        toast('success', `Dose ${nextDay} Absorbed!`, `+${streakReward.spins} Twists +${streakReward.xp} Exposure${streakReward.ppBoost ? ' + ×1.2 Goops' : ''}`);
-      },
-    });
-  };
-
-  const handleClaimBase = (id: string, baseXp: number, baseSpins?: number) => {
-    if (state.dailyMissionClaims.includes(id)) {
-      toast('info', 'Already Collected', 'Base supply gathered today');
-      return;
-    }
-    const accepted = actions.claimMissionReward(id);
-    if (!accepted) return;
-    actions.addXP(baseXp, false);
-    if (baseSpins) actions.addSpins(baseSpins);
-    toast('success', 'Contamination Secured!', `+${baseXp} Exposure${baseSpins ? ` + ${baseSpins} Twists` : ''}`);
-  };
-
-  const handleClaimAdBonus = (id: string, adXp: number, adSpins?: number) => {
-    if (state.dailyMissionClaims.includes(`${id}:ad`)) {
-      toast('info', 'Bonus Contaminated', 'Already absorbed today');
-      return;
-    }
-    if (!state.dailyMissionClaims.includes(id)) {
-      toast('error', 'Base First', 'Claim primary supply before bonus');
-      return;
-    }
-    setAdModal({
-      title: '☢️ Radiation Bonus',
-      subtitle: 'Absorb broadcast for extra contamination',
-      reward: `+75 Exposure + 5 Twists`,
-      onComplete: () => {
-        const accepted = actions.claimMissionReward(`${id}:ad`);
-        if (!accepted) return;
-        actions.addXP(adXp, true);
-        if (adSpins) actions.addSpins(adSpins);
+        actions.claimDailyBonusSpins();
+        actions.addXP(150, true);
         actions.watchAd();
-        toast('success', 'Radiation Absorbed!', `+${adXp} Exposure${adSpins ? ` + ${adSpins} Twists` : ''}`);
+        toast('success', 'Contagion Absorbed!', '+150 Exposure + 15 Twists added');
       },
     });
   };
-
-  const handleAllBase = () => {
-    if (state.allMissionsBonusClaimed) return;
-    if (!allMissionsClaimed) {
-      toast('error', 'Incomplete Exposure', 'Contaminate every target first');
-      return;
-    }
-    const accepted = actions.claimAllMissionsBonus();
-    if (!accepted) return;
-    actions.claimMissionReward('allBonus');
-    actions.addXP(ALL_MISSIONS_BONUS.baseXp, false);
-    toast('success', '☢️ FULL CONTAMINATION!', `+${ALL_MISSIONS_BONUS.baseXp} Exposure Bonus`);
-  };
-
-  const handleAllAdBonus = () => {
-    if (state.allMissionsAdBonusClaimed) return;
-    if (!state.allMissionsBonusClaimed) {
-      toast('error', 'Base First', 'Claim full contamination supply first');
+  const handleDailyBoost = () => {
+    if (state.dailyBoostClaimed) {
+      toast('info', 'Already Exposed', 'Return tomorrow for more');
       return;
     }
     setAdModal({
-      title: '☢️ MAXIMUM DOSE BONUS',
-      subtitle: 'Absorb final broadcast for ultimate contamination',
-      reward: `+${ALL_MISSIONS_BONUS.adXp} Exposure + ${ALL_MISSIONS_BONUS.adSpins} Twists`,
+      title: 'Radiation Surge',
+      subtitle: 'Absorb broadcast for daily boost',
+      reward: '+5 Twists + 50 Exposure',
       onComplete: () => {
-        const accepted = actions.claimAllMissionsAdBonus();
-        if (!accepted) return;
-        actions.claimMissionReward('allAdBonus');
-        actions.addXP(ALL_MISSIONS_BONUS.adXp, true);
-        actions.addSpins(ALL_MISSIONS_BONUS.adSpins);
+        actions.claimDailyBoost();
+        actions.addXP(50, true);
         actions.watchAd();
-        toast('success', '☢️ CRITICAL EXPOSURE!', `+${ALL_MISSIONS_BONUS.adXp} Exposure + ${ALL_MISSIONS_BONUS.adSpins} Twists`);
+        toast('success', 'Surge Active!', '+5 Twists + 50 Exposure');
       },
     });
   };
-
   return (
     <div className="space-y-4">
-      {/* Contamination Targets Header */}
-      <div className="grunge-panel p-4 text-center">
-        <Target size={28} className="text-toxic-400 mx-auto mb-2" />
-        <h2 className="font-display font-black text-lg text-toxic-400 neon-text">☢️ DAILY CONTAMINATION ☢️</h2>
-        <p className="text-[11px] text-toxic-100/50 mt-1">Infect every target → Unlock maximum radiation exposure!</p>
-        {/* Reset countdown */}
-        <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-mono text-toxic-100/50">
-          <Calendar size={10} className="text-toxic-400" />
-          <span>Radiation levels reset in: <span className="text-toxic-400 font-bold tabular-nums">{countdown}</span></span>
+      {/* Logo panel */}
+      <div className="relative grunge-panel overflow-hidden">
+        <div className="absolute inset-0 hazard-stripes opacity-[0.03]" />
+        <div className="relative p-3 text-center flex items-center justify-center min-h-[140px]">
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+            style={{ 
+              height: 'calc(100% - 16px)',
+              width: 'auto',
+              maxWidth: 'calc(100% - 16px)',
+              objectFit: 'contain',
+              display: 'block'
+            }} 
+          />
         </div>
       </div>
-
-      {/* 7-Day Contamination Streak */}
-      <div className={`grunge-panel p-4 ${isDay7 ? 'neon-border-yellow' : ''}`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Flame size={20} className={isDay7 ? 'text-radioactive-400 animate-pulse' : 'text-toxic-400'} />
-            <div>
-              <div className="font-display font-bold text-sm text-toxic-300">7-Day Contamination Streak</div>
-              <div className="text-[10px] text-toxic-100/40 font-mono">Dose {claimedDays}/7 absorbed • Next: Dose {nextDay} • Re-dose in {countdown}</div>
-            </div>
-          </div>
-          {streakBoostActive && (
-            <span className="px-2 py-1 rounded-full bg-radioactive-500/15 border border-radioactive-600/40 text-radioactive-400 text-[10px] font-display font-bold flex items-center gap-1">
-              <Zap size={10} /> ×1.2 GOOP
-            </span>
-          )}
+      {/* DECONTAMINATION CHAMBER */}
+      <div className="grunge-panel p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Wallet size={20} className="text-radioactive-400" />
+          <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
         </div>
-
-        {/* 7-day dose indicators */}
-        <div className="flex justify-between gap-1 mb-3">
-          {STREAK_REWARDS.map((r) => {
-            const filled = r.day <= claimedDays;
-            const isCurrent = r.day === nextDay && !state.streakClaimedToday;
-            return (
-              <div
-                key={r.day}
-                className={`flex-1 text-center rounded-md py-2 transition-all ${
-                  filled
-                    ? isDay7 && r.day === 7
-                      ? 'bg-radioactive-500/20 border border-radioactive-600/40'
-                      : 'bg-toxic-500/20 border border-toxic-600/30'
-                    : isCurrent
-                    ? isDay7
-                      ? 'bg-radioactive-500/25 border border-radioactive-600/50 animate-pulse'
-                      : 'bg-toxic-500/25 border border-toxic-400/50 animate-pulse'
-                    : 'bg-ink-900/50 border border-toxic-900/30'
-                }`}
-              >
-                <div className={`text-[9px] font-mono ${
-                  filled || isCurrent
-                    ? isDay7 && r.day === 7 ? 'text-radioactive-400' : 'text-toxic-400'
-                    : 'text-toxic-100/30'
-                }`}>
-                  {r.day === 7 ? '☢️' : `D${r.day}`}
-                </div>
-                <div className={`text-[8px] font-mono mt-0.5 ${
-                  filled || isCurrent ? 'text-toxic-300/60' : 'text-toxic-100/20'
-                }`}>
-                  +{r.spins}☢
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Reward + claim button */}
-        {state.streakClaimedToday ? (
-          <div className="flex items-center justify-center gap-2 py-2">
-            <CheckCircle2 size={16} className="text-toxic-400" />
-            <span className="text-[12px] font-mono text-toxic-400">Dose {claimedDays} Absorbed — return tomorrow for Dose {nextDay}!</span>
+        <div className="grid grid-cols-2 gap-2">
+          {/* LEFT — CONTAGION VAULT */}
+          <div className="rounded-lg bg-ink-700/50 border border-toxic-900/40 p-3">
+            <div className="text-[10px] text-toxic-100/40 uppercase">CONTAGION VAULT</div>
+            <div className="font-mono text-xl font-bold text-toxic-300">{formatPP(state.lockedPotPP)}</div>
+            <div className="text-[10px] text-toxic-100/30 font-mono">Watch video to unlock</div>
           </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="text-center text-[11px] font-mono text-toxic-100/60">
-              Supply: +{streakReward.spins} Twists +{streakReward.xp} Exposure{streakReward.ppBoost ? ' + ×1.2 Goops for 24h' : ''}
-            </div>
-            <button
-              onClick={handleStreakClaim}
-              className="yellow-btn w-full py-3 text-xs flex items-center justify-center gap-2"
-            >
-              <Tv size={14} /> Absorb Radiation to Claim Dose {nextDay}
-            </button>
+          {/* RIGHT — CONTAGION CACHE */}
+          <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
+            <div className="text-[10px] text-radioactive-400/60 uppercase">CONTAGION CACHE</div>
+            <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
+            <div className="text-[10px] text-radioactive-300/40 font-mono">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
           </div>
-        )}
-
-        {/* Warnings */}
-        {claimedDays > 0 && claimedDays < MAX_STREAK_DAY && !state.streakClaimedToday && (
-          <div className="mt-2 text-[10px] text-hazard-amber/70 font-mono text-center">
-            Skip a dose = infection reset! Keep your {claimedDays}-day streak alive!
-          </div>
-        )}
-        {claimedDays === 0 && !state.streakClaimedToday && (
-          <div className="mt-2 text-[10px] text-toxic-100/40 font-mono text-center">
-            Begin your contamination — absorb Dose 1 today!
-          </div>
-        )}
-        {isDay7 && !state.streakClaimedToday && (
-          <div className="mt-2 text-[10px] text-radioactive-400 font-mono animate-pulse text-center">
-            ☢️ FINAL DOSE — WEEKLY MAX! Absorb for +{streakReward.spins} Twists +{streakReward.xp} Exposure + ×1.2 Goops!
-          </div>
-        )}
-      </div>
-
-      {/* Contamination Target Cards */}
-      {MISSIONS.map((m) => {
-        const complete = isMissionComplete(state, m.id);
-        const progress = missionProgress(state, m.id);
-        const pct = (progress / m.target) * 100;
-        const hasClaimed = state.dailyMissionClaims.includes(m.id);
-        const hasAdClaimed = state.dailyMissionClaims.includes(`${m.id}:ad`);
-        return (
-          <div key={m.id} className="grunge-panel p-3.5">
-            <div className="flex items-start gap-3">
-              <div className="text-2xl shrink-0">{m.icon}</div>
-              <div className="flex-1 min-w0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-display font-bold text-sm text-toxic-200">{m.label}</h3>
-                  {complete && <CheckCircle2 size={14} className="text-toxic-400 shrink-0" />}
-                </div>
-                <div className="text-[10px] text-toxic-100/40 font-mono mt-0.5">
-                  Base: +{m.baseXp} Exposure • Radiation: +{m.adXp} Exposure + {(m as any).adSpins} Twists
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1.5 flex-1 rounded-full bg-ink-700 overflow-hidden">
-                    <div className={`h-full transition-all ${complete ? 'bg-toxic-400' : 'bg-radioactive-400'}`} style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="font-mono text-[10px] text-toxic-100/50">{progress}/{m.target}</span>
-                </div>
-                <div className="flex gap-2 mt-2.5">
-                  <button
-                    onClick={() => handleClaimBase(m.id, m.baseXp, (m as any).baseSpins)}
-                    disabled={!complete || hasClaimed}
-                    className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
-                      hasClaimed ? 'toxic-btn opacity-60' : !complete ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
-                    }`}
-                  >
-                    {hasClaimed ? <><CheckCircle2 size={12} /> Contaminated</> : <><Gift size={12} /> +{m.baseXp} Exposure</>}
-                  </button>
-                  <button
-                    onClick={() => handleClaimAdBonus(m.id, m.adXp, (m as any).adSpins)}
-                    disabled={!hasClaimed || hasAdClaimed}
-                    className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
-                      hasAdClaimed ? 'yellow-btn opacity-60' : !hasClaimed ? 'ghost-btn opacity-40 cursor-not-allowed' : 'yellow-btn'
-                    }`}
-                  >
-                    {hasAdClaimed ? <><CheckCircle2 size={12} /> Absorbed</> : <><Tv size={12} /> +75 Exposure + 5 Twists</>}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Full Contamination Bonus */}
-      <div className={`grunge-panel p-4 ${allMissionsClaimed ? 'neon-border-yellow' : 'opacity-60'}`}>
-        <div className="flex items-center gap-3 mb-3">
-          <Trophy size={24} className="text-radioactive-400" />
-          <div className="flex-1">
-            <h3 className="font-display font-bold text-sm text-radioactive-400">☢️ FULL CONTAMINATION BONUS</h3>
-            <p className="text-[10px] text-toxic-100/50">Infect every target → Unlock maximum radiation supply!</p>
-          </div>
-        </div>
-
-        <div className="mb-3 flex items-center justify-center gap-2">
-          <div className="h-2 w-32 rounded-full bg-ink-700 overflow-hidden">
-            <div className="h-full bg-toxic-400 transition-all" style={{ width: `${(completedCount / MISSIONS.length) * 100}%` }} />
-          </div>
-          <span className="font-mono text-xs text-toxic-300">{completedCount}/{MISSIONS.length} targets infected</span>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={handleAllBase}
-            disabled={!allMissionsClaimed || state.allMissionsBonusClaimed}
-            className={`flex-1 py-2.5 text-xs flex items-center justify-center gap-1 transition-all ${
-              state.allMissionsBonusClaimed ? 'toxic-btn opacity-60' : !allMissionsClaimed ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
-            }`}
-          >
-            {state.allMissionsBonusClaimed ? <><CheckCircle2 size={14} /> Secured</> : !allMissionsClaimed ? <><Lock size={14} /> Quarantined</> : <><Gift size={14} /> +{ALL_MISSIONS_BONUS.baseXp} Exposure</>}
-          </button>
-          <button
-            onClick={handleAllAdBonus}
-            disabled={!state.allMissionsBonusClaimed || state.allMissionsAdBonusClaimed}
-            className={`flex-1 py-2.5 text-xs flex items-center justify-center gap-1 transition-all ${
-              state.allMissionsAdBonusClaimed ? 'yellow-btn opacity-60' : !state.allMissionsBonusClaimed ? 'ghost-btn opacity-40 cursor-not-allowed' : 'yellow-btn'
-            }`}
-          >
-            {state.allMissionsAdBonusClaimed ? <><CheckCircle2 size={14} /> Absorbed</> : <><Tv size={14} /> +{ALL_MISSIONS_BONUS.adXp} Exposure + {ALL_MISSIONS_BONUS.adSpins} Twists</>}
-          </button>
         </div>
       </div>
-
+      {/* Radiation Exposure Bar */}
+      <XPBar xp={state.xp} nextXp={null} />
+      {/* Twists banner */}
+      <button
+        onClick={() => onNavigate('slots')}
+        className="toxic-btn w-full py-4 flex items-center justify-between px-5 group"
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles size={20} />
+          <span className="text-left">
+            <div className="text-sm">{state.spinsRemaining} Toxic Twists Ready</div>
+            <div className="text-[10px] opacity-70 font-normal">Twist reels & gather Puke Points</div>
+          </span>
+        </div>
+        <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+      </button>
+      {/* Daily buttons */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={handleDailyBonus}
+          disabled={state.freeSpinsClaimed}
+          className="yellow-btn p-3 text-left h-full disabled:opacity-30"
+        >
+          <Gift size={20} className="mb-1" />
+          <div className="text-xs">Daily Contagion</div>
+          <div className="text-[10px] opacity-80 font-normal">+150 Exposure + 15 Twists</div>
+          <div className="ad-badge mt-1.5"><Tv size={8} /> Toxic Broadcast</div>
+        </button>
+        <button
+          onClick={handleDailyBoost}
+          disabled={state.dailyBoostClaimed}
+          className="yellow-btn p-3 text-left h-full disabled:opacity-30"
+        >
+          <Tv size={20} className="mb-1" />
+          <div className="text-xs">Radiation Surge</div>
+          <div className="text-[10px] opacity-80 font-normal">+5 Twists + 50 Exposure</div>
+          <div className="ad-badge mt-1.5"><Tv size={8} /> Contagion Feed</div>
+        </button>
+      </div>
+      {/* Quick links */}
+      <div className="grunge-panel divide-y divide-toxic-900/30">
+        <QuickLink icon={<Target />} label="Daily Contamination" sub="Infect every target → Unlock maximum radiation exposure!" onClick={() => onNavigate('missions')} />
+        <QuickLink icon={<Play />} label="Enter Contagion" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
+        <QuickLink icon={<Users />} label="Spread Infection" sub="+30 Twists + 100 Exposure each" onClick={() => onNavigate('profile', 'referral-box')} />
+      </div>
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
@@ -359,5 +143,17 @@ export function MissionsScreen({ state, actions }: Props) {
         reward={adModal?.reward ?? ''}
       />
     </div>
+  );
+}
+function QuickLink({ icon, label, sub, onClick }: { icon: React.ReactNode; label: string; sub: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex items-center gap-3 px-4 py-3 w-full hover:bg-toxic-500/5 transition-colors text-left">
+      <span className="text-toxic-400">{icon}</span>
+      <div className="flex-1 min-w-0">
+        <div className="font-display font-bold text-sm text-toxic-200">{label}</div>
+        <div className="text-[11px] text-toxic-100/40 truncate">{sub}</div>
+      </div>
+      <ChevronRight size={16} className="text-toxic-100/30" />
+    </button>
   );
 }
