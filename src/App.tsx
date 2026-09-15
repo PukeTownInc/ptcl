@@ -72,12 +72,14 @@ function AppContent() {
   return (
     <ToastProvider>
       <div className="min-h-screen flex flex-col">
-        {/* ✅ HEADER NOW RECEIVES BALANCE DATA */}
+        {/* ✅ HEADER — NOW WITH BALANCES + XP */}
         <Header
           active={screen}
           onChange={navigate}
           lockedPP={actions.state.lockedPotPP}
           withdrawablePP={actions.state.withdrawablePP}
+          xp={actions.state.xp}
+          nextXp={null}
         >
           <UserStatusBadge />
         </Header>
