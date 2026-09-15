@@ -99,26 +99,19 @@
   .text-glow {
     text-shadow: 0 0 8px currentColor;
   }
-  /* ✅ FORCE TRANSPARENCY ON ALL SYMBOL IMAGES & BOXES */
-  .reel-symbol,
-  .reel-symbol img,
-  img[src*="/symbols/"] {
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
 }
 
-/* Reel symbol sizing & base styles */
+/* Reel symbol sizing */
 .reel-symbol {
   font-size: clamp(1.75rem, 7vw, 2.75rem);
   line-height: 1;
   filter: drop-shadow(0 0 4px rgba(57, 255, 20, 0.3));
-  background: transparent !important;
-  background-color: transparent !important;
+  background: transparent;
+}
+.reel-symbol img {
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 .reel-symbol.win {
   animation: pop 0.5s ease-out, glowPulse 1.2s ease-in-out infinite 0.5s;
