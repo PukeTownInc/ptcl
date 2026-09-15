@@ -75,7 +75,7 @@ export const MISSIONS = [
   { id: 'ads',       label: 'Watch 5 Ads',                  target: 5,   baseXp: 50,  adXp: 75,  icon: '📺', adSpins: 5 },
   { id: 'wheel',     label: 'Spin the Radioactive Risk Wheel 3 Times', target: 3, baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
   { id: 'claistreak',label: 'Claim Daily Streak',            target: 1,  baseXp: 50,  adXp: 75,  icon: '📅', adSpins: 5 },
-  { id: 'earnpp',    label: 'Earn 100 Puke Points',          target: 100, baseXp: 50, adXp: 75,  icon: '🎯', adSpins: 5 },
+  { id: 'earnpp',    label: 'Earn 250 Puke Points',         target: 250, baseXp: 50, adXp: 75,  icon: '🎯', adSpins: 5 },
 ];
 export const ALL_MISSIONS_BONUS = { baseXp: 100, adXp: 150, baseSpins: 0, adSpins: 10 };
 export interface StreakDayReward {
