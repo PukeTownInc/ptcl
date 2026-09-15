@@ -17,19 +17,23 @@ import { VialMixerScreen } from './components/VialMixerScreen';
 import { LoginScreen, UserStatusBadge } from './components/LoginScreen';
 import { Logo } from './components/Logo';
 import { PwaInstallButton } from './components/PwaInstallButton';
+
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const actions = useGameState(user?.id ?? null);
   const [screen, setScreen] = useState<Screen>('home');
   const [skipLogin, setSkipLogin] = useState(false);
   const [scrollTarget, setScrollTarget] = useState<string | null>(null);
+
   useEffect(() => {
     if (authLoading) return;
     actions.loginCheck();
   }, [authLoading, user]);
+
   useEffect(() => {
     if (user) setSkipLogin(false);
   }, [user]);
+
   const navigate = (s: Screen, target?: string) => {
     setScreen(s);
     setScrollTarget(target ?? null);
@@ -37,6 +41,7 @@ function AppContent() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
   useEffect(() => {
     if (!scrollTarget) return;
     const el = document.getElementById(scrollTarget);
@@ -45,6 +50,7 @@ function AppContent() {
     }
     setScrollTarget(null);
   }, [scrollTarget, screen]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-ink-900 gap-4 animate-fade-in">
@@ -58,15 +64,24 @@ function AppContent() {
       </div>
     );
   }
+
   if (!user && !skipLogin) {
     return <LoginScreen onSkip={() => setSkipLogin(true)} />;
   }
+
   return (
     <ToastProvider>
       <div className="min-h-screen flex flex-col">
-        <Header active={screen} onChange={navigate}>
+        {/* ✅ HEADER NOW RECEIVES BALANCE DATA */}
+        <Header
+          active={screen}
+          onChange={navigate}
+          lockedPP={actions.state.lockedPotPP}
+          withdrawablePP={actions.state.withdrawablePP}
+        >
           <UserStatusBadge />
         </Header>
+
         <main className="flex-1 mx-auto w-full max-w-md px-3 pt-4 pb-6">
           {screen === 'home' && <HomeScreen state={actions.state} actions={actions} onNavigate={navigate} />}
           {screen === 'slots' && <SlotScreen state={actions.state} actions={actions} />}
@@ -85,11 +100,13 @@ function AppContent() {
             />
           )}
         </main>
+
         <PwaInstallButton />
       </div>
     </ToastProvider>
   );
 }
+
 function App() {
   return (
     <ErrorBoundary>
@@ -99,4 +116,5 @@ function App() {
     </ErrorBoundary>
   );
 }
+
 export default App;
