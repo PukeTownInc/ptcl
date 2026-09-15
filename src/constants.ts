@@ -38,7 +38,7 @@ export function getTier(xp: number): TierInfo {
 export function getNextTier(xp: number): TierInfo | null {
   return TIERS.find((t) => t.minXp > xp) ?? null;
 }
-// ✅ ALL SYMBOLS — PAY VALUES NOW MATCH YOUR SCREENSHOT EXACTLY
+// ✅ ALL SYMBOLS
 export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
   cashlab: { id: 'cashlab', emoji: '🤑', label: 'Cash Lab',      pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cash-lab.png?v=11` },
   puke:    { id: 'puke',    emoji: '🤢', label: 'Puke Town',     pays: [2, 3, 9],     weight: 26,  image: `${SYMBOL_IMAGE_PATH}symbol-puke-town.png?v=11` },
@@ -71,7 +71,7 @@ export const ROW_COUNT = 3;
 export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 10;
 export const MISSIONS = [
-  { id: 'spins',     label: 'Spin 20 Times',                target: 20,  baseXp: 50,  adXp: 75,  icon: '🎰', adSpins: 5 },
+  { id: 'spins',     label: 'Spin 50 Times',                target: 50,  baseXp: 50,  adXp: 75,  icon: '🎰', adSpins: 5 },
   { id: 'ads',       label: 'Watch 5 Ads',                  target: 5,   baseXp: 50,  adXp: 75,  icon: '📺', adSpins: 5 },
   { id: 'wheel',     label: 'Spin the Radioactive Risk Wheel 3 Times', target: 3, baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
   { id: 'claistreak',label: 'Claim Daily Streak',            target: 1,  baseXp: 50,  adXp: 75,  icon: '📅', adSpins: 5 },
