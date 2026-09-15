@@ -63,8 +63,8 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       reward: `Unlock ${formatPP(state.lockedPotPP)} Puke Points`,
       onComplete: () => {
         const amountToUnlock = state.lockedPotPP;
-        actions.unlockPot?.();
-        actions.watchAd?.();
+        actions.unlockPot();
+        actions.watchAd();
         toast('success', '☢️ VAULT UNLEASHED!', `+${formatPP(amountToUnlock)} PP released to Contagion Cache!`);
       },
     });
@@ -115,7 +115,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       )}
 
-      {/* ✅ UPDATED BALANCE BOX — Vault greyed out until full, ad-gate transfers balance */}
+      {/* ✅ UPDATED BALANCE BOX — "FILL TO UNLOCK" text added above vault balance */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet size={20} className="text-radioactive-400" />
@@ -131,7 +131,13 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             }`}
             onClick={vaultFull ? handleUnlockVault : undefined}
           >
-            <div className="text-[10px] uppercase mb-1.5" style={{ color: vaultFull ? '#9aff9a' : '#6b7280' }}>
+            {/* ✅ NEW TEXT: FILL TO UNLOCK — only shows when vault NOT full */}
+            {!vaultFull && (
+              <div className="text-[9px] font-bold uppercase tracking-widest text-ink-400 mb-1.5">
+                FILL TO UNLOCK
+              </div>
+            )}
+            <div className="text-[10px] uppercase mb-1" style={{ color: vaultFull ? '#9aff9a' : '#6b7280' }}>
               CONTAGION VAULT
             </div>
             <div className={`font-mono text-xl font-bold ${vaultFull ? 'text-toxic-300' : 'text-ink-500'}`}>
