@@ -123,22 +123,20 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     }
   };
 
-  // ✅ Fixed: Allow arrows to work, then clamp after change
+  // ✅ FIXED: Let browser arrows work, THEN clamp AFTER the value updates
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    if (raw === '' || raw === '-') {
-      setAmountStr('');
-      return;
-    }
-    let val = parseFloat(raw);
+    const val = parseFloat(e.target.value);
     if (isNaN(val)) {
-      setAmountStr('');
+      setAmountStr(e.target.value); // Allow empty/partial typing
       return;
     }
-    // Clamp to valid range
-    val = Math.max(0, Math.min(val, state.withdrawablePP, MAX_WITHDRAW_PP));
-    setAmountStr(String(val));
+    // Clamp safely AFTER browser changes the value
+    const clamped = Math.max(0, Math.min(val, state.withdrawablePP, MAX_WITHDRAW_PP));
+    setAmountStr(clamped === val ? String(val) : String(clamped));
   };
+
+  // Calculate limits for input
+  const inputMax = Math.min(state.withdrawablePP, MAX_WITHDRAW_PP);
 
   return (
     <div className="space-y-4">
@@ -215,7 +213,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       </div>
 
-      {/* Withdraw Form — ✅ Arrows work + clamped range */}
+      {/* Withdraw Form — ✅ Arrows WORK + safety limits */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -253,7 +251,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             onChange={handleAmountChange}
             placeholder={`Min ${formatPP(MIN_WITHDRAW_PP)}`}
             min={0}
-            max={Math.min(state.withdrawablePP, MAX_WITHDRAW_PP)}
+            max={inputMax}
             step={100}
             className="w-full bg-ink-900 border border-toxic-900/50 rounded-lg px-3 py-2.5 font-mono text-sm text-toxic-200 focus:border-toxic-400 focus:outline-none focus:neon-border transition-all"
           />
