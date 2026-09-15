@@ -4,8 +4,8 @@ import type { Screen } from '../types';
 
 const SUBMENU_INFECTION_LABEL = '☢️ INFECTION & RANKS';
 const SUBMENU_INFECTION_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
-  { id: 'missions', label: 'Hazard Duties', icon: Target },
-  { id: 'leaderboards', label: 'Toxicity Ranks', icon: Trophy },
+  { id: 'missions', label: 'Daily Contamination', icon: Target },
+  { id: 'leaderboards', label: 'Infection Ranks', icon: Trophy },
 ];
 
 const SUBMENU_GAMES_LABEL = '⚛️ REACTOR WORKS';
