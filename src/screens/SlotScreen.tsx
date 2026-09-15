@@ -9,7 +9,6 @@ import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
 import { XPBar } from '../components/XPBar';
 import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
-
 const REEL_DISPLAY = 3;
 type ReelPhase = 'idle' | 'spinning' | 'stopped';
 type SpinHistoryEntry =
@@ -18,12 +17,10 @@ type SpinHistoryEntry =
   | { kind: 'half'; pp: number }
   | { kind: 'lose'; pp: number }
   | { kind: 'safe'; pp: number };
-
 const MAX_HISTORY = 20;
 const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
-
 // Helper: render special symbol icon (PNG first, fallback emoji)
 function SpecialIcon({ symId, label }: { symId: SymbolId; label: string }) {
   const sym = SYMBOLS[symId];
@@ -43,7 +40,6 @@ function SpecialIcon({ symId, label }: { symId: SymbolId; label: string }) {
     </span>
   );
 }
-
 // Helper: render history symbol icon (PNG first, fallback emoji)
 function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
   const sym = SYMBOLS[symId];
@@ -62,7 +58,20 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
     </span>
   );
 }
-
+// Helper: render wheel icon with PNG
+function WheelIcon({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <img 
+        src="/symbols/symbol-bonus.png" 
+        alt="Wheel" 
+        className="w-5 h-5 object-contain inline-block"
+        style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
+      />
+      {label}
+    </span>
+  );
+}
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const tier = getTier(state.xp);
@@ -101,14 +110,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [spinHistory, setSpinHistory] = useState<SpinHistoryEntry[]>([]);
   const [potAccelCountdown, setPotAccelCountdown] = useState('');
   const [showPaytable, setShowPaytable] = useState(false);
-
   useEffect(() => {
     return () => {
       if (cycleInterval.current) clearInterval(cycleInterval.current);
       stopTimers.current.forEach(clearTimeout);
     };
   }, []);
-
   useEffect(() => {
     if (!state.potAccelUntil) return;
     const update = () => {
@@ -125,7 +132,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [state.potAccelUntil]);
-
   useEffect(() => {
     if (!reelsRef.current) return;
     const measure = () => {
@@ -136,7 +142,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, []);
-
   useEffect(() => {
     if (spinning || !lastResult || lastResult.wins.length === 0) return;
     setActiveWinIndex(0);
@@ -146,9 +151,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 900);
     return () => clearInterval(interval);
   }, [spinning, lastResult]);
-
   const potFull = state.lockedPotPP >= tier.potCap;
-
   const doSpin = useCallback(() => {
     if (spinning) return;
     if (state.spinsRemaining <= 0 && freeSpinsLeft <= 0) {
@@ -191,28 +194,21 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, baseDelay + r * stagger);
       stopTimers.current.push(t);
     }
-
     function finishSpin(res: SpinResult) {
       setSpinning(false);
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
       setLastResult(res);
-
-      // ✅ APPLY MULTIPLIERS FIRST
       let finalPP = res.totalPP;
       const hadPotAccel = isPotAccelActive(state);
       const hadHotStreak = isHotStreakActive(state);
       if (hadPotAccel) finalPP *= 2;
       if (hadHotStreak) finalPP = Math.floor(finalPP * 1.5);
-
       const posSet = new Set<string>();
       res.wins.forEach((w) => w.positions.forEach(([r, row]) => posSet.add(`${r}-${row}`)));
       res.jackpot && res.grid.forEach((col, r) => col.forEach((s, row) => s === 'jackpot' && posSet.add(`${r}-${row}`)));
       setWinPositions(posSet);
       setWinPP(finalPP);
-
-      // ✅ NEW WHEEL RULES: ≥10 PP ONLY, NO daily limit, NO potFull block
       const eligibleDoubleUp = finalPP >= 10;
-
       if (finalPP > 0) {
         if (eligibleDoubleUp) {
           doubleUpResolvedRef.current = false;
@@ -222,12 +218,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           actions.addPP(finalPP);
         }
       }
-
-      // ✅ Still show VAT OVERFLOW toast but DON'T block PP/wheel
       if (potFull && finalPP === 0) {
         toast('info', 'VAT OVERFLOWETH!', 'Absorb radiation to breach containment — +1 XP only');
       }
-
       actions.addXP(res.xpGained, false);
       actions.recordSpin();
       if (freeSpinsLeft > 0) {
@@ -242,8 +235,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         actions.recordJackpot();
         setTimeout(() => setShowJackpot(null), 3000);
       }
-
-      // ✅ Store history
       const winSymbols = res.wins.length > 0
         ? [...new Set(res.wins.map((w) => w.symbols[0]))]
         : [];
@@ -256,7 +247,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, potFull, actions, toast]);
-
   const handleWheelClaim = (result: WheelResult) => {
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
@@ -280,7 +270,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     const kind = result.outcome === 'double' ? 'double' : result.outcome === 'half' ? 'half' : 'safe';
     setSpinHistory((prev) => [{ kind, pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
   };
-
   const handleWheelLose = () => {
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
@@ -289,7 +278,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     toast('error', '☠️ GOOPS SPILLED!', 'All washed away — better containment next time!');
     setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
   };
-
   const handleWheelForfeit = () => {
     const original = state.doubleUpPending ?? 0;
     doubleUpResolvedRef.current = true;
@@ -299,7 +287,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     toast('info', '🧪 GOOPS BANKED', `+${formatPP(original)} Puke Points secured — wheel result purged`);
     setSpinHistory((prev) => [{ kind: 'safe', pp: original }, ...prev].slice(0, MAX_HISTORY));
   };
-
   const handleMysteryPack = () => {
     if (state.spinsRemaining > 0) {
       toast('info', 'TWISTS STILL AVAILABLE', 'Mystery Goop Vat only empty when contaminated');
@@ -316,7 +303,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       },
     });
   };
-
   const handlePotAccel = () => {
     if (state.dailyPotAccel >= 2) {
       toast('info', 'ACCELERATOR OVERHEATED', 'Return after radiation cools');
@@ -337,7 +323,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       },
     });
   };
-
   const canSpin = state.spinsRemaining > 0 || freeSpinsLeft > 0;
   const toggleAutoSpin = useCallback(() => {
     setAutoSpin((prev) => {
@@ -346,7 +331,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       return next;
     });
   }, []);
-
   useEffect(() => {
     if (!autoSpin) return;
     if (spinning || showDoubleUp || showJackpot || adModal) return;
@@ -361,7 +345,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 600);
     return () => clearTimeout(t);
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
-
   return (
     <div className="space-y-4">
       <div className="grunge-panel p-4">
@@ -382,9 +365,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         </div>
       </div>
-
       <XPBar xp={state.xp} nextXp={null} />
-
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
         <div className="flex flex-wrap gap-2">
           {freeSpinsLeft > 0 && (
@@ -404,7 +385,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -442,7 +422,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             );
           })}
         </div>
-
         <div className="mt-3 min-h-[60px] flex items-center justify-center">
           {spinning ? (
             <div className="text-center">
@@ -470,13 +449,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </div>
           )}
         </div>
-
         <div className="flex items-center justify-center mb-2 mt-2">
           <span className="font-display font-bold text-sm text-toxic-300">
             Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
           </span>
         </div>
-
         <button
           onClick={doSpin}
           disabled={!canSpin || spinning}
@@ -488,7 +465,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             <><Play size={22} /> CONTAMINATE</>
           )}
         </button>
-
         <div className="mt-2 flex items-center gap-2">
           <button
             onClick={toggleAutoSpin}
@@ -503,7 +479,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </button>
         </div>
       </div>
-
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -545,14 +520,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
               <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
               <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
-              <div><SpecialIcon symId="bonus" label="= Radioactive Risk Wheel" /></div>
+              <div><WheelIcon label="Radioactive Risk Wheel — Activates on Puke Point wins of 10 or more" /></div>
               <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
               <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
             </div>
           </div>
         )}
       </div>
-
       <div className="grid grid-cols-2 gap-2">
         <BonusBtn
           icon={<Package size={16} />}
@@ -571,9 +545,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           disabled={state.dailyPotAccel >= 2 || spinning}
         />
       </div>
-
       <SpinHistory entries={spinHistory} />
-
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
           stake={state.doubleUpPending}
@@ -582,7 +554,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           onForfeit={handleWheelForfeit}
         />
       )}
-
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
@@ -597,7 +568,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     </div>
   );
 }
-
 function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { icon: React.ReactNode; label: string; sub: string; ad?: boolean; onClick: () => void; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
@@ -610,7 +580,6 @@ function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { icon: React.Rea
     </button>
   );
 }
-
 function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
   const [open, setOpen] = useState(true);
   return (
