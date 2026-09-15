@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, FlaskConical, ChevronDown, ChevronRight } from 'lucide-react';
+import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, FlaskConical, ChevronDown, ChevronRight, Users, AlertTriangle, Globe } from 'lucide-react';
 import type { Screen } from '../types';
 
 const SUBMENU_ALLIES_LABEL = '☣️ TOXIC ALLIES';
@@ -128,13 +128,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
               active === 'home' ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
             }`}
           >
-            <span className="w-[18px] h-[18px] flex items-center justify-center">
-              <img
-                src="/icons/contamination-zone-symbol.png"
-                alt=""
-                style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }}
-              />
-            </span>
+            <Home size={18} />
             <span className="flex-1 text-left">Contamination Zone</span>
             {active === 'home' && <Check size={16} className="text-green-400" />}
           </button>
@@ -147,13 +141,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subAlliesOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            <span className="w-[18px] h-[18px] flex items-center justify-center">
-              <img
-                src="/icons/toxic-allies-symbol.png"
-                alt=""
-                style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }}
-              />
-            </span>
+            <Users size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_ALLIES_LABEL}</span>
           </button>
           {subAlliesOpen && (
@@ -179,17 +167,10 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             onClick={() => setSubInfectionOpen((v) => !v)}
             className={`w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium transition-all border-t border-green-900/30 ${
               isInfectionActive || subInfectionOpen ? 'bg-green-500/10 text-green-400' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
-             
             }`}
           >
             {subInfectionOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            <span className="w-[18px] h-[18px] flex items-center justify-center">
-              <img
-                src="/icons/infection-ranks-symbol.png"
-                alt=""
-                style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }}
-              />
-            </span>
+            <AlertTriangle size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_INFECTION_LABEL}</span>
           </button>
           {subInfectionOpen && (
@@ -203,7 +184,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
                   }`}
                 >
                   <Icon size={16} />
-                  <span className="flex-1 text-left">{label}</point>
+                  <span className="flex-1 text-left">{label}</span>
                   {active === id && <Check size={14} className="text-green-400" />}
                 </button>
               ))}
@@ -218,13 +199,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subGamingOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            <span className="w-[18px] h-[18px] flex items-center justify-center">
-              <img
-                src="/icons/infectious-gaming-symbol.png"
-                alt=""
-                style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }}
-              />
-            </span>
+            <Gamepad2 size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_GAMING_LABEL}</span>
           </button>
           {subGamingOpen && (
@@ -253,13 +228,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subEcosystemOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            <span className="w-[18px] h-[18px] flex items-center justify-center">
-              <img
-                src="/icons/ecosystem-options-symbol.png
-                alt=""
-                style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }}
-              />
-            </span>
+            <Globe size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_ECOSYSTEM_LABEL}</span>
           </button>
           {subEcosystemOpen && (
@@ -269,7 +238,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
                   key={id}
                   onClick={() => handleSelect(id)}
                   className={`w-full flex items-center gap-3 px-5 py-3 pl-10 text-[15px] font-medium transition-all ${
-                    active === id ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500 : 'text-gray-300 hover:bg-green-500/10 hover:text-green-400'
+                    active === id ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500' : 'text-gray-300 hover:bg-green-500/10 hover:text-green-400'
                   }`}
                 >
                   <Icon size={16} />
