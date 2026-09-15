@@ -337,13 +337,18 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div key={ri} className={`relative overflow-hidden rounded-md bg-ink-850 border border-toxic-900/30 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`}>
                 {displayReel.map((symId, row) => {
                   const isWin = winPositions.has(`${ri}-${row}`);
+                  const sym = SYMBOLS[symId];
                   return (
                     <div
                       key={row}
                       className={`aspect-square flex items-center justify-center reel-symbol ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
                     >
                       <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
-                        {engine.getSymbol(symId).emoji}
+                        {sym.image ? (
+                          <img src={sym.image} alt={sym.label} className="w-10 h-10 object-contain" />
+                        ) : (
+                          sym.emoji
+                        )}
                       </span>
                     </div>
                   );
@@ -430,7 +435,14 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </div>
             {PAYTABLE.map((sym, i) => (
               <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
-                <span className="col-span-5 font-mono text-sm">{sym.emoji} {sym.label}</span>
+                <span className="col-span-5 font-mono text-sm flex items-center gap-2">
+                  {sym.image ? (
+                    <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain" />
+                  ) : (
+                    sym.emoji
+                  )}
+                  {sym.label}
+                </span>
                 <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
                 <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
                 <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
