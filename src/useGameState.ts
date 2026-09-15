@@ -331,15 +331,26 @@ export function useGameState(userId: string | null) {
   const setFaucetpayEmail = useCallback((email: string) => {
     setState((prev) => ({ ...prev, faucetpayEmail: email }));
   }, []);
-  // ✅ THIS ALREADY SUBTRACTS FROM BALANCE — PERFECT!
+
+  // ✅ NEW: DIRECT BALANCE ADJUSTMENT (deducts total = amount + fee)
+  const adjustWithdrawablePP = useCallback((delta: number) => {
+    setState((prev) => ({
+      ...prev,
+      withdrawablePP: Math.max(0, prev.withdrawablePP + delta),
+    }));
+  }, []);
+
+  // ✅ UPDATED: recordWithdrawal NOW deducts TOTAL (user amount + fee)
   const recordWithdrawal = useCallback((rec: WithdrawalRecord) => {
     setState((prev) => ({
       ...prev,
-      withdrawablePP: prev.withdrawablePP - rec.amountPP,
+      // ✅ DEDUCTS BOTH: user's requested amount + platform fee
+      withdrawablePP: Math.max(0, prev.withdrawablePP - (rec.amountPP + rec.feePP)),
       lastWithdraw: Date.now(),
       withdrawalHistory: [rec, ...prev.withdrawalHistory].slice(0, 50),
     }));
   }, []);
+
   const activateXPBoost = useCallback(() => {
     setState((prev) => ({
       ...prev,
@@ -507,6 +518,7 @@ export function useGameState(userId: string | null) {
     claimDailyBoost,
     loginCheck,
     setFaucetpayEmail,
+    adjustWithdrawablePP,
     recordWithdrawal,
     activateXPBoost,
     activateHotStreak,
@@ -541,6 +553,7 @@ export function useGameState(userId: string | null) {
     claimDailyBoost,
     loginCheck,
     setFaucetpayEmail,
+    adjustWithdrawablePP,
     recordWithdrawal,
     activateXPBoost,
     activateHotStreak,
