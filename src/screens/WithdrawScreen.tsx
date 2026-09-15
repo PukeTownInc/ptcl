@@ -123,20 +123,19 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     }
   };
 
-  // ✅ FIXED: Let browser arrows work, THEN clamp AFTER the value updates
+  // ✅ Clean input — NO arrows, still validates & clamps typed values
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    if (isNaN(val)) {
-      setAmountStr(e.target.value); // Allow empty/partial typing
+    const raw = e.target.value;
+    if (raw === '') {
+      setAmountStr('');
       return;
     }
-    // Clamp safely AFTER browser changes the value
+    const val = parseFloat(raw);
+    if (isNaN(val)) return;
+    // Still clamp any typed value for safety
     const clamped = Math.max(0, Math.min(val, state.withdrawablePP, MAX_WITHDRAW_PP));
-    setAmountStr(clamped === val ? String(val) : String(clamped));
+    setAmountStr(String(clamped));
   };
-
-  // Calculate limits for input
-  const inputMax = Math.min(state.withdrawablePP, MAX_WITHDRAW_PP);
 
   return (
     <div className="space-y-4">
@@ -213,7 +212,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       </div>
 
-      {/* Withdraw Form — ✅ Arrows WORK + safety limits */}
+      {/* Withdraw Form — ✅ No arrows, still safe */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -246,13 +245,10 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">Amount (Puke Points)</label>
           <input
-            type="number"
+            type="text"
             value={amountStr}
             onChange={handleAmountChange}
             placeholder={`Min ${formatPP(MIN_WITHDRAW_PP)}`}
-            min={0}
-            max={inputMax}
-            step={100}
             className="w-full bg-ink-900 border border-toxic-900/50 rounded-lg px-3 py-2.5 font-mono text-sm text-toxic-200 focus:border-toxic-400 focus:outline-none focus:neon-border transition-all"
           />
           <div className="flex gap-1.5 mt-1.5">
