@@ -20,7 +20,6 @@ type SpinHistoryEntry =
   | { kind: 'safe'; pp: number };
 
 const MAX_HISTORY = 20;
-
 const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
@@ -67,7 +66,6 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const tier = getTier(state.xp);
-
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
     const init: SymbolId[][] = [];
     for (let r = 0; r < 5; r++) {
@@ -77,7 +75,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
     return init;
   });
-
   const [spinning, setSpinning] = useState(false);
   const [lastResult, setLastResult] = useState<SpinResult | null>(null);
   const [winPositions, setWinPositions] = useState<Set<string>>(new Set());
@@ -96,7 +93,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     for (let r = 0; r < 5; r++) init.push(engine.randomReelStrip(REEL_DISPLAY));
     return init;
   });
-
   const cycleInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [autoSpin, setAutoSpin] = useState(false);
@@ -159,22 +155,18 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       toast('error', 'No Toxic Twists Left', 'Absorb radiation or wait for daily dose');
       return;
     }
-
     setSpinning(true);
     setWinPositions(new Set());
     setWinPP(0);
     setLastResult(null);
     setSpinId((n) => n + 1);
     setReelPhases(['spinning', 'spinning', 'spinning', 'spinning', 'spinning']);
-
     const result = engine.spin();
-
     cycleInterval.current = setInterval(() => {
       const next: SymbolId[][] = [];
       for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
       setCyclingSymbols(next);
     }, 70);
-
     const baseDelay = 1000;
     const stagger = 320;
     for (let r = 0; r < 5; r++) {
@@ -205,7 +197,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
       setLastResult(res);
 
-      // ✅ APPLY MULTIPLIERS FIRST — BEFORE using anywhere
+      // ✅ APPLY MULTIPLIERS FIRST
       let finalPP = res.totalPP;
       const hadPotAccel = isPotAccelActive(state);
       const hadHotStreak = isHotStreakActive(state);
@@ -218,9 +210,10 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       setWinPositions(posSet);
       setWinPP(finalPP);
 
-      const eligibleDoubleUp = finalPP >= 6 && !potFull && state.dailyDoubleUps < 3;
+      // ✅ NEW WHEEL RULES: ≥10 PP ONLY, NO daily limit, NO potFull block
+      const eligibleDoubleUp = finalPP >= 10;
 
-      if (finalPP > 0 && !potFull) {
+      if (finalPP > 0) {
         if (eligibleDoubleUp) {
           doubleUpResolvedRef.current = false;
           actions.setDoubleUpPending(finalPP);
@@ -228,13 +221,15 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         } else {
           actions.addPP(finalPP);
         }
-      } else if (potFull) {
+      }
+
+      // ✅ Still show VAT OVERFLOW toast but DON'T block PP/wheel
+      if (potFull && finalPP === 0) {
         toast('info', 'VAT OVERFLOWETH!', 'Absorb radiation to breach containment — +1 XP only');
       }
 
       actions.addXP(res.xpGained, false);
       actions.recordSpin();
-
       if (freeSpinsLeft > 0) {
         setFreeSpinsLeft((n) => n - 1);
       }
@@ -248,7 +243,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         setTimeout(() => setShowJackpot(null), 3000);
       }
 
-      // ✅ Store symbol IDs + multiplied value + multiplier badge flags
+      // ✅ Store history
       const winSymbols = res.wins.length > 0
         ? [...new Set(res.wins.map((w) => w.symbols[0]))]
         : [];
@@ -344,7 +339,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   };
 
   const canSpin = state.spinsRemaining > 0 || freeSpinsLeft > 0;
-
   const toggleAutoSpin = useCallback(() => {
     setAutoSpin((prev) => {
       const next = !prev;
