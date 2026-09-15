@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, FlaskConical, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Screen } from '../types';
 
+const SUBMENU_ALLIES_LABEL = '☣️ TOXIC ALLIES';
+const SUBMENU_ALLIES_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
+  { id: 'profile', label: 'Radiation Profile', icon: User },
+  // FUTURE: add factions/teams here later
+];
+
 const SUBMENU_INFECTION_LABEL = '☢️ INFECTION & RANKS';
 const SUBMENU_INFECTION_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'missions', label: 'Daily Contamination', icon: Target },
@@ -22,21 +28,23 @@ const REMAINING_NAV: { id: Screen; label: string; icon: typeof Home }[] = [
 
 export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s: Screen, target?: string) => void }) {
   const [open, setOpen] = useState(false);
+  const [subAlliesOpen, setSubAlliesOpen] = useState(false);
   const [subInfectionOpen, setSubInfectionOpen] = useState(false);
   const [subGamesOpen, setSubGamesOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) { setSubInfectionOpen(false); setSubGamesOpen(false); return; }
+    if (!open) { setSubAlliesOpen(false); setSubInfectionOpen(false); setSubGamesOpen(false); return; }
     const handleClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
+        setSubAlliesOpen(false);
         setSubInfectionOpen(false);
         setSubGamesOpen(false);
       }
     };
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setOpen(false); setSubInfectionOpen(false); setSubGamesOpen(false); }
+      if (e.key === 'Escape') { setOpen(false); setSubAlliesOpen(false); setSubInfectionOpen(false); setSubGamesOpen(false); }
     };
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('keydown', handleKey);
@@ -49,10 +57,12 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
   const handleSelect = (s: Screen) => {
     onChange(s);
     setOpen(false);
+    setSubAlliesOpen(false);
     setSubInfectionOpen(false);
     setSubGamesOpen(false);
   };
 
+  const isAlliesActive = SUBMENU_ALLIES_ITEMS.some(item => item.id === active);
   const isInfectionActive = SUBMENU_INFECTION_ITEMS.some(item => item.id === active);
   const isGamesActive = SUBMENU_GAMES_ITEMS.some(item => item.id === active);
 
@@ -106,17 +116,33 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             {active === 'home' && <Check size={16} className="text-green-400" />}
           </button>
 
-          {/* 2. Radiation Profile */}
+          {/* ☣️ TOXIC ALLIES — Submenu */}
           <button
-            onClick={() => handleSelect('profile')}
-            className={`w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium transition-all border-t border-green-900/20 ${
-              active === 'profile' ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
+            onClick={() => setSubAlliesOpen((v) => !v)}
+            className={`w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium transition-all border-t border-green-900/30 ${
+              isAlliesActive || subAlliesOpen ? 'bg-green-500/10 text-green-400' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
             }`}
           >
-            <User size={18} />
-            <span className="flex-1 text-left">Radiation Profile</span>
-            {active === 'profile' && <Check size={16} className="text-green-400" />}
+            {subAlliesOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            <span className="flex-1 text-left font-semibold">{SUBMENU_ALLIES_LABEL}</span>
           </button>
+          {subAlliesOpen && (
+            <div className="border-t border-green-900/20">
+              {SUBMENU_ALLIES_ITEMS.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => handleSelect(id)}
+                  className={`w-full flex items-center gap-3 px-5 py-3 pl-10 text-[15px] font-medium transition-all ${
+                    active === id ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500' : 'text-gray-300 hover:bg-green-500/10 hover:text-green-400'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span className="flex-1 text-left">{label}</span>
+                  {active === id && <Check size={14} className="text-green-400" />}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* ☢️ INFECTION & RANKS — Submenu */}
           <button
