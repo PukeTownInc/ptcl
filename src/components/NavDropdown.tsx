@@ -1,22 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Home,
-  Gamepad2,
-  Target,
-  Trophy,
-  Wallet,
-  Settings,
-  User,
-  Users,
-  Check,
-  Zap,
-  FlaskConical,
-  ChevronDown,
-  ChevronRight,
-  Radioactive,
-  Globe,
-  AlertTriangle
-} from 'lucide-react';
+import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, FlaskConical, ChevronDown, ChevronRight, Users, AlertTriangle, Globe } from 'lucide-react';
 import type { Screen } from '../types';
 
 const SUBMENU_ALLIES_LABEL = '☣️ TOXIC ALLIES';
@@ -145,7 +128,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
               active === 'home' ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
             }`}
           >
-            <Radioactive size={18} />
+            <Home size={18} />
             <span className="flex-1 text-left">Contamination Zone</span>
             {active === 'home' && <Check size={16} className="text-green-400" />}
           </button>
