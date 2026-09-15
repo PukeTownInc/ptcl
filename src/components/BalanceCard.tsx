@@ -1,4 +1,5 @@
 import { ppToUsd, formatPP } from '../constants';
+
 export function BalanceCard({
   lockedPP,
   withdrawablePP,
@@ -12,15 +13,17 @@ export function BalanceCard({
   nextXp: number | null;
   compact?: boolean;
 }) {
-  const potPct = Math.min(100, (lockedPP / 500000) * 100);
-  const potFull = lockedPP >= 500000;
+  const UNLOCK_THRESHOLD = 50000;
+  const potPct = Math.min(100, (lockedPP / UNLOCK_THRESHOLD) * 100);
+  const potFull = lockedPP >= UNLOCK_THRESHOLD;
+
   return (
     <div className="grunge-panel p-4 space-y-3">
-      {/* Contagion Vault */}
+      {/* LOCKED CONTAGION VAULT */}
       <div className={`rounded-lg p-3 border ${potFull ? 'border-hazard-amber bg-hazard-amber/10 animate-shake' : 'border-toxic-900/50 bg-ink-700/50'}`}>
         <div className="flex items-center justify-between">
-          <span className="text-xs font-display uppercase tracking-wider text-toxic-300">Contagion Vault</span>
-          {potFull && <span className="text-[10px] font-display font-bold text-hazard-amber animate-pulse">CRITICAL!</span>}
+          <span className="text-xs font-display uppercase tracking-wider text-toxic-300">Locked Contagion Vault</span>
+          {potFull && <span className="text-[10px] font-display font-bold text-hazard-amber animate-pulse">UNLOCKED!</span>}
         </div>
         <div className="flex items-baseline gap-2 mt-1">
           <span className="font-mono text-2xl font-bold text-toxic-400 neon-text">{formatPP(lockedPP)}</span>
@@ -35,11 +38,15 @@ export function BalanceCard({
             style={{ width: `${potPct}%` }}
           />
         </div>
-        <p className="text-[9px] font-mono text-toxic-100/30 mt-1">{formatPP(lockedPP)} / 500,000 Puke Points</p>
+        <p className="text-[9px] font-mono text-toxic-100/30 mt-1">
+          {formatPP(lockedPP)} / 50,000 Puke Points
+          {!potFull && <span className="ml-2">• Watch ads to unlock</span>}
+        </p>
       </div>
-      {/* Contagion Cache */}
+
+      {/* UNLOCKED CONTAGION VAULT */}
       <div className="rounded-lg p-3 border border-radioactive-600/40 bg-radioactive-500/5">
-        <span className="text-xs font-display uppercase tracking-wider text-radioactive-400">Contagion Cache</span>
+        <span className="text-xs font-display uppercase tracking-wider text-radioactive-400">Unlocked Contagion Vault</span>
         <div className="flex items-baseline gap-2 mt-1">
           <span className="font-mono text-2xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(withdrawablePP)}</span>
           <span className="text-xs text-radioactive-300/60">Puke Points</span>
@@ -48,6 +55,7 @@ export function BalanceCard({
           ${ppToUsd(withdrawablePP).toFixed(2)} Contagion Value
         </div>
       </div>
+
       {/* Radiation Exposure */}
       {!compact && (
         <div className="stat-chip text-center">
