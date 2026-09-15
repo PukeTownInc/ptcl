@@ -123,18 +123,13 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     }
   };
 
-  // ✅ Clean input — NO arrows, still validates & clamps typed values
+  // ✅ FIXED: Allow typing freely, validate on submit ONLY
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    if (raw === '') {
-      setAmountStr('');
-      return;
+    const val = e.target.value;
+    // Allow empty string or valid positive numbers only
+    if (val === '' || /^\d+$/.test(val)) {
+      setAmountStr(val);
     }
-    const val = parseFloat(raw);
-    if (isNaN(val)) return;
-    // Still clamp any typed value for safety
-    const clamped = Math.max(0, Math.min(val, state.withdrawablePP, MAX_WITHDRAW_PP));
-    setAmountStr(String(clamped));
   };
 
   return (
@@ -208,11 +203,11 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         <div className="text-[11px] text-toxic-100/60">
           <p>Minimum release: <span className="text-radioactive-400 font-bold">{formatPP(MIN_WITHDRAW_PP)} Puke Points</span> • Maximum: <span className="text-radioactive-400 font-bold">{formatPP(MAX_WITHDRAW_PP)} Puke Points</span></p>
           <p className="mt-1">Platform fee: <span className="text-hazard-amber">{(PLATFORM_FEE * 100).toFixed(0)}%</span> • Cooldown: 24h between withdrawals</p>
-          <p className="mt-1 text-toxic-100/40">Conversion: 10,000 Puke Points = $0.25 USD</p>
+          <p className="mt-1 text-toxic-100/40">Your available balance: <span className="text-radioactive-400 font-bold">{formatPP(state.withdrawablePP)} PP</span></p>
         </div>
       </div>
 
-      {/* Withdraw Form — ✅ No arrows, still safe */}
+      {/* Withdraw Form — ✅ Type freely, limits enforced on submit */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -249,6 +244,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             value={amountStr}
             onChange={handleAmountChange}
             placeholder={`Min ${formatPP(MIN_WITHDRAW_PP)}`}
+            inputMode="numeric"
             className="w-full bg-ink-900 border border-toxic-900/50 rounded-lg px-3 py-2.5 font-mono text-sm text-toxic-200 focus:border-toxic-400 focus:outline-none focus:neon-border transition-all"
           />
           <div className="flex gap-1.5 mt-1.5">
