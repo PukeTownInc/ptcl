@@ -103,12 +103,26 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     }, 1800);
   };
 
-  // ✅ MIN BUTTON: Check balance first
+  // Shared toast message for insufficient balance
+  const showInsufficientToast = () => {
+    toast('info', 'NOT YET CONTAMINATED ENOUGH', `Need ${formatPP(MIN_WITHDRAW_PP)} PP unlocked for release — keep earning!`);
+  };
+
+  // ✅ MAX BUTTON: Check balance meets minimum first
+  const handleMax = () => {
+    if (state.withdrawablePP >= MIN_WITHDRAW_PP) {
+      setAmountStr(String(Math.min(MAX_WITHDRAW_PP, state.withdrawablePP)));
+    } else {
+      showInsufficientToast();
+    }
+  };
+
+  // ✅ MIN BUTTON: Same check
   const handleMin = () => {
     if (state.withdrawablePP >= MIN_WITHDRAW_PP) {
       setAmountStr(String(MIN_WITHDRAW_PP));
     } else {
-      toast('info', 'NOT YET CONTAMINATED ENOUGH', `Need ${formatPP(MIN_WITHDRAW_PP)} PP unlocked for minimum release — keep earning!`);
+      showInsufficientToast();
     }
   };
 
@@ -187,7 +201,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       </div>
 
-      {/* Withdraw Form — ✅ Min button with balance check */}
+      {/* Withdraw Form — ✅ Both buttons check balance first */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -227,14 +241,14 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             className="w-full bg-ink-900 border border-toxic-900/50 rounded-lg px-3 py-2.5 font-mono text-sm text-toxic-200 focus:border-toxic-400 focus:outline-none focus:neon-border transition-all"
           />
           <div className="flex gap-1.5 mt-1.5">
-            {/* ✅ MAX = unlocked balance OR 500,000 — whichever is less */}
+            {/* ✅ MAX: Check balance ≥50k first, toast if not */}
             <button
-              onClick={() => setAmountStr(String(Math.min(MAX_WITHDRAW_PP, state.withdrawablePP)))}
+              onClick={handleMax}
               className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300"
             >
               Max
             </button>
-            {/* ✅ MIN = check balance first, toast if insufficient */}
+            {/* ✅ MIN: Check balance ≥50k first, toast if not */}
             <button
               onClick={handleMin}
               className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300"
