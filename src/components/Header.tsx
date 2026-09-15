@@ -9,9 +9,11 @@ interface HeaderProps {
   children?: React.ReactNode;
   lockedPP: number;
   withdrawablePP: number;
+  xp: number;
+  nextXp: number | null;
 }
 
-export function Header({ active, onChange, children, lockedPP, withdrawablePP }: HeaderProps) {
+export function Header({ active, onChange, children, lockedPP, withdrawablePP, xp, nextXp }: HeaderProps) {
   const [time, setTime] = useState('');
   useEffect(() => {
     const tick = () => {
@@ -27,6 +29,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP }:
   const UNLOCK_THRESHOLD = 50000;
   const progressPct = Math.min(100, (lockedPP / UNLOCK_THRESHOLD) * 100);
   const isUnlocked = lockedPP >= UNLOCK_THRESHOLD;
+  const xpProgressPct = nextXp ? Math.min(100, ((xp - 0) / (nextXp - 0)) * 100) : 100;
 
   return (
     <header className="sticky top-0 z-30 safe-top">
@@ -46,7 +49,8 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP }:
 
       {/* ✅ PERMANENT BALANCE SUB-HEADER */}
       <div className="bg-ink-800/60 backdrop-blur-sm border-b border-toxic-900/30">
-        <div className="mx-auto max-w-md px-3 py-2">
+        <div className="mx-auto max-w-md px-3 py-2 space-y-2">
+          {/* Vault Row */}
           <div className="grid grid-cols-2 gap-3">
             {/* LOCKED CONTAGION VAULT */}
             <div className="text-left">
@@ -63,7 +67,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP }:
               )}
             </div>
 
-            {/* UNLOCKED CONTAGION VAULT — USD now next to PP */}
+            {/* UNLOCKED CONTAGION VAULT */}
             <div className="text-right">
               <div className="text-[9px] font-display uppercase tracking-wider text-radioactive-400/70">
                 ⚡ UNLOCKED CONTAGION VAULT
@@ -72,6 +76,24 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP }:
                 {formatPP(withdrawablePP)} PP <span className="text-radioactive-300/60 font-normal">${ppToUsd(withdrawablePP).toFixed(2)}</span>
               </div>
             </div>
+          </div>
+
+          {/* ✅ RADIATION EXPOSURE — XP TRACKER */}
+          <div className="text-center pt-1 border-t border-toxic-900/20">
+            <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70">
+              ☢️ RADIATION EXPOSURE
+            </div>
+            <div className="font-mono text-xs font-bold text-toxic-300 mt-0.5">
+              {xp.toLocaleString()}{nextXp !== null ? ` / ${nextXp.toLocaleString()}` : ''}
+            </div>
+            {nextXp && (
+              <div className="h-1 rounded-full bg-ink-900 mt-1 overflow-hidden">
+                <div
+                  className="h-full bg-toxic-400 transition-all duration-500"
+                  style={{ width: `${xpProgressPct}%` }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
