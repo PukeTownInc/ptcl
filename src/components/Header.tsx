@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Screen } from '../types';
 import { NavDropdown } from './NavDropdown';
-import { formatPP, ppToUsd, getLevel, getNextLevelXp } from '../constants';
+import { formatPP, ppToUsd } from '../constants';
 
 interface HeaderProps {
   active: Screen;
@@ -12,8 +12,11 @@ interface HeaderProps {
   xp: number;
 }
 
+const XP_PER_LEVEL = 1000; // ✅ 1,000 XP = 1 Level — NO CAP
+
 export function Header({ active, onChange, children, lockedPP, withdrawablePP, xp }: HeaderProps) {
   const [time, setTime] = useState('');
+
   useEffect(() => {
     const tick = () => {
       const now = new Date();
@@ -29,25 +32,17 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
   const progressPct = Math.min(100, (lockedPP / UNLOCK_THRESHOLD) * 100);
   const isUnlocked = lockedPP >= UNLOCK_THRESHOLD;
 
-  // ✅ LEVEL CALCULATIONS
-  const currentLevel = getLevel(xp);
-  const nextLevelXp = getNextLevelXp(xp);
-  const prevLevelXp = currentLevel === 1 ? 0
-    : currentLevel === 2 ? 500
-    : currentLevel === 3 ? 2500
-    : 10000;
-  const xpIntoLevel = xp - prevLevelXp;
-  const xpNeededForLevel = nextLevelXp - prevLevelXp;
-  const xpProgressPct = xpNeededForLevel > 0 
-    ? Math.min(100, Math.round((xpIntoLevel / xpNeededForLevel) * 100)) 
-    : 100;
+  // ✅ SIMPLE INFINITE LEVELING — 1,000 XP per level, NO CAP
+  const currentLevel = Math.floor(xp / XP_PER_LEVEL) + 1;
+  const xpIntoLevel = xp % XP_PER_LEVEL;
+  const xpProgressPct = Math.min(100, (xpIntoLevel / XP_PER_LEVEL) * 100);
+  const xpNeeded = XP_PER_LEVEL - xpIntoLevel;
 
   return (
     <header className="sticky top-0 z-40 safe-top">
-      {/* ✅ TOP NAV BAR — z-index 40, dropdown will be higher */}
+      {/* ✅ TOP NAV BAR */}
       <div className="bg-ink-900/80 backdrop-blur-md border-b border-toxic-900/40 relative z-40">
         <div className="mx-auto max-w-md px-4 py-3 flex items-center justify-between">
-          {/* ✅ NavDropdown — ensure it pops OVER the sub-header */}
           <div className="relative z-50">
             <NavDropdown active={active} onChange={onChange} />
           </div>
@@ -61,12 +56,11 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
         </div>
       </div>
 
-      {/* ✅ BALANCE SUB-HEADER — z-index LOWER so it goes UNDER the dropdown */}
+      {/* ✅ BALANCE + XP SUB-HEADER */}
       <div className="bg-ink-800/60 backdrop-blur-sm border-b border-toxic-900/30 relative z-30">
         <div className="mx-auto max-w-md px-3 py-2 space-y-2">
           {/* Vault Row */}
           <div className="grid grid-cols-2 gap-3">
-            {/* LOCKED CONTAGION VAULT */}
             <div className="text-left">
               <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70">
                 ☢️ LOCKED CONTAGION VAULT
@@ -80,8 +74,6 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
                 </div>
               )}
             </div>
-
-            {/* UNLOCKED CONTAGION VAULT */}
             <div className="text-right">
               <div className="text-[9px] font-display uppercase tracking-wider text-radioactive-400/70">
                 ⚡ UNLOCKED CONTAGION VAULT
@@ -92,7 +84,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
             </div>
           </div>
 
-          {/* ✅ RADIATION EXPOSURE — ALL ON ONE LINE */}
+          {/* ✅ RADIATION EXPOSURE — NOW TRACKS PERFECTLY */}
           <div className="flex items-center gap-3 pt-1 border-t border-toxic-900/20">
             <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70 whitespace-nowrap">
               ☢️ RADIATION EXPOSURE
@@ -101,7 +93,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
               LVL {currentLevel}
             </span>
             <span className="font-mono text-xs font-bold text-toxic-300 whitespace-nowrap">
-              {xp.toLocaleString()}/{nextLevelXp.toLocaleString()}
+              {xpIntoLevel.toLocaleString()}/{XP_PER_LEVEL.toLocaleString()}
             </span>
             <div className="flex-1 h-2 rounded-full bg-ink-900 overflow-hidden">
               <div
@@ -110,7 +102,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
               />
             </div>
             <span className="font-mono text-[11px] text-toxic-300/80 whitespace-nowrap">
-              {xpProgressPct}%
+              {xpNeeded} XP ➜ LVL{currentLevel + 1}
             </span>
           </div>
         </div>
