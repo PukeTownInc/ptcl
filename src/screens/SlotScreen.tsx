@@ -325,7 +325,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      {/* ✅ REELS — FULLY TRANSPARENT + BLEND MODE TO KILL WHITE BOXES */}
+      {/* ✅ REELS — FULLY TRANSPARENT, NO LAG */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -341,20 +341,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                   return (
                     <div
                       key={row}
-                      className={`aspect-square flex items-center justify-center bg-transparent border-0 p-0 m-0 ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
+                      className={`aspect-square flex items-center justify-center reel-symbol bg-transparent border-0 p-0 m-0 ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
                     >
                       <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
                         {sym.image ? (
-                          <img 
-                            src={sym.image} 
-                            alt={sym.label} 
-                            className="w-10 h-10 object-contain"
-                            style={{
-                              background: 'transparent',
-                              backgroundColor: 'transparent',
-                              mixBlendMode: 'multiply'
-                            }}
-                          />
+                          <img src={sym.image} alt={sym.label} className="w-10 h-10 object-contain bg-transparent border-0" style={{ background: 'transparent' }} />
                         ) : (
                           sym.emoji
                         )}
@@ -423,7 +414,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </button>
         </div>
       </div>
-      {/* ✅ PAYTABLE — SAME BLEND MODE APPLIED */}
+      {/* ✅ PAYTABLE */}
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -446,16 +437,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
                 <span className="col-span-5 font-mono text-sm flex items-center gap-2">
                   {sym.image ? (
-                    <img 
-                      src={sym.image} 
-                      alt={sym.label} 
-                      className="w-6 h-6 object-contain"
-                      style={{
-                        background: 'transparent',
-                        backgroundColor: 'transparent',
-                        mixBlendMode: 'multiply'
-                      }}
-                    />
+                    <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain bg-transparent border-0" style={{ background: 'transparent' }} />
                   ) : (
                     sym.emoji
                   )}
