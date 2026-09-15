@@ -20,7 +20,8 @@ const SUBMENU_GAMES_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = 
   { id: 'vialmixer', label: 'Contamination Lab', icon: FlaskConical },
 ];
 
-const REMAINING_NAV: { id: Screen; label: string; icon: typeof Home }[] = [
+const SUBMENU_ECOSYSTEM_LABEL = '🛡️ ECOSYSTEM OPTIONS';
+const SUBMENU_ECOSYSTEM_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'roadmap', label: 'Fallout Forecast', icon: Zap },
   { id: 'withdraw', label: 'Waste Withdrawal', icon: Wallet },
   { id: 'settings', label: 'Lab Controls', icon: Settings },
@@ -31,20 +32,34 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
   const [subAlliesOpen, setSubAlliesOpen] = useState(false);
   const [subInfectionOpen, setSubInfectionOpen] = useState(false);
   const [subGamesOpen, setSubGamesOpen] = useState(false);
+  const [subEcosystemOpen, setSubEcosystemOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) { setSubAlliesOpen(false); setSubInfectionOpen(false); setSubGamesOpen(false); return; }
+    if (!open) {
+      setSubAlliesOpen(false);
+      setSubInfectionOpen(false);
+      setSubGamesOpen(false);
+      setSubEcosystemOpen(false);
+      return;
+    }
     const handleClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
         setSubAlliesOpen(false);
         setSubInfectionOpen(false);
         setSubGamesOpen(false);
+        setSubEcosystemOpen(false);
       }
     };
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setOpen(false); setSubAlliesOpen(false); setSubInfectionOpen(false); setSubGamesOpen(false); }
+      if (e.key === 'Escape') {
+        setOpen(false);
+        setSubAlliesOpen(false);
+        setSubInfectionOpen(false);
+        setSubGamesOpen(false);
+        setSubEcosystemOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('keydown', handleKey);
@@ -60,11 +75,13 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
     setSubAlliesOpen(false);
     setSubInfectionOpen(false);
     setSubGamesOpen(false);
+    setSubEcosystemOpen(false);
   };
 
   const isAlliesActive = SUBMENU_ALLIES_ITEMS.some(item => item.id === active);
   const isInfectionActive = SUBMENU_INFECTION_ITEMS.some(item => item.id === active);
   const isGamesActive = SUBMENU_GAMES_ITEMS.some(item => item.id === active);
+  const isEcosystemActive = SUBMENU_ECOSYSTEM_ITEMS.some(item => item.id === active);
 
   return (
     <div ref={ref} className="relative">
@@ -116,7 +133,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             {active === 'home' && <Check size={16} className="text-green-400" />}
           </button>
 
-          {/* ☣️ TOXIC ALLIES — Submenu */}
+          {/* ☣️ TOXIC ALLIES */}
           <button
             onClick={() => setSubAlliesOpen((v) => !v)}
             className={`w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium transition-all border-t border-green-900/30 ${
@@ -144,7 +161,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             </div>
           )}
 
-          {/* ☢️ INFECTION & RANKS — Submenu */}
+          {/* ☢️ INFECTION & RANKS */}
           <button
             onClick={() => setSubInfectionOpen((v) => !v)}
             className={`w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium transition-all border-t border-green-900/30 ${
@@ -172,7 +189,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             </div>
           )}
 
-          {/* ⚛️ REACTOR WORKS — Games Area Submenu */}
+          {/* ⚛️ REACTOR WORKS */}
           <button
             onClick={() => setSubGamesOpen((v) => !v)}
             className={`w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium transition-all border-t border-green-900/30 ${
@@ -200,20 +217,33 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             </div>
           )}
 
-          {/* Remaining Items */}
-          {REMAINING_NAV.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => handleSelect(id)}
-              className={`w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium transition-all border-t border-green-900/20 ${
-                active === id ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
-              }`}
-            >
-              <Icon size={18} />
-              <span className="flex-1 text-left">{label}</span>
-              {active === id && <Check size={16} className="text-green-400" />}
-            </button>
-          ))}
+          {/* 🛡️ ECOSYSTEM OPTIONS */}
+          <button
+            onClick={() => setSubEcosystemOpen((v) => !v)}
+            className={`w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium transition-all border-t border-green-900/30 ${
+              isEcosystemActive || subEcosystemOpen ? 'bg-green-500/10 text-green-400' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
+            }`}
+          >
+            {subEcosystemOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            <span className="flex-1 text-left font-semibold">{SUBMENU_ECOSYSTEM_LABEL}</span>
+          </button>
+          {subEcosystemOpen && (
+            <div className="border-t border-green-900/20">
+              {SUBMENU_ECOSYSTEM_ITEMS.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => handleSelect(id)}
+                  className={`w-full flex items-center gap-3 px-5 py-3 pl-10 text-[15px] font-medium transition-all ${
+                    active === id ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500' : 'text-gray-300 hover:bg-green-500/10 hover:text-green-400'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span className="flex-1 text-left">{label}</span>
+                  {active === id && <Check size={14} className="text-green-400" />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
