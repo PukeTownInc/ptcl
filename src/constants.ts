@@ -14,6 +14,7 @@ export const WITHDRAW_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 export const DAILY_XP_FREE_CAP = 150;
 export const DAILY_XP_BONUS_CAP = 100;
 export const DAILY_XP_MAX = 250;
+
 export interface TierInfo {
   id: Tier;
   label: string;
@@ -38,12 +39,13 @@ export function getTier(xp: number): TierInfo {
 export function getNextTier(xp: number): TierInfo | null {
   return TIERS.find((t) => t.minXp > xp) ?? null;
 }
+
 // ✅ ALL SYMBOLS — 100% PNG POWERED!
 export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
   cashlab: { id: 'cashlab', emoji: '🤑', label: 'Cash Lab',      pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cash-lab.png` },
-  puke:    { id: 'puke',    emoji: '🤢', label: 'Puke Town',     pays: [2, 3, 9],     weight: 26,  image: `${SYMBOL_IMAGE_PATH}symbol-puke-town.jpeg` },
+  puke:    { id: 'puke',    emoji: '🤢', label: 'Puke Town',     pays: [2, 3, 9],     weight: 26,  image: `${SYMBOL_IMAGE_PATH}symbol-puke-town.png` },
   slime:   { id: 'slime',   emoji: '🟡', label: 'Slime Blob',    pays: [2, 4, 11],    weight: 24,  image: `${SYMBOL_IMAGE_PATH}symbol-slime-blob.png` },
-  sneeze:  { id: 'sneeze',  emoji: '😷', label: 'Gas Mask',      pays: [2, 5, 13],    weight: 21,  image: `${SYMBOL_IMAGE_PATH}symbol-gas-mask.jpeg` },
+  sneeze:  { id: 'sneeze',  emoji: '😷', label: 'Gas Mask',      pays: [2, 5, 13],    weight: 21,  image: `${SYMBOL_IMAGE_PATH}symbol-gas-mask.png` },
   tp:      { id: 'tp',      emoji: '🐀', label: 'Mutant Rat',    pays: [3, 6, 16],    weight: 18,  image: `${SYMBOL_IMAGE_PATH}symbol-mutant-rat.png` },
   pill:    { id: 'pill',    emoji: '💊', label: 'Test Tube',     pays: [3, 7, 19],    weight: 15,  image: `${SYMBOL_IMAGE_PATH}symbol-test-tube.png` },
   germ:    { id: 'germ',    emoji: '🦠', label: 'Virus',         pays: [3, 8, 23],    weight: 13,  image: `${SYMBOL_IMAGE_PATH}symbol-virus.png` },
@@ -53,12 +55,13 @@ export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
   barrel:  { id: 'barrel',  emoji: '🛢️', label: 'Waste Drum',     pays: [7, 20, 64],   weight: 4,   image: `${SYMBOL_IMAGE_PATH}symbol-waste-drum.png` },
   warn:    { id: 'warn',    emoji: '⚠️', label: 'Skull',         pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-radioactive-skull.png` },
   rich:    { id: 'rich',    emoji: '📻', label: 'Geiger Counter', pays: [18, 55, 220],  weight: 1.5, image: `${SYMBOL_IMAGE_PATH}symbol-geiger-counter.png` },
-  wild:    { id: 'wild',    emoji: '🤮', label: 'Puke Wild',     pays: [0, 0, 0], weight: 3.5, special: 'wild', isSpecial: true },
-  scatter: { id: 'scatter', emoji: '🤒', label: 'Sick Scatter',   pays: [0, 0, 0], weight: 2, special: 'scatter', isSpecial: true },
-  bonus:   { id: 'bonus',   emoji: '☢️', label: 'Toxic Bonus',    pays: [0, 0, 0], weight: 1.5, special: 'bonus', isSpecial: true },
-  hazard:  { id: 'hazard',  emoji: '☣️', label: 'Hazard Mystery', pays: [0, 0, 0], weight: 1.2, special: 'hazard', isSpecial: true },
-  jackpot: { id: 'jackpot', emoji: '🧪', label: 'Toxic Jackpot',  pays: [0, 0, 0], weight: 1, special: 'jackpot', isSpecial: true },
+  wild:    { id: 'wild',    emoji: '🤮', label: 'Puke Wild',     pays: [0, 0, 0], weight: 3.5, special: 'wild', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-wild.png` },
+  scatter: { id: 'scatter', emoji: '🤒', label: 'Sick Scatter',   pays: [0, 0, 0], weight: 2, special: 'scatter', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-scatter.png` },
+  bonus:   { id: 'bonus',   emoji: '☢️', label: 'Toxic Bonus',    pays: [0, 0, 0], weight: 1.5, special: 'bonus', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-bonus.png` },
+  hazard:  { id: 'hazard',  emoji: '☣️', label: 'Hazard Mystery', pays: [0, 0, 0], weight: 1.2, special: 'hazard', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-hazard.png` },
+  jackpot: { id: 'jackpot', emoji: '🧪', label: 'Toxic Jackpot',  pays: [0, 0, 0], weight: 1, special: 'jackpot', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-jackpot.png` },
 };
+
 export const JACKPOT_TYPES = [
   { type: 'mini' as const,  amount: 30,  label: 'Mini' },
   { type: 'minor' as const, amount: 60,  label: 'Minor' },
@@ -70,6 +73,7 @@ export const REEL_COUNT = 5;
 export const ROW_COUNT = 3;
 export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 10;
+
 export const MISSIONS = [
   { id: 'spins',     label: 'Spin 20 Times',                target: 20,  baseXp: 50,  adXp: 75,  icon: '🎰', adSpins: 5 },
   { id: 'ads',       label: 'Watch 5 Ads',                  target: 5,   baseXp: 50,  adXp: 75,  icon: '📺', adSpins: 5 },
@@ -78,6 +82,7 @@ export const MISSIONS = [
   { id: 'earnpp',    label: 'Earn 100 Puke Points',          target: 100, baseXp: 50, adXp: 75,  icon: '🎯', adSpins: 5 },
 ];
 export const ALL_MISSIONS_BONUS = { baseXp: 100, adXp: 150, baseSpins: 0, adSpins: 10 };
+
 export interface StreakDayReward {
   day: number;
   spins: number;
@@ -95,10 +100,12 @@ export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 7, spins: 15, xp: 75, ppBoost: true, label: 'Day 7 — MAX!' },
 ];
 export const MAX_STREAK_DAY = 7;
+
 export const ppToUsd = (pp: number) => pp * PP_TO_USD;
 export function formatPP(pp: number): string {
   return pp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
 export const CRYPTO_OPTIONS = [
   { id: 'BTC', label: 'Bitcoin (BTC)',  network: 'bitcoin' },
   { id: 'LTC', label: 'Litecoin (LTC)', network: 'litecoin' },
