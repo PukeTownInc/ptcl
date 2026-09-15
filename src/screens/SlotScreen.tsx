@@ -331,22 +331,23 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             const phase = reelPhases[ri];
             const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
             return (
-              <div key={ri} className={`relative overflow-hidden rounded-md bg-transparent border-0 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`}>
+              <div key={ri} className={`relative overflow-hidden rounded-md border-0 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`} style={{ background: 'transparent !important', backgroundColor: 'transparent !important' }}>
                 {displayReel.map((symId, row) => {
                   const isWin = winPositions.has(`${ri}-${row}`);
                   const sym = SYMBOLS[symId];
                   return (
                     <div
                       key={row}
-                      className={`aspect-square flex items-center justify-center reel-symbol bg-transparent border-0 p-0 m-0 ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
+                      className={`aspect-square flex items-center justify-center reel-symbol border-0 p-0 m-0 ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
+                      style={{ background: 'transparent !important', backgroundColor: 'transparent !important' }}
                     >
-                      <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
+                      <span className={isWin ? 'win-symbol-pop' : ''} style={{ background: 'transparent !important', backgroundColor: 'transparent !important', ...(isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : {}) }}>
                         {sym.image ? (
                           <img 
                             src={sym.image} 
                             alt={sym.label} 
                             className="w-10 h-10 object-contain"
-                            style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important' }}
+                            style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important', border: 'none !important' }}
                           />
                         ) : (
                           sym.emoji
@@ -442,7 +443,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                       src={sym.image} 
                       alt={sym.label} 
                       className="w-6 h-6 object-contain"
-                      style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important' }}
+                      style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important', border: 'none !important' }}
                     />
                   ) : (
                     sym.emoji
