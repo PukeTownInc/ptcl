@@ -25,6 +25,45 @@ const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
 
+// Helper: render special symbol icon (PNG first, fallback emoji)
+function SpecialIcon({ symId, label }: { symId: SymbolId; label: string }) {
+  const sym = SYMBOLS[symId];
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {sym.image ? (
+        <img 
+          src={sym.image} 
+          alt={label} 
+          className="w-5 h-5 object-contain inline-block"
+          style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
+        />
+      ) : (
+        <span>{sym.emoji}</span>
+      )}
+      {label}
+    </span>
+  );
+}
+
+// Helper: render history symbol icon (PNG first, fallback emoji)
+function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
+  const sym = SYMBOLS[symId];
+  return (
+    <span className="inline-flex items-center justify-center">
+      {sym.image ? (
+        <img 
+          src={sym.image} 
+          alt={sym.label} 
+          className="w-5 h-5 object-contain"
+          style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
+        />
+      ) : (
+        <span className="text-lg">{sym.emoji}</span>
+      )}
+    </span>
+  );
+}
+
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const tier = getTier(state.xp);
@@ -189,8 +228,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         actions.recordJackpot();
         setTimeout(() => setShowJackpot(null), 3000);
       }
+      // ✅ NOW STORES SYMBOL IDs (not emojis) → so PNGs show in history!
       const winSymbols = res.wins.length > 0
-        ? [...new Set(res.wins.map((w) => engine.getSymbol(w.symbols[0]).emoji))]
+        ? [...new Set(res.wins.map((w) => w.symbols[0]))]
         : [];
       setSpinHistory((prev) => [{ kind: 'spin', pp: res.totalPP, symbols: winSymbols }, ...prev].slice(0, MAX_HISTORY));
     }
@@ -301,26 +341,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 600);
     return () => clearTimeout(t);
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
-
-  // Helper to render special symbol icon (PNG or fallback emoji)
-  const SpecialIcon = ({ symId, label }: { symId: SymbolId; label: string }) => {
-    const sym = SYMBOLS[symId];
-    return (
-      <span className="inline-flex items-center gap-1.5">
-        {sym.image ? (
-          <img 
-            src={sym.image} 
-            alt={label} 
-            className="w-5 h-5 object-contain inline-block"
-            style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
-          />
-        ) : (
-          <span>{sym.emoji}</span>
-        )}
-        {label}
-      </span>
-    );
-  };
 
   return (
     <div className="space-y-4">
@@ -590,8 +610,12 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-ink-700/40">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="text-[10px] font-mono text-toxic-100/30 shrink-0">#{entries.length - i}</span>
-                      {entry.pp > 0 ? (
-                        <span className="text-sm truncate">{entry.symbols.join(' ')}</span>
+                      {entry.pp > 0 && entry.symbols.length > 0 ? (
+                        <span className="flex items-center gap-1">
+                          {entry.symbols.map((symId, idx) => (
+                            <HistorySymbolIcon key={idx} symId={symId as SymbolId} />
+                          ))}
+                        </span>
                       ) : (
                         <span className="text-[11px] font-mono text-toxic-100/30">No contamination</span>
                       )}
@@ -615,7 +639,7 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                 );
               } else if (entry.kind === 'safe') {
                 return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-radioactive-500/10 border border-radioactive-500/30">
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-radioactive-500/10 border border-radioactive-600/30">
                     <span className="text-sm font-mono text-radioactive-400">☣️ SECURED</span>
                     <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{formatPP(entry.pp)}</span>
                   </div>
