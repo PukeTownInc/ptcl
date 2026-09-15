@@ -62,6 +62,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   const [effect, setEffect] = useState<'confetti' | 'redflash' | 'neutral' | null>(null);
   const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spinFiredRef = useRef(false);
+
   const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
   const multiplier = outcome ? getMultiplier(outcome.id) : 0;
   const finalPP = outcome ? Math.round(safeStake * multiplier) : 0;
@@ -183,19 +184,19 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             />
           </div>
 
-          {/* Center Hub — Logo-192 */}
+          {/* ✅ CENTER HUB — LOGO MADE BIGGER */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center overflow-hidden"
             style={{
-              width: 56,
-              height: 56,
+              width: 80,
+              height: 80,
               boxShadow: '0 0 15px #39ff14, 0 0 30px #39ff1444',
             }}
           >
             <img
               src="/logo-192.png"
               alt="Puke Town"
-              className="w-12 h-12 object-contain"
+              className="w-16 h-16 object-contain"
             />
           </div>
         </div>
@@ -233,11 +234,13 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             <Play size={18} /> SPIN THE WHEEL
           </button>
         )}
+
         {phase === 'spinning' && (
           <div className="py-3">
             <span className="font-display text-sm text-toxic-300/60 animate-pulse tracking-[0.3em]">CONTAMINATING...</span>
           </div>
         )}
+
         {phase === 'result' && outcome && outcome.id !== 'lose' && (
           <>
             <button
@@ -254,6 +257,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             </button>
           </>
         )}
+
         {phase === 'result' && outcome && outcome.id === 'lose' && (
           <button onClick={handleClose} className="ghost-btn w-full py-3 text-sm">
             Close
