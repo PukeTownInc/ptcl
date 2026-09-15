@@ -104,7 +104,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       {/* Quick links */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
         <QuickLink icon={<Target />} label="Daily Contamination" sub="Infect every target → Unlock maximum radiation exposure!" onClick={() => onNavigate('missions')} />
-        <QuickLink icon={<Play />} label="REACTOR REELS" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
+        <QuickLink icon={<Play />} label="Reactor Reels" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
         <QuickLink icon={<Users />} label="Spread Infection" sub="+30 Twists + 100 Exposure each" onClick={() => onNavigate('profile', 'referral-box')} />
       </div>
       <AdModal
