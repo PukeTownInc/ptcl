@@ -70,13 +70,13 @@ export const REEL_COUNT = 5;
 export const ROW_COUNT = 3;
 export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 10;
-// ✅ REORDERED: Claim Daily Streak is NOW FIRST
+// ✅ UPDATED: Label + target → 5 to complete
 export const MISSIONS = [
   { id: 'claistreak',label: 'Claim Daily Streak',            target: 1,  baseXp: 50,  adXp: 75,  icon: '📅', adSpins: 5 },
   { id: 'spins',     label: 'Spin 50 Times',                target: 50,  baseXp: 50,  adXp: 75,  icon: '🎰', adSpins: 5 },
-  { id: 'ads',       label: 'Watch 5 Ads',                  target: 5,   baseXp: 50,  adXp: 75,  icon: '📺', adSpins: 5 },
-  { id: 'wheel',     label: 'Spin the Radioactive Risk Wheel 3 Times', target: 3, baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
   { id: 'earnpp',    label: 'Earn 250 Puke Points',         target: 250, baseXp: 50, adXp: 75,  icon: '🎯', adSpins: 5 },
+  { id: 'wheel',     label: 'Claim Radioactive Risk 5 Times', target: 5,  baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
+  { id: 'ads',       label: 'Watch 5 Ads',                  target: 5,   baseXp: 50,  adXp: 75,  icon: '📺', adSpins: 5 },
 ];
 export const ALL_MISSIONS_BONUS = { baseXp: 100, adXp: 150, baseSpins: 0, adSpins: 10 };
 export interface StreakDayReward {
