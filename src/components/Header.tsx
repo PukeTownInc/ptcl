@@ -44,7 +44,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP }:
         </div>
       </div>
 
-      {/* ✅ PERMANENT BALANCE SUB-HEADER */}
+      {/* ✅ PERMANENT BALANCE SUB-HEADER — bar & helper text removed */}
       <div className="bg-ink-800/60 backdrop-blur-sm border-b border-toxic-900/30">
         <div className="mx-auto max-w-md px-3 py-2">
           <div className="grid grid-cols-2 gap-3">
@@ -53,21 +53,14 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP }:
               <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70">
                 ☢️ LOCKED CONTAGION VAULT
               </div>
-              {/* ✅ BIG NUMBER: Value / 50,000 (XX%) */}
               <div className="font-mono text-sm font-bold text-toxic-300">
                 {formatPP(lockedPP)} / 50,000 ({Math.round(progressPct)}%)
               </div>
-              <div className="flex items-center gap-1 mt-1">
-                <div className="h-1 flex-1 rounded-full bg-ink-900 overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 ${isUnlocked ? 'bg-hazard-amber' : 'bg-toxic-400'}`}
-                    style={{ width: `${progressPct}%` }}
-                  />
+              {isUnlocked && (
+                <div className="text-[8px] font-mono text-hazard-amber mt-0.5">
+                  ✅ UNLOCKED!
                 </div>
-              </div>
-              <div className="text-[8px] font-mono text-toxic-100/30 mt-0.5">
-                {isUnlocked ? '✅ UNLOCKED!' : 'Watch ads to unlock'}
-              </div>
+              )}
             </div>
 
             {/* UNLOCKED CONTAGION VAULT */}
