@@ -43,7 +43,6 @@ function defaultState(): GameState {
     dailyUnlocksUsed: 0,
     dailyXpFree: 0,
     dailyXpBonus: 0,
-    dailyDoubleUps: 0,
     dailyExtraLucky: 0,
     dailyHotStreak: 0,
     dailyMysteryPacks: 0,
@@ -101,7 +100,6 @@ function dailyResetIfNeeded(state: GameState): GameState {
   const today = todayUTC();
   if (state.lastReset === today) return state;
 
-  // carry login streak forward only if consecutive day
   const todayDate = today;
   let loginStreak = state.loginStreak;
   let lastLogin = state.lastLogin;
@@ -119,7 +117,6 @@ function dailyResetIfNeeded(state: GameState): GameState {
     dailyUnlocksUsed: 0,
     dailyXpFree: 0,
     dailyXpBonus: 0,
-    dailyDoubleUps: 0,
     dailyExtraLucky: 0,
     dailyHotStreak: 0,
     dailyMysteryPacks: 0,
@@ -151,17 +148,16 @@ export function useGameState(userId: string | null) {
     const loaded = loadState();
     return dailyResetIfNeeded(loaded);
   });
+
   const [cloudLoading, setCloudLoading] = useState(false);
   const stateRef = useRef(state);
   stateRef.current = state;
   const skipCloudSaveRef = useRef(false);
 
-  // Load from cloud when user logs in
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
     setCloudLoading(true);
-
     (async () => {
       try {
         const { data, error } = await supabase
@@ -179,13 +175,11 @@ export function useGameState(userId: string | null) {
         }
 
         if (data?.data) {
-          // Cloud data exists — merge with defaults and apply daily reset
           const cloudState = { ...defaultState(), ...(data.data as Partial<GameState>) };
           const reset = dailyResetIfNeeded(cloudState);
           skipCloudSaveRef.current = true;
           setState(reset);
         } else {
-          // New user — create profile with current local state
           await supabase.from('user_profiles').upsert({
             id: userId,
             data: stateRef.current,
@@ -197,11 +191,9 @@ export function useGameState(userId: string | null) {
         if (!cancelled) setCloudLoading(false);
       }
     })();
-
     return () => { cancelled = true; };
   }, [userId]);
 
-  // Save to localStorage on every change
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -210,7 +202,6 @@ export function useGameState(userId: string | null) {
     }
   }, [state]);
 
-  // Debounced cloud save (skip when loading from cloud)
   useEffect(() => {
     if (!userId) return;
     if (skipCloudSaveRef.current) {
@@ -241,6 +232,7 @@ export function useGameState(userId: string | null) {
       let xpToAdd = Math.round(baseXp * multiplier);
       let freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       let bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
+
       if (viaAd) {
         const fromBonus = Math.min(xpToAdd - Math.min(xpToAdd, freeRemaining), bonusRemaining);
         const freePart = Math.min(xpToAdd, freeRemaining);
@@ -269,8 +261,8 @@ export function useGameState(userId: string | null) {
       const streakBoost = prev.streakPPBoostUntil && prev.streakPPBoostUntil > Date.now() ? 1.2 : 1;
       const accelerated = prev.potAccelUntil && prev.potAccelUntil > Date.now() ? pp * 2 : pp;
       const final = Math.round(accelerated * tier.multiplier * hotStreak * streakBoost);
-      const potFull = prev.lockedPotPP >= tier.potCap;
-      if (potFull) return prev; // wins pause when pot full
+      
+      // ✅ NO potFull check here — wins always add now
       const newPot = Math.min(prev.lockedPotPP + final, tier.potCap);
       return {
         ...prev,
@@ -351,7 +343,6 @@ export function useGameState(userId: string | null) {
       const today = todayUTC();
       if (prev.lastLogin === today) return prev;
 
-      // Check if streak was missed (last claim was >1 day ago)
       let streakDay = prev.streakDay;
       if (prev.lastStreakClaimDate) {
         const gap = daysBetween(prev.lastStreakClaimDate, today);
@@ -362,7 +353,6 @@ export function useGameState(userId: string | null) {
 
       const loginStreak = prev.loginStreak;
       const bestStreak = Math.max(prev.bestStreak, streakDay);
-
       return {
         ...prev,
         loginStreak,
@@ -407,7 +397,6 @@ export function useGameState(userId: string | null) {
   const useDoubleUp = useCallback(() => {
     setState((prev) => ({
       ...prev,
-      dailyDoubleUps: prev.dailyDoubleUps + 1,
       doubleUpPending: null,
       missions: { ...prev.missions, wheelSpins: prev.missions.wheelSpins + 1 },
     }));
@@ -475,7 +464,6 @@ export function useGameState(userId: string | null) {
     setState((prev) => {
       if (prev.streakClaimedToday) return prev;
 
-      // Increment streak day: 0→1, 1→2, ..., 6→7, 7→1 (cycle after max)
       let newStreakDay: number;
       if (prev.streakDay >= 7) {
         newStreakDay = 1;
@@ -490,7 +478,6 @@ export function useGameState(userId: string | null) {
       const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
       const freePart = Math.min(xpToAdd, freeRemaining);
       const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
-
       const bestStreak = Math.max(prev.bestStreak, newStreakDay);
 
       return {
