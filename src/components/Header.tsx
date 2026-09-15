@@ -84,28 +84,25 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
             </div>
           </div>
 
-          {/* ✅ RADIATION EXPOSURE — XP + BAR + % */}
-          <div className="text-center pt-1 border-t border-toxic-900/20">
-            <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70">
+          {/* ✅ RADIATION EXPOSURE — ALL ON ONE LINE, label on LEFT */}
+          <div className="flex items-center gap-3 pt-1 border-t border-toxic-900/20">
+            {/* Label — LEFT SIDE */}
+            <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70 whitespace-nowrap">
               ☢️ RADIATION EXPOSURE
             </div>
-            <div className="flex items-center justify-center gap-2 mt-1">
-              {/* XP Amount */}
-              <span className="font-mono text-sm font-bold text-toxic-300">
-                {xp.toLocaleString()}
-              </span>
-              {/* Progress Bar */}
-              <div className="flex-1 max-w-32 h-2 rounded-full bg-ink-900 overflow-hidden">
-                <div
-                  className="h-full bg-toxic-400 transition-all duration-500"
-                  style={{ width: `${xpProgressPct}%` }}
-                />
-              </div>
-              {/* Percentage */}
-              <span className="font-mono text-[11px] text-toxic-300/80">
-                {xpProgressPct}%
-              </span>
+            {/* XP Amount + Bar + % — ALL IN ONE ROW */}
+            <span className="font-mono text-sm font-bold text-toxic-300 whitespace-nowrap">
+              {xp.toLocaleString()}
+            </span>
+            <div className="flex-1 h-2 rounded-full bg-ink-900 overflow-hidden">
+              <div
+                className="h-full bg-toxic-400 transition-all duration-500"
+                style={{ width: `${xpProgressPct}%` }}
+              />
             </div>
+            <span className="font-mono text-[11px] text-toxic-300/80 whitespace-nowrap">
+              {xpProgressPct}%
+            </span>
           </div>
         </div>
       </div>
