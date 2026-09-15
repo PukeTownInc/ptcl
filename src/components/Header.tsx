@@ -29,7 +29,13 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
   const UNLOCK_THRESHOLD = 50000;
   const progressPct = Math.min(100, (lockedPP / UNLOCK_THRESHOLD) * 100);
   const isUnlocked = lockedPP >= UNLOCK_THRESHOLD;
-  const xpProgressPct = nextXp ? Math.min(100, ((xp - 0) / (nextXp - 0)) * 100) : 100;
+
+  // XP progress calculation
+  const xpStart = 0;
+  const xpTarget = nextXp ?? xp;
+  const xpProgressPct = xpTarget > 0 
+    ? Math.min(100, Math.round(((xp - xpStart) / (xpTarget - xpStart)) * 100)) 
+    : 0;
 
   return (
     <header className="sticky top-0 z-30 safe-top">
@@ -78,22 +84,28 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
             </div>
           </div>
 
-          {/* ✅ RADIATION EXPOSURE — XP TRACKER */}
+          {/* ✅ RADIATION EXPOSURE — XP + BAR + % */}
           <div className="text-center pt-1 border-t border-toxic-900/20">
             <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70">
               ☢️ RADIATION EXPOSURE
             </div>
-            <div className="font-mono text-xs font-bold text-toxic-300 mt-0.5">
-              {xp.toLocaleString()}{nextXp !== null ? ` / ${nextXp.toLocaleString()}` : ''}
-            </div>
-            {nextXp && (
-              <div className="h-1 rounded-full bg-ink-900 mt-1 overflow-hidden">
+            <div className="flex items-center justify-center gap-2 mt-1">
+              {/* XP Amount */}
+              <span className="font-mono text-sm font-bold text-toxic-300">
+                {xp.toLocaleString()}
+              </span>
+              {/* Progress Bar */}
+              <div className="flex-1 max-w-32 h-2 rounded-full bg-ink-900 overflow-hidden">
                 <div
                   className="h-full bg-toxic-400 transition-all duration-500"
                   style={{ width: `${xpProgressPct}%` }}
                 />
               </div>
-            )}
+              {/* Percentage */}
+              <span className="font-mono text-[11px] text-toxic-300/80">
+                {xpProgressPct}%
+              </span>
+            </div>
           </div>
         </div>
       </div>
