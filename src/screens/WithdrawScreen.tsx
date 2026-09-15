@@ -34,8 +34,8 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
   const cooldownActive = state.lastWithdraw && Date.now() - state.lastWithdraw < WITHDRAW_COOLDOWN_MS;
   const cooldownMs = cooldownActive ? (WITHDRAW_COOLDOWN_MS - (Date.now() - (state.lastWithdraw as number))) : 0;
   const cooldownHrs = Math.ceil(cooldownMs / 3600000);
-  const amount = parseFloat(amountStr) || 0;
-  const fee = amount * PLATFORM_FEE;
+  const amount = parseInt(amountStr, 10) || 0;
+  const fee = Math.floor(amount * PLATFORM_FEE);
   const payoutPP = amount - fee;
   const payoutUsd = ppToUsd(payoutPP);
   const canWithdraw =
@@ -78,13 +78,17 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     if (!canWithdraw) {
       if (amount < MIN_WITHDRAW_PP) toast('error', 'DOSE TOO LOW', `Minimum release: ${formatPP(MIN_WITHDRAW_PP)} Puke Points`);
       else if (amount > MAX_WITHDRAW_PP) toast('error', 'DOSE TOO HIGH', `Maximum release: ${formatPP(MAX_WITHDRAW_PP)} Puke Points`);
-      else if (amount > state.withdrawablePP) toast('error', 'INSUFFICIENT BALANCE', 'Not enough Puke Points available');
+      else if (amount > state.withdrawablePP) toast('error', 'INSUFFICIENT BALANCE', `Only ${formatPP(state.withdrawablePP)} Puke Points available`);
       else if (cooldownActive) toast('error', 'RADIATION COOLDOWN', `Wait ${cooldownHrs}h before next release`);
       else if (!email.trim()) toast('error', 'EMAIL REQUIRED', 'Enter your FaucetPay email');
       return;
     }
     setSubmitting(true);
     actions.setFaucetpayEmail(email.trim());
+
+    // ✅ SUBTRACT WITHDRAWAL FROM UNLOCKED BALANCE
+    actions.spendWithdrawablePP(amount);
+
     setTimeout(() => {
       const rec: WithdrawalRecord = {
         id: Math.random().toString(36).slice(2),
@@ -99,7 +103,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       actions.recordWithdrawal(rec);
       setSubmitting(false);
       setAmountStr('');
-      toast('success', '☢️ SUPPLY RELEASED!', `$${payoutUsd.toFixed(2)} USD sent to ${email}`);
+      toast('success', '☢️ SUPPLY RELEASED!', `-${formatPP(amount)} PP • $${payoutUsd.toFixed(2)} USD sent to ${email}`);
     }, 1800);
   };
 
@@ -123,10 +127,9 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     }
   };
 
-  // ✅ FIXED: Allow typing freely, validate on submit ONLY
+  // Allow typing positive whole numbers only
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    // Allow empty string or valid positive numbers only
     if (val === '' || /^\d+$/.test(val)) {
       setAmountStr(val);
     }
@@ -207,7 +210,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       </div>
 
-      {/* Withdraw Form — ✅ Type freely, limits enforced on submit */}
+      {/* Withdraw Form */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -319,7 +322,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       <div className="grunge-panel p-3 flex items-start gap-2">
         <Lock size={14} className="text-toxic-400 shrink-0 mt-0.5" />
         <p className="text-[10px] text-toxic-100/40">
-          All payouts processed via FaucetPay server-side API. XP never affects withdrawals — pure progression only.
+          All payouts processed via FaucetPay server-side API. Puke Points deducted immediately upon release.
         </p>
       </div>
 
