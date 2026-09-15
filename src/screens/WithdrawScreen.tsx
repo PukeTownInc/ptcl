@@ -15,7 +15,7 @@ import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
 
-const VAULT_CAP = 500000;
+const VAULT_CAP = 50000; // ✅ CHANGED: 50,000 instead of 500,000
 
 interface Props {
   state: GameState;
@@ -115,14 +115,14 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       )}
 
-      {/* ✅ UPDATED BALANCE BOX — "FILL TO UNLOCK" text added above vault balance */}
+      {/* ✅ VAULT CAP NOW 50,000 PP — "FILL TO UNLOCK" under label */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet size={20} className="text-radioactive-400" />
           <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {/* LEFT — CONTAGION VAULT — GREYED OUT UNTIL FULL */}
+          {/* LEFT — CONTAGION VAULT */}
           <div
             className={`rounded-lg border p-3 transition-all ${
               vaultFull
@@ -131,15 +131,15 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             }`}
             onClick={vaultFull ? handleUnlockVault : undefined}
           >
-            {/* ✅ NEW TEXT: FILL TO UNLOCK — only shows when vault NOT full */}
+            <div className="text-[10px] uppercase mb-0.5" style={{ color: vaultFull ? '#9aff9a' : '#6b7280' }}>
+              CONTAGION VAULT
+            </div>
+            {/* FILL TO UNLOCK — directly under label */}
             {!vaultFull && (
               <div className="text-[9px] font-bold uppercase tracking-widest text-ink-400 mb-1.5">
                 FILL TO UNLOCK
               </div>
             )}
-            <div className="text-[10px] uppercase mb-1" style={{ color: vaultFull ? '#9aff9a' : '#6b7280' }}>
-              CONTAGION VAULT
-            </div>
             <div className={`font-mono text-xl font-bold ${vaultFull ? 'text-toxic-300' : 'text-ink-500'}`}>
               {formatPP(state.lockedPotPP)}
             </div>
@@ -162,7 +162,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             )}
           </div>
 
-          {/* RIGHT — CONTAGION CACHE — UNCHANGED */}
+          {/* RIGHT — CONTAGION CACHE */}
           <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
             <div className="text-[10px] text-radioactive-400/60 uppercase mb-1.5">CONTAGION CACHE</div>
             <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
@@ -171,7 +171,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       </div>
 
-      {/* ⚠️ ALL BELOW THIS LINE — UNCHANGED FROM YOUR ORIGINAL FILE ⚠️ */}
+      {/* ⚠️ ALL BELOW THIS LINE — UNCHANGED */}
       <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50 flex items-start gap-2">
         <AlertTriangle size={16} className="text-radioactive-400 shrink-0 mt-0.5" />
         <div className="text-[11px] text-toxic-100/60">
