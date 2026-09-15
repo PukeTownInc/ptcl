@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Zap } from 'lucide-react';
+import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, FlaskConical } from 'lucide-react';
 import type { Screen } from '../types';
 
 const NAV: { id: Screen; label: string; icon: typeof Home }[] = [
@@ -11,6 +11,7 @@ const NAV: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'roadmap', label: 'Fallout Forecast', icon: Zap },
   { id: 'withdraw', label: 'Waste Withdrawal', icon: Wallet },
   { id: 'settings', label: 'Lab Controls', icon: Settings },
+  { id: 'vialmixer', label: 'Contamination Lab', icon: FlaskConical },
 ];
 
 export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s: Screen, target?: string) => void }) {
