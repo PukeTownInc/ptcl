@@ -32,19 +32,17 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
   const cooldownHrs = Math.ceil(cooldownMs / 3600000);
   const amount = parseInt(amountStr, 10) || 0;
   const fee = Math.floor(amount * PLATFORM_FEE);
-  const totalDeducted = amount + fee; // ✅ TOTAL = USER AMOUNT + FEE
+  const totalDeducted = amount + fee;
   const payoutPP = amount - fee;
   const payoutUsd = ppToUsd(payoutPP);
-  // ✅ CHECK BALANCE AGAINST TOTAL DEDUCTED (amount + fee)
   const canPrepareWithdraw =
     isLoggedIn &&
     email.trim().length > 0 &&
     amount >= MIN_WITHDRAW_PP &&
     amount <= MAX_WITHDRAW_PP &&
-    totalDeducted <= state.withdrawablePP && // ✅ ENSURE BALANCE COVERS BOTH
+    totalDeducted <= state.withdrawablePP &&
     !cooldownActive &&
     !submitting;
-  // Vault logic
   const vaultFull = state.lockedPotPP >= VAULT_CAP;
   const vaultPercent = Math.min(100, (state.lockedPotPP / VAULT_CAP) * 100);
   const remainingToFull = VAULT_CAP - state.lockedPotPP;
@@ -65,7 +63,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       },
     });
   };
-  // Step 1: Validate → Open Ad Modal → After Ad → Process Withdrawal
   const handlePrepareWithdraw = () => {
     if (!isLoggedIn) {
       toast('error', 'QUARANTINED', 'Sign in to release your Puke Points');
@@ -91,7 +88,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       toast('error', 'EMAIL REQUIRED', 'Enter your FaucetPay email');
       return;
     }
-    // ✅ ALL VALID — SHOW AD GATE BEFORE WITHDRAW
     setAdModal({
       title: '☢️ ACTIVATE RELEASE PERMIT',
       subtitle: 'Watch one quick video to authorise your withdrawal',
@@ -101,7 +97,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       },
     });
   };
-  // Step 2: AFTER AD COMPLETES → recordWithdrawal deducts BOTH amount + fee
   const executeWithdrawal = (amountVal: number, feeVal: number, usdVal: number) => {
     setSubmitting(true);
     actions.setFaucetpayEmail(email.trim());
@@ -117,7 +112,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         usd: usdVal,
         status: Math.random() > 0.1 ? 'sent' : 'pending',
       };
-      // ✅ recordWithdrawal NOW DEDUCTS BOTH amount + fee automatically
       actions.recordWithdrawal(rec);
       setSubmitting(false);
       setAmountStr('');
@@ -160,14 +154,12 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         </div>
       )}
-      {/* VAULT — 50k Cap, FILL TO UNLOCK under label */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet size={20} className="text-radioactive-400" />
           <h2 className="font-display font-bold text-sm text-radioactive-400">☢️ DECONTAMINATION CHAMBER</h2>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {/* LEFT — CONTAGION VAULT */}
           <div
             className={`rounded-lg border p-3 transition-all ${
               vaultFull
@@ -203,7 +195,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
               </div>
             )}
           </div>
-          {/* RIGHT — CONTAGION CACHE */}
           <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
             <div className="text-[10px] text-radioactive-400/60 uppercase mb-1.5">CONTAGION CACHE</div>
             <div className="font-mono text-xl font-bold text-radioactive-400 neon-text-yellow">{formatPP(state.withdrawablePP)}</div>
@@ -211,7 +202,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         </div>
       </div>
-      {/* Info Panel */}
       <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50 flex items-start gap-2">
         <AlertTriangle size={16} className="text-radioactive-400 shrink-0 mt-0.5" />
         <div className="text-[11px] text-toxic-100/60">
@@ -220,7 +210,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           <p className="mt-1 text-toxic-100/40">⚠️ Total deducted = Your amount + {(PLATFORM_FEE * 100).toFixed(0)}% fee • Ad required to release</p>
         </div>
       </div>
-      {/* Withdraw Form */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -309,12 +298,14 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           )}
         </button>
       </div>
-      {state.withdrawalHistory.length > 0 && (
-        <div className="grunge-panel p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <History size={16} className="text-toxic-300" />
-            <h3 className="font-display font-bold text-sm text-toxic-300">Withdrawal History</h3>
-          </div>
+
+      {/* ✅ WITHDRAWAL HISTORY — ALWAYS VISIBLE */}
+      <div className="grunge-panel p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <History size={16} className="text-toxic-300" />
+          <h3 className="font-display font-bold text-sm text-toxic-300">☢️ RELEASE HISTORY</h3>
+        </div>
+        {state.withdrawalHistory.length > 0 ? (
           <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-hide">
             {state.withdrawalHistory.map((w) => (
               <div key={w.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-ink-700/50">
@@ -328,8 +319,14 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-center py-4 text-toxic-100/40 text-xs font-mono">
+            📭 No releases yet. <br />
+            Release Puke Points above and they'll appear here.
+          </div>
+        )}
+      </div>
+
       <div className="grunge-panel p-3 flex items-start gap-2">
         <Lock size={14} className="text-toxic-400 shrink-0 mt-0.5" />
         <p className="text-[10px] text-toxic-100/40">
