@@ -13,7 +13,7 @@ import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
 const REEL_DISPLAY = 3;
 type ReelPhase = 'idle' | 'spinning' | 'stopped';
 type SpinHistoryEntry =
-  | { kind: 'spin'; pp: number; symbols: string[] }
+  | { kind: 'spin'; pp: number; symbols: string[]; multiplied?: boolean; multiplier?: string | null }
   | { kind: 'double'; pp: number }
   | { kind: 'half'; pp: number }
   | { kind: 'lose'; pp: number }
@@ -128,11 +128,10 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   }, [state.potAccelUntil]);
 
   useEffect(() => {
+    if (!reelsRef.current) return;
     const measure = () => {
-      if (reelsRef.current) {
-        const rect = reelsRef.current.getBoundingClientRect();
-        setReelsDims({ w: rect.width, h: rect.height });
-      }
+      const rect = reelsRef.current!.getBoundingClientRect();
+      setReelsDims({ w: rect.width, h: rect.height });
     };
     measure();
     window.addEventListener('resize', measure);
@@ -144,7 +143,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     setActiveWinIndex(0);
     if (lastResult.wins.length <= 1) return;
     const interval = setInterval(() => {
-      setActiveWinIndex((i) => (i + 1) % lastResult.wins.length);
+      setActiveWinIndex((i) => (i + 1) % lastResult!.wins.length);
     }, 900);
     return () => clearInterval(interval);
   }, [spinning, lastResult]);
@@ -193,24 +192,34 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, baseDelay + r * stagger);
       stopTimers.current.push(t);
     }
+
     function finishSpin(res: SpinResult) {
       setSpinning(false);
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
       setLastResult(res);
+
+      // ✅ APPLY MULTIPLIERS FIRST — BEFORE using anywhere
+      let finalPP = res.totalPP;
+      const hadPotAccel = isPotAccelActive(state);
+      const hadHotStreak = isHotStreakActive(state);
+      if (hadPotAccel) finalPP *= 2;
+      if (hadHotStreak) finalPP = Math.floor(finalPP * 1.5);
+
       const posSet = new Set<string>();
       res.wins.forEach((w) => w.positions.forEach(([r, row]) => posSet.add(`${r}-${row}`)));
       res.jackpot && res.grid.forEach((col, r) => col.forEach((s, row) => s === 'jackpot' && posSet.add(`${r}-${row}`)));
       setWinPositions(posSet);
-      const eligibleDoubleUp = res.totalPP >= 6 && !potFull && state.dailyDoubleUps < 3;
-      if (res.totalPP > 0 && !potFull) {
+      setWinPP(finalPP);
+
+      const eligibleDoubleUp = finalPP >= 6 && !potFull && state.dailyDoubleUps < 3;
+      if (finalPP > 0 && !potFull) {
         if (eligibleDoubleUp) {
           doubleUpResolvedRef.current = false;
-          actions.setDoubleUpPending(res.totalPP);
+          actions.setDoubleUpPending(finalPP);
           setShowDoubleUp(true);
         } else {
-          actions.addPP(res.totalPP);
+          actions.addPP(finalPP);
         }
-        setWinPP(res.totalPP);
       } else if (potFull) {
         toast('info', 'VAT OVERFLOWETH!', 'Absorb radiation to breach containment — +1 XP only');
       }
@@ -228,11 +237,18 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         actions.recordJackpot();
         setTimeout(() => setShowJackpot(null), 3000);
       }
-      // ✅ NOW STORES SYMBOL IDs (not emojis) → so PNGs show in history!
+
+      // ✅ Store symbol IDs + multiplied value + multiplier badge flags
       const winSymbols = res.wins.length > 0
         ? [...new Set(res.wins.map((w) => w.symbols[0]))]
         : [];
-      setSpinHistory((prev) => [{ kind: 'spin', pp: res.totalPP, symbols: winSymbols }, ...prev].slice(0, MAX_HISTORY));
+      setSpinHistory((prev) => [{
+        kind: 'spin',
+        pp: finalPP,
+        symbols: winSymbols,
+        multiplied: hadPotAccel || hadHotStreak,
+        multiplier: hadPotAccel ? 'x2' : hadHotStreak ? 'x1.5' : null,
+      }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, potFull, actions, toast]);
 
@@ -434,7 +450,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{formatPP(winPP)} Puke Points</div>
               {lastResult && lastResult.wins.length > 0 && (
                 <div className="text-[10px] text-toxic-100/50 font-mono mt-1">
-                  {lastResult.wins.length} way{lastResult.wins.length > 1 ? 's' : ''} • {lastResult.wins.map((w) => engine.getSymbol(w.symbols[0]).label).join(', ')}
+                  {lastResult.wins.length} way{lastResult.wins.length > 1 ? 's' : ''} • {lastResult.wins.map((w) => SYMBOLS[w.symbols[0]].label).join(', ')}
                 </div>
               )}
             </div>
@@ -600,14 +616,14 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
         <span className="text-toxic-100/40 text-xs">{open ? 'Hide' : 'Reveal'}</span>
       </button>
       {open && (
-        <div className="px-3 pb-3 space-y-1 animate-slide-up max-h-64 overflow-y-auto">
+        <div className="px-3 pb-3 space-y-1 max-h-64 overflow-y-auto">
           {entries.length === 0 ? (
             <p className="text-[11px] text-toxic-100/30 font-mono text-center py-4">No contamination yet — start the infection!</p>
           ) : (
             entries.map((entry, i) => {
               if (entry.kind === 'spin') {
                 return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-ink-700/40">
+                  <div key={i} className={`flex items-center justify-between px-2 py-1.5 rounded ${entry.multiplied ? 'bg-radioactive-500/10 border border-radioactive-600/30' : 'bg-ink-700/40'}`}>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="text-[10px] font-mono text-toxic-100/30 shrink-0">#{entries.length - i}</span>
                       {entry.pp > 0 && entry.symbols.length > 0 ? (
@@ -615,12 +631,18 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                           {entry.symbols.map((symId, idx) => (
                             <HistorySymbolIcon key={idx} symId={symId as SymbolId} />
                           ))}
+                          {/* ✅ ☢️ x2 BADGE VISIBLE ON MULTIPLIED WINS! */}
+                          {entry.multiplied && entry.multiplier && (
+                            <span className="text-radioactive-400 text-[10px] font-bold font-mono px-1 py-0.5 rounded bg-radioactive-500/15 border border-radioactive-500/30">
+                              ☢️ {entry.multiplier}
+                            </span>
+                          )}
                         </span>
                       ) : (
                         <span className="text-[11px] font-mono text-toxic-100/30">No contamination</span>
                       )}
                     </div>
-                    <span className="font-mono text-sm text-toxic-300 tabular-nums">+{formatPP(entry.pp)}</span>
+                    <span className={`font-mono text-sm tabular-nums ${entry.multiplied ? 'text-radioactive-400 font-bold' : 'text-toxic-300'}`}>+{formatPP(entry.pp)}</span>
                   </div>
                 );
               } else if (entry.kind === 'double') {
