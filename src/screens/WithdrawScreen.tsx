@@ -15,7 +15,7 @@ import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
 
-const VAULT_CAP = 50000; // ✅ CHANGED: 50,000 instead of 500,000
+const VAULT_CAP = 50000;
 
 interface Props {
   state: GameState;
@@ -103,6 +103,15 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     }, 1800);
   };
 
+  // ✅ MIN BUTTON: Check balance first
+  const handleMin = () => {
+    if (state.withdrawablePP >= MIN_WITHDRAW_PP) {
+      setAmountStr(String(MIN_WITHDRAW_PP));
+    } else {
+      toast('info', 'NOT YET CONTAMINATED ENOUGH', `Need ${formatPP(MIN_WITHDRAW_PP)} PP unlocked for minimum release — keep earning!`);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {!isLoggedIn && (
@@ -115,7 +124,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       )}
 
-      {/* ✅ VAULT CAP NOW 50,000 PP — "FILL TO UNLOCK" under label */}
+      {/* VAULT — 50k Cap, FILL TO UNLOCK under label */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet size={20} className="text-radioactive-400" />
@@ -134,7 +143,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             <div className="text-[10px] uppercase mb-0.5" style={{ color: vaultFull ? '#9aff9a' : '#6b7280' }}>
               CONTAGION VAULT
             </div>
-            {/* FILL TO UNLOCK — directly under label */}
             {!vaultFull && (
               <div className="text-[9px] font-bold uppercase tracking-widest text-ink-400 mb-1.5">
                 FILL TO UNLOCK
@@ -143,14 +151,12 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             <div className={`font-mono text-xl font-bold ${vaultFull ? 'text-toxic-300' : 'text-ink-500'}`}>
               {formatPP(state.lockedPotPP)}
             </div>
-            {/* Progress bar */}
             <div className="mt-2 h-2 rounded-full bg-ink-700 overflow-hidden">
               <div
                 className={`h-full transition-all duration-500 ${vaultFull ? 'bg-toxic-400' : 'bg-ink-500'}`}
                 style={{ width: `${vaultPercent}%` }}
               />
             </div>
-            {/* Button / Status */}
             {vaultFull ? (
               <button className="mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-toxic-500/20 border border-toxic-500/40 text-toxic-300 text-[10px] font-bold">
                 <Tv size={12} /> WATCH VIDEO TO UNLOCK
@@ -171,7 +177,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         </div>
       </div>
 
-      {/* ⚠️ ALL BELOW THIS LINE — UNCHANGED */}
+      {/* Info Panel */}
       <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50 flex items-start gap-2">
         <AlertTriangle size={16} className="text-radioactive-400 shrink-0 mt-0.5" />
         <div className="text-[11px] text-toxic-100/60">
@@ -180,6 +186,8 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           <p className="mt-1 text-toxic-100/40">Conversion: 10,000 Puke Points = $0.25 USD</p>
         </div>
       </div>
+
+      {/* Withdraw Form — ✅ Min button with balance check */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
           <label className="text-[11px] font-display uppercase tracking-wider text-toxic-300 mb-1.5 block">FaucetPay Email</label>
@@ -219,8 +227,20 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             className="w-full bg-ink-900 border border-toxic-900/50 rounded-lg px-3 py-2.5 font-mono text-sm text-toxic-200 focus:border-toxic-400 focus:outline-none focus:neon-border transition-all"
           />
           <div className="flex gap-1.5 mt-1.5">
-            <button onClick={() => setAmountStr(String(Math.min(MAX_WITHDRAW_PP, Math.max(MIN_WITHDRAW_PP, state.withdrawablePP))))} className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300">Max</button>
-            <button onClick={() => setAmountStr(String(MIN_WITHDRAW_PP))} className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300">Min</button>
+            {/* ✅ MAX = unlocked balance OR 500,000 — whichever is less */}
+            <button
+              onClick={() => setAmountStr(String(Math.min(MAX_WITHDRAW_PP, state.withdrawablePP)))}
+              className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300"
+            >
+              Max
+            </button>
+            {/* ✅ MIN = check balance first, toast if insufficient */}
+            <button
+              onClick={handleMin}
+              className="text-[10px] px-2 py-1 rounded bg-ink-700 text-toxic-100/60 hover:text-toxic-300"
+            >
+              Min
+            </button>
           </div>
         </div>
         {amount > 0 && (
@@ -254,6 +274,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           )}
         </button>
       </div>
+
       {state.withdrawalHistory.length > 0 && (
         <div className="grunge-panel p-4">
           <div className="flex items-center gap-2 mb-3">
@@ -275,6 +296,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         </div>
       )}
+
       <div className="grunge-panel p-3 flex items-start gap-2">
         <Lock size={14} className="text-toxic-400 shrink-0 mt-0.5" />
         <p className="text-[10px] text-toxic-100/40">
