@@ -511,6 +511,28 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-2">
+        <BonusBtn
+          icon={<Package size={16} />}
+          label="Mystery Goop Vat"
+          sub={`15-25 Twists • only when empty`}
+          ad
+          onClick={handleMysteryPack}
+          disabled={state.spinsRemaining > 0 || spinning}
+        />
+        <BonusBtn
+          icon={<Zap size={16} />}
+          label="Sludge Accelerator"
+          sub={`${2 - state.dailyPotAccel} left • x2 flow for 5 min`}
+          ad
+          onClick={handlePotAccel}
+          disabled={state.dailyPotAccel >= 2 || spinning}
+        />
+      </div>
+
+      <SpinHistory entries={spinHistory} />
+
+      {/* ✅ PAYTABLE MOVED TO BOTTOM — LAST THING ON SCREEN */}
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -558,7 +580,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
               <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
               <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
-              {/* ✅ WHEEL — BOTTOM, IMAGE + EXACT TEXT */}
+              {/* ✅ WHEEL — IMAGE + EXACT TEXT */}
               <div className="flex items-center gap-2">
                 <img 
                   src="/radioactive-risk-wheel.png" 
@@ -572,27 +594,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         )}
       </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <BonusBtn
-          icon={<Package size={16} />}
-          label="Mystery Goop Vat"
-          sub={`15-25 Twists • only when empty`}
-          ad
-          onClick={handleMysteryPack}
-          disabled={state.spinsRemaining > 0 || spinning}
-        />
-        <BonusBtn
-          icon={<Zap size={16} />}
-          label="Sludge Accelerator"
-          sub={`${2 - state.dailyPotAccel} left • x2 flow for 5 min`}
-          ad
-          onClick={handlePotAccel}
-          disabled={state.dailyPotAccel >= 2 || spinning}
-        />
-      </div>
-
-      <SpinHistory entries={spinHistory} />
 
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
