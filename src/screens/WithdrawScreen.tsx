@@ -14,15 +14,12 @@ import {
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
-
 const VAULT_CAP = 50000;
-
 interface Props {
   state: GameState;
   actions: GameActions;
   isLoggedIn: boolean;
 }
-
 export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
   const toast = useToast();
   const [email, setEmail] = useState(state.faucetpayEmail);
@@ -30,7 +27,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
   const [amountStr, setAmountStr] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
-
   const cooldownActive = state.lastWithdraw && Date.now() - state.lastWithdraw < WITHDRAW_COOLDOWN_MS;
   const cooldownMs = cooldownActive ? (WITHDRAW_COOLDOWN_MS - (Date.now() - (state.lastWithdraw as number))) : 0;
   const cooldownHrs = Math.ceil(cooldownMs / 3600000);
@@ -46,12 +42,10 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     amount <= state.withdrawablePP &&
     !cooldownActive &&
     !submitting;
-
   // Vault logic
   const vaultFull = state.lockedPotPP >= VAULT_CAP;
   const vaultPercent = Math.min(100, (state.lockedPotPP / VAULT_CAP) * 100);
   const remainingToFull = VAULT_CAP - state.lockedPotPP;
-
   const handleUnlockVault = () => {
     if (!vaultFull) {
       toast('info', 'Still Contaminating', `Need ${formatPP(remainingToFull)} more PP to fill the vault`);
@@ -69,7 +63,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       },
     });
   };
-
   const handleWithdraw = () => {
     if (!isLoggedIn) {
       toast('error', 'QUARANTINED', 'Sign in to release your Puke Points');
@@ -85,10 +78,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     }
     setSubmitting(true);
     actions.setFaucetpayEmail(email.trim());
-
-    // ✅ SUBTRACT WITHDRAWAL FROM UNLOCKED BALANCE
-    actions.spendWithdrawablePP(amount);
-
     setTimeout(() => {
       const rec: WithdrawalRecord = {
         id: Math.random().toString(36).slice(2),
@@ -100,17 +89,16 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
         usd: payoutUsd,
         status: Math.random() > 0.1 ? 'sent' : 'pending',
       };
+      // ✅ THIS SINGLE LINE SUBTRACTS FROM BALANCE AUTOMATICALLY
       actions.recordWithdrawal(rec);
       setSubmitting(false);
       setAmountStr('');
       toast('success', '☢️ SUPPLY RELEASED!', `-${formatPP(amount)} PP • $${payoutUsd.toFixed(2)} USD sent to ${email}`);
     }, 1800);
   };
-
   const showInsufficientToast = () => {
     toast('info', 'NOT YET CONTAMINATED ENOUGH', `Need ${formatPP(MIN_WITHDRAW_PP)} PP unlocked for release — keep earning!`);
   };
-
   const handleMax = () => {
     if (state.withdrawablePP >= MIN_WITHDRAW_PP) {
       setAmountStr(String(Math.min(MAX_WITHDRAW_PP, state.withdrawablePP)));
@@ -118,7 +106,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       showInsufficientToast();
     }
   };
-
   const handleMin = () => {
     if (state.withdrawablePP >= MIN_WITHDRAW_PP) {
       setAmountStr(String(MIN_WITHDRAW_PP));
@@ -126,7 +113,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       showInsufficientToast();
     }
   };
-
   // Allow typing positive whole numbers only
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -134,7 +120,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       setAmountStr(val);
     }
   };
-
   return (
     <div className="space-y-4">
       {!isLoggedIn && (
@@ -146,7 +131,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         </div>
       )}
-
       {/* VAULT — 50k Cap, FILL TO UNLOCK under label */}
       <div className="grunge-panel p-4">
         <div className="flex items-center gap-2 mb-3">
@@ -190,7 +174,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
               </div>
             )}
           </div>
-
           {/* RIGHT — CONTAGION CACHE */}
           <div className="rounded-lg bg-radioactive-500/10 border border-radioactive-600/30 p-3">
             <div className="text-[10px] text-radioactive-400/60 uppercase mb-1.5">CONTAGION CACHE</div>
@@ -199,7 +182,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         </div>
       </div>
-
       {/* Info Panel */}
       <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50 flex items-start gap-2">
         <AlertTriangle size={16} className="text-radioactive-400 shrink-0 mt-0.5" />
@@ -209,7 +191,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           <p className="mt-1 text-toxic-100/40">Your available balance: <span className="text-radioactive-400 font-bold">{formatPP(state.withdrawablePP)} PP</span></p>
         </div>
       </div>
-
       {/* Withdraw Form */}
       <div className="grunge-panel p-4 space-y-3">
         <div>
@@ -296,7 +277,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           )}
         </button>
       </div>
-
       {state.withdrawalHistory.length > 0 && (
         <div className="grunge-panel p-4">
           <div className="flex items-center gap-2 mb-3">
@@ -318,14 +298,12 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         </div>
       )}
-
       <div className="grunge-panel p-3 flex items-start gap-2">
         <Lock size={14} className="text-toxic-400 shrink-0 mt-0.5" />
         <p className="text-[10px] text-toxic-100/40">
           All payouts processed via FaucetPay server-side API. Puke Points deducted immediately upon release.
         </p>
       </div>
-
       {/* Ad Modal */}
       {adModal && (
         <AdModal
@@ -343,7 +321,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
     </div>
   );
 }
-
 function StatusBadge({ status }: { status: WithdrawalRecord['status'] }) {
   const styles: Record<string, string> = {
     sent: 'text-toxic-400 bg-toxic-500/10 border-toxic-600/40',
