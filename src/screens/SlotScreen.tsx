@@ -552,13 +552,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               </div>
             ))}
 
-            {/* ✅ SPECIALS — WHEEL AT BOTTOM, IMAGE ONLY, NO TEXT */}
+            {/* ✅ SPECIALS — WHEEL AT BOTTOM, EXACT TEXT: = Radioactive Risk Wheel */}
             <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
               <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
               <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
               <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
               <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
-              {/* ✅ WHEEL — IMAGE ONLY, NO TEXT */}
+              {/* ✅ WHEEL — BOTTOM, IMAGE + EXACT TEXT */}
               <div className="flex items-center gap-2">
                 <img 
                   src="/radioactive-risk-wheel.png" 
@@ -566,6 +566,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                   className="w-5 h-5 object-contain inline-block"
                   style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
                 />
+                <span>= Radioactive Risk Wheel</span>
               </div>
             </div>
           </div>
