@@ -14,6 +14,7 @@ export const WITHDRAW_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 export const DAILY_XP_FREE_CAP = 150;
 export const DAILY_XP_BONUS_CAP = 100;
 export const DAILY_XP_MAX = 250;
+
 export interface TierInfo {
   id: Tier;
   label: string;
@@ -26,18 +27,39 @@ export interface TierInfo {
   dailySpinsBase: number;
   dailyMissions: number;
 }
+
 export const TIERS: TierInfo[] = [
   { id: 'bronze',   label: 'Bronze',   badge: '🥉', minXp: 0,      maxXp: 500,    potCap: 15000,  dailyUnlocks: 1, multiplier: 1.0,  dailySpinsBase: 25, dailyMissions: 3 },
   { id: 'silver',   label: 'Silver',   badge: '🥈', minXp: 500,    maxXp: 2500,   potCap: 30000,  dailyUnlocks: 2, multiplier: 1.05, dailySpinsBase: 40, dailyMissions: 5 },
   { id: 'gold',     label: 'Gold',     badge: '🥇', minXp: 2500,   maxXp: 10000,  potCap: 60000,  dailyUnlocks: 3, multiplier: 1.1,  dailySpinsBase: 55, dailyMissions: 8 },
   { id: 'platinum', label: 'Platinum', badge: '💎', minXp: 10000,  maxXp: Infinity, potCap: 150000, dailyUnlocks: 5, multiplier: 1.2,  dailySpinsBase: 85, dailyMissions: 12 },
 ];
+
 export function getTier(xp: number): TierInfo {
   return [...TIERS].reverse().find((t) => xp >= t.minXp) ?? TIERS[0];
 }
+
 export function getNextTier(xp: number): TierInfo | null {
   return TIERS.find((t) => t.minXp > xp) ?? null;
 }
+
+// ✅ === NEW LEVELS SYSTEM ===
+// Maps XP → Level using existing tier thresholds
+export function getLevel(xp: number): number {
+  if (xp >= 10000) return 4; // Platinum
+  if (xp >= 2500) return 3;  // Gold
+  if (xp >= 500) return 2;    // Silver
+  return 1;                    // Bronze
+}
+
+// Returns XP needed to reach NEXT level
+export function getNextLevelXp(xp: number): number {
+  if (xp < 500) return 500;    // Bronze → Silver
+  if (xp < 2500) return 2500;  // Silver → Gold
+  if (xp < 10000) return 10000; // Gold → Platinum
+  return 10000; // Max level
+}
+
 // ✅ ALL SYMBOLS
 export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
   cashlab: { id: 'cashlab', emoji: '🤑', label: 'Cash Lab',      pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cash-lab.png?v=11` },
@@ -59,17 +81,20 @@ export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
   hazard:  { id: 'hazard',  emoji: '☣️', label: 'Hazard Mystery', pays: [0, 0, 0], weight: 1.2, special: 'hazard', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-hazard.png?v=11` },
   jackpot: { id: 'jackpot', emoji: '🧪', label: 'Toxic Jackpot',  pays: [0, 0, 0], weight: 1, special: 'jackpot', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-jackpot.png?v=11` },
 };
+
 export const JACKPOT_TYPES = [
   { type: 'mini' as const,  amount: 30,  label: 'Mini' },
   { type: 'minor' as const, amount: 60,  label: 'Minor' },
   { type: 'major' as const, amount: 120, label: 'Major' },
   { type: 'grand' as const, amount: 300, label: 'Grand' },
 ];
+
 export const JACKPOT_WEIGHTS = [50, 30, 15, 5];
 export const REEL_COUNT = 5;
 export const ROW_COUNT = 3;
 export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 10;
+
 // ✅ UPDATED: Watch 10 Ads
 export const MISSIONS = [
   { id: 'claistreak',label: 'Claim Daily Streak',            target: 1,  baseXp: 50,  adXp: 75,  icon: '📅', adSpins: 5 },
@@ -78,7 +103,9 @@ export const MISSIONS = [
   { id: 'wheel',     label: 'Claim Radioactive Risk 5 Times', target: 5,  baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
   { id: 'ads',       label: 'Watch 10 Ads',                 target: 10,  baseXp: 50,  adXp: 75,  icon: '📺', adSpins: 5 },
 ];
+
 export const ALL_MISSIONS_BONUS = { baseXp: 100, adXp: 150, baseSpins: 0, adSpins: 10 };
+
 export interface StreakDayReward {
   day: number;
   spins: number;
@@ -86,6 +113,7 @@ export interface StreakDayReward {
   ppBoost?: boolean;
   label: string;
 }
+
 export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 1, spins: 2, xp: 10, label: 'Day 1' },
   { day: 2, spins: 3, xp: 15, label: 'Day 2' },
@@ -95,11 +123,13 @@ export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 6, spins: 8, xp: 40, label: 'Day 6' },
   { day: 7, spins: 15, xp: 75, ppBoost: true, label: 'Day 7 — MAX!' },
 ];
+
 export const MAX_STREAK_DAY = 7;
 export const ppToUsd = (pp: number) => pp * PP_TO_USD;
 export function formatPP(pp: number): string {
   return pp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
 export const CRYPTO_OPTIONS = [
   { id: 'BTC', label: 'Bitcoin (BTC)',  network: 'bitcoin' },
   { id: 'LTC', label: 'Litecoin (LTC)', network: 'litecoin' },
