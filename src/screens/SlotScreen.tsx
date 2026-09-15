@@ -67,6 +67,7 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const tier = getTier(state.xp);
+
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
     const init: SymbolId[][] = [];
     for (let r = 0; r < 5; r++) {
@@ -76,6 +77,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
     return init;
   });
+
   const [spinning, setSpinning] = useState(false);
   const [lastResult, setLastResult] = useState<SpinResult | null>(null);
   const [winPositions, setWinPositions] = useState<Set<string>>(new Set());
@@ -94,6 +96,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     for (let r = 0; r < 5; r++) init.push(engine.randomReelStrip(REEL_DISPLAY));
     return init;
   });
+
   const cycleInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [autoSpin, setAutoSpin] = useState(false);
@@ -156,18 +159,22 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       toast('error', 'No Toxic Twists Left', 'Absorb radiation or wait for daily dose');
       return;
     }
+
     setSpinning(true);
     setWinPositions(new Set());
     setWinPP(0);
     setLastResult(null);
     setSpinId((n) => n + 1);
     setReelPhases(['spinning', 'spinning', 'spinning', 'spinning', 'spinning']);
+
     const result = engine.spin();
+
     cycleInterval.current = setInterval(() => {
       const next: SymbolId[][] = [];
       for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
       setCyclingSymbols(next);
     }, 70);
+
     const baseDelay = 1000;
     const stagger = 320;
     for (let r = 0; r < 5; r++) {
@@ -212,6 +219,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       setWinPP(finalPP);
 
       const eligibleDoubleUp = finalPP >= 6 && !potFull && state.dailyDoubleUps < 3;
+
       if (finalPP > 0 && !potFull) {
         if (eligibleDoubleUp) {
           doubleUpResolvedRef.current = false;
@@ -223,8 +231,10 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       } else if (potFull) {
         toast('info', 'VAT OVERFLOWETH!', 'Absorb radiation to breach containment — +1 XP only');
       }
+
       actions.addXP(res.xpGained, false);
       actions.recordSpin();
+
       if (freeSpinsLeft > 0) {
         setFreeSpinsLeft((n) => n - 1);
       }
@@ -417,7 +427,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                     <div
                       key={row}
                       className={`aspect-square flex items-center justify-center reel-symbol border-0 p-0 m-0 ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
-                      style={{ background: 'transparent !important', backgroundColor: 'transparent !important' }}
+                      style={{ backgroundColor: '#ffffff' }}
                     >
                       <span className={isWin ? 'win-symbol-pop' : ''} style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important', ...(isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : {}) }}>
                         {sym.image ? (
@@ -631,7 +641,6 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                           {entry.symbols.map((symId, idx) => (
                             <HistorySymbolIcon key={idx} symId={symId as SymbolId} />
                           ))}
-                          {/* ✅ ☢️ x2 BADGE VISIBLE ON MULTIPLIED WINS! */}
                           {entry.multiplied && entry.multiplier && (
                             <span className="text-radioactive-400 text-[10px] font-bold font-mono px-1 py-0.5 rounded bg-radioactive-500/15 border border-radioactive-500/30">
                               ☢️ {entry.multiplier}
