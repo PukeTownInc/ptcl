@@ -3,7 +3,6 @@ import { Tv, X, Play } from 'lucide-react';
 import { formatPP } from '../constants';
 
 export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
-
 export interface WheelResult {
   outcome: WheelOutcome;
   multiplier: number;
@@ -63,7 +62,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   const [effect, setEffect] = useState<'confetti' | 'redflash' | 'neutral' | null>(null);
   const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spinFiredRef = useRef(false);
-
   const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
   const multiplier = outcome ? getMultiplier(outcome.id) : 0;
   const finalPP = outcome ? Math.round(safeStake * multiplier) : 0;
@@ -85,7 +83,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     const targetSeg = SEGMENTS[targetIndex];
     const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
     const fullRotations = 4 + Math.floor(Math.random() * 3);
-    // Rotate so the target segment center aligns with the pointer at top (0°)
     const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
 
     setRotation(targetRotation);
@@ -141,47 +138,68 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           <X size={16} />
         </button>
 
-        <h3 className="font-display font-black text-lg text-radioactive-400 neon-text-yellow mb-1">🔥 BIG WIN!</h3>
+        <h3 className="font-display font-black text-lg text-radioactive-400 neon-text-yellow mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
         <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Risk it all for DOUBLE?</p>
 
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-toxic-500/10 border border-toxic-600/30 mb-4">
           <span className="text-[10px] text-toxic-100/50 font-mono uppercase">Stake:</span>
-          <span className="font-display font-bold text-toxic-400">+{formatPP(safeStake)} PP</span>
+          <span className="font-display font-bold text-toxic-400">+{formatPP(safeStake)} Puke Points</span>
         </div>
 
-        {/* Wheel */}
+        {/* === NEW PNG WHEEL WITH SPIN ANIMATION === */}
         <div className="relative mx-auto mb-4" style={{ width: 220, height: 220 }}>
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20" style={{ marginTop: -4 }}>
+          {/* Fixed Pointer — sits on top, always points down */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30" style={{ marginTop: -4 }}>
             <div
               className="w-0 h-0"
               style={{
-                borderLeft: '10px solid transparent',
-                borderRight: '10px solid transparent',
-                borderTop: '18px solid #ffff00',
-                filter: 'drop-shadow(0 0 6px #ffff00)',
+                borderLeft: '12px solid transparent',
+                borderRight: '12px solid transparent',
+                borderTop: '20px solid #ffff00',
+                filter: 'drop-shadow(0 0 8px #ffff00) drop-shadow(0 0 12px #ffff00)',
               }}
             />
           </div>
 
+          {/* Spinning PNG Wheel */}
           <div
-            className="absolute inset-0 rounded-full"
+            className="absolute inset-0 rounded-full overflow-hidden"
             style={{
               transform: `rotate(${rotation}deg)`,
-              transition: phase === 'spinning' ? 'transform 3.8s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
-              boxShadow: '0 0 20px #39ff1455, inset 0 0 10px #000',
-              border: '3px solid #39ff14',
+              transition: phase === 'spinning'
+                ? 'transform 3.8s cubic-bezier(0.17, 0.67, 0.12, 0.99)'
+                : 'none',
+              boxShadow: '0 0 25px #39ff1466, 0 0 50px #39ff1433, inset 0 0 15px #000',
+              border: '4px solid #39ff14',
             }}
           >
-            <WheelSVG />
+            <img
+              src="/radioactive-risk-wheel.png"
+              alt="Radioactive Risk Wheel"
+              className="w-full h-full object-contain"
+              style={{
+                transform: 'rotate(0deg)',
+              }}
+            />
           </div>
 
+          {/* Center Hub — Logo-192 */}
           <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 rounded-full bg-ink-900 border-2 border-toxic-400 flex items-center justify-center"
-            style={{ width: 40, height: 40, boxShadow: '0 0 10px #39ff14' }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center overflow-hidden"
+            style={{
+              width: 56,
+              height: 56,
+              boxShadow: '0 0 15px #39ff14, 0 0 30px #39ff1444',
+            }}
           >
-            <span className="text-lg">🤮</span>
+            <img
+              src="/logo-192.png"
+              alt="Puke Town"
+              className="w-12 h-12 object-contain"
+            />
           </div>
         </div>
+        {/* === END WHEEL === */}
 
         {/* Result display */}
         {phase === 'result' && outcome && (
@@ -198,13 +216,13 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
                   : 'text-toxic-100/60'
               }`}
             >
-              {outcome.id === 'double' && `🤮 DOUBLED! +${formatPP(finalPP)} PP`}
-              {outcome.id === 'lose' && `☢️ LOSE ALL — Gone!`}
-              {outcome.id === 'half' && `⚠️ HALF! +${formatPP(finalPP)} PP`}
-              {outcome.id === 'safe' && `✅ SAFE! +${formatPP(finalPP)} PP`}
+              {outcome.id === 'double' && `☢️ DOUBLED! +${formatPP(finalPP)} Puke Points`}
+              {outcome.id === 'lose' && `☠️ CONTAMINATED — All Spilled!`}
+              {outcome.id === 'half' && `⚠️ HALVED! +${formatPP(finalPP)} Puke Points`}
+              {outcome.id === 'safe' && `✅ SECURED! +${formatPP(finalPP)} Puke Points`}
             </div>
             {outcome.id !== 'lose' && (
-              <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Watch ad to claim your reward</p>
+              <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Absorb radiation to secure reward</p>
             )}
           </div>
         )}
@@ -215,20 +233,18 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             <Play size={18} /> SPIN THE WHEEL
           </button>
         )}
-
         {phase === 'spinning' && (
           <div className="py-3">
-            <span className="font-display text-sm text-toxic-300/60 animate-pulse tracking-[0.3em]">SPINNING...</span>
+            <span className="font-display text-sm text-toxic-300/60 animate-pulse tracking-[0.3em]">CONTAMINATING...</span>
           </div>
         )}
-
         {phase === 'result' && outcome && outcome.id !== 'lose' && (
           <>
             <button
               onClick={handleWatchAd}
               className="toxic-btn w-full py-3 flex items-center justify-center gap-2 text-sm"
             >
-              <Tv size={16} /> Watch Ad to Claim
+              <Tv size={16} /> Absorb Radiation to Claim
             </button>
             <button
               onClick={handleClose}
@@ -238,7 +254,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             </button>
           </>
         )}
-
         {phase === 'result' && outcome && outcome.id === 'lose' && (
           <button onClick={handleClose} className="ghost-btn w-full py-3 text-sm">
             Close
@@ -249,63 +264,9 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   );
 }
 
-function WheelSVG() {
-  const radius = 100;
-  const center = 110;
-
-  return (
-    <svg width="220" height="220" viewBox="0 0 220 220">
-      {SEGMENTS.map((seg, i) => {
-        // SVG angles start at 3 o'clock (0°), go clockwise.
-        // Our segment angles start at 12 o'clock (top), go clockwise.
-        // Offset by -90° to align SVG with our coordinate system.
-        const startDeg = seg.startAngle - 90;
-        const endDeg = seg.endAngle - 90;
-        const startRad = (startDeg * Math.PI) / 180;
-        const endRad = (endDeg * Math.PI) / 180;
-
-        const x1 = center + radius * Math.cos(startRad);
-        const y1 = center + radius * Math.sin(startRad);
-        const x2 = center + radius * Math.cos(endRad);
-        const y2 = center + radius * Math.sin(endRad);
-
-        const arcAngle = seg.endAngle - seg.startAngle;
-        const largeArc = arcAngle > 180 ? 1 : 0;
-        const path = `M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-
-        const midDeg = (seg.startAngle + seg.endAngle) / 2 - 90;
-        const midRad = (midDeg * Math.PI) / 180;
-        const labelDist = radius * 0.62;
-        const labelX = center + labelDist * Math.cos(midRad);
-        const labelY = center + labelDist * Math.sin(midRad);
-
-        return (
-          <g key={i}>
-            <path d={path} fill={seg.color} stroke="#000" strokeWidth="1.5" opacity="0.9" />
-            <text
-              x={labelX}
-              y={labelY}
-              fill={seg.textColor}
-              fontSize="11"
-              fontWeight="bold"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              transform={`rotate(${midDeg + 90} ${labelX} ${labelY})`}
-              style={{ fontFamily: 'Orbitron, sans-serif' }}
-            >
-              {seg.emoji} {seg.label}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
 function ConfettiBurst() {
   const particles = Array.from({ length: 24 }, (_, i) => i);
   const colors = ['#39ff14', '#ffff00', '#39ff14', '#ffff00', '#39ff14'];
-
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {particles.map((i) => {
