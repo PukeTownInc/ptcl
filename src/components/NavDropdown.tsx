@@ -1,5 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, FlaskConical, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  Home,
+  Gamepad2,
+  Target,
+  Trophy,
+  Wallet,
+  Settings,
+  User,
+  Users,
+  Check,
+  Zap,
+  FlaskConical,
+  ChevronDown,
+  ChevronRight,
+  Radioactive,
+  Globe,
+  AlertTriangle
+} from 'lucide-react';
 import type { Screen } from '../types';
 
 const SUBMENU_ALLIES_LABEL = '☣️ TOXIC ALLIES';
@@ -14,8 +31,8 @@ const SUBMENU_INFECTION_ITEMS: { id: Screen; label: string; icon: typeof Home }[
   { id: 'leaderboards', label: 'Infection Ranks', icon: Trophy },
 ];
 
-const SUBMENU_GAMES_LABEL = '⚛️ REACTOR WORKS';
-const SUBMENU_GAMES_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
+const SUBMENU_GAMING_LABEL = '⚛️ INFECTIOUS GAMING';
+const SUBMENU_GAMING_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'slots', label: 'Reactor Reels', icon: Gamepad2 },
   { id: 'vialmixer', label: 'Contamination Lab', icon: FlaskConical },
 ];
@@ -31,7 +48,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
   const [open, setOpen] = useState(false);
   const [subAlliesOpen, setSubAlliesOpen] = useState(false);
   const [subInfectionOpen, setSubInfectionOpen] = useState(false);
-  const [subGamesOpen, setSubGamesOpen] = useState(false);
+  const [subGamingOpen, setSubGamingOpen] = useState(false);
   const [subEcosystemOpen, setSubEcosystemOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -39,7 +56,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
     if (!open) {
       setSubAlliesOpen(false);
       setSubInfectionOpen(false);
-      setSubGamesOpen(false);
+      setSubGamingOpen(false);
       setSubEcosystemOpen(false);
       return;
     }
@@ -48,7 +65,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
         setOpen(false);
         setSubAlliesOpen(false);
         setSubInfectionOpen(false);
-        setSubGamesOpen(false);
+        setSubGamingOpen(false);
         setSubEcosystemOpen(false);
       }
     };
@@ -57,7 +74,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
         setOpen(false);
         setSubAlliesOpen(false);
         setSubInfectionOpen(false);
-        setSubGamesOpen(false);
+        setSubGamingOpen(false);
         setSubEcosystemOpen(false);
       }
     };
@@ -74,13 +91,13 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
     setOpen(false);
     setSubAlliesOpen(false);
     setSubInfectionOpen(false);
-    setSubGamesOpen(false);
+    setSubGamingOpen(false);
     setSubEcosystemOpen(false);
   };
 
   const isAlliesActive = SUBMENU_ALLIES_ITEMS.some(item => item.id === active);
   const isInfectionActive = SUBMENU_INFECTION_ITEMS.some(item => item.id === active);
-  const isGamesActive = SUBMENU_GAMES_ITEMS.some(item => item.id === active);
+  const isGamingActive = SUBMENU_GAMING_ITEMS.some(item => item.id === active);
   const isEcosystemActive = SUBMENU_ECOSYSTEM_ITEMS.some(item => item.id === active);
 
   return (
@@ -128,7 +145,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
               active === 'home' ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
             }`}
           >
-            <Home size={18} />
+            <Radioactive size={18} />
             <span className="flex-1 text-left">Contamination Zone</span>
             {active === 'home' && <Check size={16} className="text-green-400" />}
           </button>
@@ -141,6 +158,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subAlliesOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            <Users size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_ALLIES_LABEL}</span>
           </button>
           {subAlliesOpen && (
@@ -169,6 +187,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subInfectionOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            <AlertTriangle size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_INFECTION_LABEL}</span>
           </button>
           {subInfectionOpen && (
@@ -189,19 +208,20 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             </div>
           )}
 
-          {/* ⚛️ REACTOR WORKS */}
+          {/* ⚛️ INFECTIOUS GAMING */}
           <button
-            onClick={() => setSubGamesOpen((v) => !v)}
+            onClick={() => setSubGamingOpen((v) => !v)}
             className={`w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium transition-all border-t border-green-900/30 ${
-              isGamesActive || subGamesOpen ? 'bg-green-500/10 text-green-400' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
+              isGamingActive || subGamingOpen ? 'bg-green-500/10 text-green-400' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
             }`}
           >
-            {subGamesOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            <span className="flex-1 text-left font-semibold">{SUBMENU_GAMES_LABEL}</span>
+            {subGamingOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            <Gamepad2 size={18} />
+            <span className="flex-1 text-left font-semibold">{SUBMENU_GAMING_LABEL}</span>
           </button>
-          {subGamesOpen && (
+          {subGamingOpen && (
             <div className="border-t border-green-900/20">
-              {SUBMENU_GAMES_ITEMS.map(({ id, label, icon: Icon }) => (
+              {SUBMENU_GAMING_ITEMS.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => handleSelect(id)}
@@ -225,6 +245,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subEcosystemOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            <Globe size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_ECOSYSTEM_LABEL}</span>
           </button>
           {subEcosystemOpen && (
