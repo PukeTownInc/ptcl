@@ -325,7 +325,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      {/* ✅ REELS */}
+      {/* ✅ REELS — TRANSPARENT BACKGROUNDS */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -334,18 +334,18 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             const phase = reelPhases[ri];
             const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
             return (
-              <div key={ri} className={`relative overflow-hidden rounded-md bg-ink-850 border border-toxic-900/30 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`}>
+              <div key={ri} className={`relative overflow-hidden rounded-md bg-transparent border-0 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`}>
                 {displayReel.map((symId, row) => {
                   const isWin = winPositions.has(`${ri}-${row}`);
                   const sym = SYMBOLS[symId];
                   return (
                     <div
                       key={row}
-                      className={`aspect-square flex items-center justify-center reel-symbol ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
+                      className={`aspect-square flex items-center justify-center reel-symbol bg-transparent border-0 p-0 m-0 ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
                     >
                       <span className={isWin ? 'win-symbol-pop' : ''} style={isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : undefined}>
                         {sym.image ? (
-                          <img src={sym.image} alt={sym.label} className="w-10 h-10 object-contain" />
+                          <img src={sym.image} alt={sym.label} className="w-10 h-10 object-contain bg-transparent border-0" />
                         ) : (
                           sym.emoji
                         )}
@@ -437,7 +437,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
                 <span className="col-span-5 font-mono text-sm flex items-center gap-2">
                   {sym.image ? (
-                    <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain" />
+                    <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain bg-transparent border-0" />
                   ) : (
                     sym.emoji
                   )}
