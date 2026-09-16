@@ -3,7 +3,6 @@ import { Tv, X, Play } from 'lucide-react';
 import { formatPP } from '../constants';
 
 export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
-
 export interface WheelResult {
   outcome: WheelOutcome;
   multiplier: number;
@@ -13,20 +12,18 @@ export interface WheelResult {
 interface Segment {
   id: WheelOutcome;
   label: string;
-  emoji: string;
   color: string;
-  textColor: string;
   probability: number;
   startAngle: number;
   endAngle: number;
 }
 
-// ✅ ODDS: Lose 40% • Half 30% • Safe 20% • Double 10%
+// ✅ EXACT ANGLES matching 40%/30%/20%/10% = 360° total
 const SEGMENTS: Segment[] = [
-  { id: 'double', label: 'DOUBLE', emoji: '🤮', color: '#39ff14', textColor: '#0a0a0a', probability: 10, startAngle: 0, endAngle: 36 },
-  { id: 'lose', label: 'LOSE ALL', emoji: '☢️', color: '#ff2d2d', textColor: '#fff', probability: 40, startAngle: 36, endAngle: 180 },
-  { id: 'half', label: 'HALF', emoji: '⚠️', color: '#ffaa00', textColor: '#0a0a0a', probability: 30, startAngle: 180, endAngle: 288 },
-  { id: 'safe', label: 'SAFE', emoji: '✅', color: '#3399FF', textColor: '#fff', probability: 20, startAngle: 288, endAngle: 360 },
+  { id: 'lose',    label: 'LOSE',   color: '#ff2d2d', probability: 40, startAngle: 0,   endAngle: 144 },   // 40% = 144°
+  { id: 'half',    label: 'HALF',   color: '#ffaa00', probability: 30, startAngle: 144, endAngle: 252 },   // 30% = 108°
+  { id: 'safe',    label: 'SAFE',   color: '#3399FF', probability: 20, startAngle: 252, endAngle: 324 },   // 20% = 72°
+  { id: 'double',  label: 'DOUBLE', color: '#39ff14', probability: 10, startAngle: 324, endAngle: 360 },   // 10% = 36°
 ];
 
 function pickWeightedIndex(): number {
@@ -35,14 +32,16 @@ function pickWeightedIndex(): number {
     r -= SEGMENTS[i].probability;
     if (r <= 0) return i;
   }
-  return SEGMENTS.length - 1;
+  return 0;
 }
 
 function getMultiplier(outcome: WheelOutcome): number {
-  if (outcome === 'double') return 2;
-  if (outcome === 'lose') return 0;
-  if (outcome === 'half') return 0.5;
-  return 1;
+  switch (outcome) {
+    case 'double': return 2;
+    case 'lose':   return 0;
+    case 'half':   return 0.5;
+    case 'safe':   return 1;
+  }
 }
 
 interface Props {
@@ -59,14 +58,13 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   const [rotation, setRotation] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
   const [resultIndex, setResultIndex] = useState<number | null>(null);
-  const [effect, setEffect] = useState<'confetti' | 'redflash' | 'neutral' | null>(null);
+  const [effect, setEffect] = useState<'confetti' | 'redflash' | 'amberflash' | 'blueflash' | null>(null);
   const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spinFiredRef = useRef(false);
 
   const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
   const multiplier = outcome ? getMultiplier(outcome.id) : 0;
-  
-  // ✅ finalPP = EXACT reward only — SlotScreen decides how to apply
+  // ✅ finalPP = stake × multiplier — EXACT
   const finalPP = outcome ? Math.round(safeStake * multiplier) : 0;
 
   useEffect(() => {
@@ -85,7 +83,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     const targetIndex = pickWeightedIndex();
     const targetSeg = SEGMENTS[targetIndex];
     const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
-    const fullRotations = 4 + Math.floor(Math.random() * 3);
+    const fullRotations = 5 + Math.floor(Math.random() * 3);
     const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
 
     setRotation(targetRotation);
@@ -95,14 +93,14 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
       setPhase('result');
       if (targetSeg.id === 'double') setEffect('confetti');
       else if (targetSeg.id === 'lose') setEffect('redflash');
-      else setEffect('neutral');
+      else if (targetSeg.id === 'half') setEffect('amberflash');
+      else setEffect('blueflash');
       spinFiredRef.current = false;
     }, 3800);
   }, [phase, rotation]);
 
   const handleWatchAd = () => {
     if (!outcome || phase !== 'result') return;
-    // ✅ Sends ONLY final reward amount — no stake added
     onClaim({ outcome: outcome.id, multiplier, finalPP });
   };
 
@@ -112,18 +110,13 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
       return;
     }
     if (phase === 'result' && outcome) {
-      if (outcome.id === 'lose') {
-        onLose();
-      } else {
-        onForfeit();
-      }
-    } else if (phase === 'idle') {
-      onForfeit();
-    }
+      if (outcome.id === 'lose') onLose();
+      else onForfeit();
+    } else onForfeit();
   };
 
   useEffect(() => {
-    if (effect === 'redflash') {
+    if (effect === 'redflash' || effect === 'amberflash' || effect === 'blueflash') {
       const t = setTimeout(() => setEffect(null), 1000);
       return () => clearTimeout(t);
     }
@@ -131,16 +124,16 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
-      {effect === 'redflash' && (
-        <div className="absolute inset-0 bg-red-600/30 animate-fade-in pointer-events-none" />
-      )}
+      {effect === 'redflash' && <div className="absolute inset-0 bg-red-600/30 animate-fade-in pointer-events-none" />}
+      {effect === 'amberflash' && <div className="absolute inset-0 bg-amber-500/20 animate-fade-in pointer-events-none" />}
+      {effect === 'blueflash' && <div className="absolute inset-0 bg-blue-500/20 animate-fade-in pointer-events-none" />}
       {effect === 'confetti' && <ConfettiBurst />}
       
       <div className="grunge-panel neon-border p-5 max-w-xs w-full text-center animate-slide-up relative">
         <button
           onClick={handleClose}
           disabled={phase === 'spinning'}
-          className="absolute top-2 right-2 p-1.5 rounded-full bg-ink-700/80 text-toxic-200 hover:text-toxic-400 disabled:opacity-30 disabled:cursor-not-allowed z-10"
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-ink-700/80 text-toxic-200 hover:text-toxic-400 disabled:opacity-30"
         >
           <X size={16} />
         </button>
@@ -153,7 +146,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           <span className="font-display font-bold text-toxic-400">{formatPP(safeStake)} Puke Points</span>
         </div>
 
-        {/* ✅ PNG WHEEL — VISUALLY UNCHANGED */}
         <div className="relative mx-auto mb-4" style={{ width: 220, height: 220 }}>
           <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30" style={{ marginTop: -4 }}>
             <div
@@ -162,7 +154,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
                 borderLeft: '12px solid transparent',
                 borderRight: '12px solid transparent',
                 borderTop: '20px solid #ffff00',
-                filter: 'drop-shadow(0 0 8px #ffff00) drop-shadow(0 0 12px #ffff00)',
+                filter: 'drop-shadow(0 0 8px #ffff00)',
               }}
             />
           </div>
@@ -173,7 +165,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
               transition: phase === 'spinning'
                 ? 'transform 3.8s cubic-bezier(0.17, 0.67, 0.12, 0.99)'
                 : 'none',
-              boxShadow: '0 0 25px #39ff1466, 0 0 50px #39ff1433, inset 0 0 15px #000',
+              boxShadow: '0 0 25px #39ff1466, 0 0 50px #39ff1433',
               border: '4px solid #39ff14',
             }}
           >
@@ -184,8 +176,8 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             />
           </div>
           <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center overflow-hidden"
-            style={{ width: 56, height: 56, boxShadow: '0 0 15px #39ff14, 0 0 30px #39ff1444' }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center"
+            style={{ width: 56, height: 56, boxShadow: '0 0 15px #39ff14' }}
           >
             <img src="/logo-192.png" alt="Puke Town" className="w-12 h-12 object-contain" />
           </div>
@@ -193,7 +185,12 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
 
         {phase === 'result' && outcome && (
           <div className="animate-pop mb-3">
-            <div className="text-4xl mb-1">{outcome.emoji}</div>
+            <div className="text-4xl mb-1">
+              {outcome.id === 'double' && '☢️'}
+              {outcome.id === 'lose' && '☠️'}
+              {outcome.id === 'half' && '⚠️'}
+              {outcome.id === 'safe' && '🛡️'}
+            </div>
             <div
               className={`font-display font-black text-xl ${
                 outcome.id === 'double' ? 'text-toxic-400 neon-text' :
@@ -201,11 +198,10 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
                 outcome.id === 'half' ? 'text-hazard-amber' : 'text-blue-400'
               }`}
             >
-              {/* ✅ DISPLAY = ONLY REWARD */}
-              {outcome.id === 'double' && `☢️ DOUBLED! +${formatPP(finalPP)} Puke Points`}
-              {outcome.id === 'lose' && `☠️ CONTAMINATED — All Spilled!`}
-              {outcome.id === 'half' && `⚠️ HALVED! +${formatPP(finalPP)} Puke Points`}
-              {outcome.id === 'safe' && `✅ SECURED! +${formatPP(finalPP)} Puke Points`}
+              {outcome.id === 'double' && `DOUBLED! +${formatPP(finalPP)} Puke Points`}
+              {outcome.id === 'lose' && `SPILLED! All lost`}
+              {outcome.id === 'half' && `HALVED! +${formatPP(finalPP)} Puke Points`}
+              {outcome.id === 'safe' && `SECURED! +${formatPP(finalPP)} Puke Points`}
             </div>
             {outcome.id !== 'lose' && (
               <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Absorb radiation to secure reward</p>
@@ -230,7 +226,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             <button onClick={handleWatchAd} className="toxic-btn w-full py-3 flex items-center justify-center gap-2 text-sm">
               <Tv size={16} /> Absorb Radiation to Claim
             </button>
-            <button onClick={handleClose} className="w-full mt-2 py-2 text-[11px] text-toxic-100/30 hover:text-toxic-100/50 font-mono transition-colors">
+            <button onClick={handleClose} className="w-full mt-2 py-2 text-[11px] text-toxic-100/30 hover:text-toxic-100/50 font-mono">
               Skip — Keep Original {formatPP(safeStake)} PP
             </button>
           </>
@@ -248,7 +244,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
 
 function ConfettiBurst() {
   const particles = Array.from({ length: 24 }, (_, i) => i);
-  const colors = ['#39ff14', '#ffff00', '#39ff14', '#ffff00', '#39ff14'];
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {particles.map((i) => {
@@ -256,16 +251,13 @@ function ConfettiBurst() {
         const distance = 80 + Math.random() * 120;
         const x = Math.cos((angle * Math.PI) / 180) * distance;
         const y = Math.sin((angle * Math.PI) / 180) * distance;
-        const delay = Math.random() * 0.3;
-        const duration = 1.2 + Math.random() * 0.8;
         return (
           <div
             key={i}
-            className="absolute top-1/2 left-1/2"
+            className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full"
             style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: colors[i % colors.length],
-              animation: `confetti-burst ${duration}s ease-out ${delay}s forwards`,
+              background: ['#39ff14', '#ffff00', '#ff2d2d'][i % 3],
+              animation: `confetti-burst 1.2s ease-out ${i * 0.05}s forwards`,
               '--tx': `${x}px`, '--ty': `${y}px`,
             } as React.CSSProperties}
           />
