@@ -228,4 +228,4 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
       </div>
     </div>
   );
-}  
+}
