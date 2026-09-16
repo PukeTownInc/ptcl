@@ -118,7 +118,6 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
               active === 'home' ? 'bg-green-500/15 text-green-400 border-l-[3px] border-green-500' : 'text-gray-200 hover:bg-green-500/10 hover:text-green-400'
             }`}
           >
-            <Home size={18} />
             <span className="flex-1 text-left">Contamination Zone</span>
             {active === 'home' && <Check size={16} className="text-green-400" />}
           </button>
