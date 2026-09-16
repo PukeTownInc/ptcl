@@ -17,11 +17,12 @@ interface Segment {
   endAngle: number;
 }
 
+// ✅ ODDS: Lose 40% • Half 30% • Safe 20% • Double 10%
 const SEGMENTS: Segment[] = [
-  { id: 'half',    label: 'HALF',   probability: 30, startAngle: 0,   endAngle: 90 },
-  { id: 'lose',    label: 'LOSE',   probability: 40, startAngle: 90,  endAngle: 180 },
-  { id: 'safe',    label: 'SAFE',   probability: 20, startAngle: 180, endAngle: 270 },
-  { id: 'double',  label: 'DOUBLE', probability: 10, startAngle: 270, endAngle: 360 },
+  { id: 'lose',   label: 'LOSE',   probability: 40, startAngle: 0,   endAngle: 144 },
+  { id: 'half',   label: 'HALF',   probability: 30, startAngle: 144, endAngle: 252 },
+  { id: 'safe',   label: 'SAFE',   probability: 20, startAngle: 252, endAngle: 324 },
+  { id: 'double', label: 'DOUBLE', probability: 10, startAngle: 324, endAngle: 360 },
 ];
 
 function pickWeightedIndex(): number {
@@ -33,12 +34,13 @@ function pickWeightedIndex(): number {
   return 0;
 }
 
+// ✅ EXACT PAYOUT RULES — stake already consumed
 function getAmount(outcome: WheelOutcome, stake: number): number {
   switch (outcome) {
-    case 'double': return Math.round(stake * 2);
-    case 'lose':   return 0;
-    case 'half':   return Math.round(stake * 0.5);
-    case 'safe':   return Math.round(stake * 1);
+    case 'double': return Math.round(stake * 2);   // x2 return
+    case 'safe':   return Math.round(stake * 1);   // x1 return
+    case 'half':   return Math.round(stake * 0.5); // 0.5 return
+    case 'lose':   return 0;                        // 0 — nothing
   }
 }
 
@@ -46,7 +48,7 @@ interface Props {
   stake: number;
   onClaim: (result: WheelResult) => void;
   onLose: () => void;
-  onForfeit: () => void; // ✅ FORFEIT = stake GONE — never returned
+  onForfeit: () => void; // ✅ FORFEIT = stake GONE
 }
 
 type Phase = 'idle' | 'spinning' | 'result';
@@ -56,10 +58,9 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   const [rotation, setRotation] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
   const [resultIndex, setResultIndex] = useState<number | null>(null);
-  const [effect, setEffect] = useState<'confetti' | 'redflash' | 'amberflash' | 'blueflash' | null>(null);
+  const [effect, setEffect] = useState<'confetti' | 'redflash' | 'amberflash' | 'greenflash' | null>(null);
   const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spinFiredRef = useRef(false);
-
   const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
   const winAmount = outcome ? getAmount(outcome.id, safeStake) : 0;
 
@@ -81,7 +82,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
     const fullRotations = 5 + Math.floor(Math.random() * 3);
     const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
-
     setRotation(targetRotation);
 
     spinTimerRef.current = setTimeout(() => {
@@ -90,11 +90,12 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
       if (targetSeg.id === 'double') setEffect('confetti');
       else if (targetSeg.id === 'lose') setEffect('redflash');
       else if (targetSeg.id === 'half') setEffect('amberflash');
-      else setEffect('blueflash');
+      else if (targetSeg.id === 'safe') setEffect('greenflash');
       spinFiredRef.current = false;
     }, 3800);
   }, [phase, rotation]);
 
+  // ✅ Claim = send exact amount to add
   const handleWatchAd = () => {
     if (!outcome || phase !== 'result') return;
     onClaim({ 
@@ -103,19 +104,25 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     });
   };
 
+  // ✅ Close logic — ALL close paths = stake stays gone
   const handleClose = () => {
     if (phase === 'spinning') {
-      onForfeit(); // ✅ SPINNING = FORFEIT — stake GONE
+      onForfeit(); // Spinning = Forfeit
       return;
     }
     if (phase === 'result' && outcome) {
-      if (outcome.id === 'lose') onLose();
-      else onForfeit(); // ✅ SKIP = FORFEIT — stake GONE
-    } else onForfeit(); // ✅ ANY CLOSE = FORFEIT — stake GONE
+      if (outcome.id === 'lose') {
+        onLose(); // Lose = 0
+      } else {
+        onForfeit(); // Skip claiming = Forfeit
+      }
+    } else {
+      onForfeit();
+    }
   };
 
   useEffect(() => {
-    if (effect === 'redflash' || effect === 'amberflash' || effect === 'blueflash') {
+    if (effect === 'redflash' || effect === 'amberflash' || effect === 'greenflash') {
       const t = setTimeout(() => setEffect(null), 1000);
       return () => clearTimeout(t);
     }
@@ -125,7 +132,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
       {effect === 'redflash' && <div className="absolute inset-0 bg-red-600/30 animate-fade-in pointer-events-none" />}
       {effect === 'amberflash' && <div className="absolute inset-0 bg-amber-500/20 animate-fade-in pointer-events-none" />}
-      {effect === 'blueflash' && <div className="absolute inset-0 bg-blue-500/20 animate-fade-in pointer-events-none" />}
+      {effect === 'greenflash' && <div className="absolute inset-0 bg-green-500/20 animate-fade-in pointer-events-none" />}
       {effect === 'confetti' && <ConfettiBurst />}
       
       <div className="grunge-panel neon-border p-5 max-w-xs w-full text-center animate-slide-up relative">
@@ -138,13 +145,14 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
         </button>
 
         <h3 className="font-display font-black text-lg text-radioactive-400 neon-text-yellow mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
-        <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Stake: {formatPP(safeStake)} PP — RISKED & GONE</p>
+        <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Stake: {formatPP(safeStake)} PP — RISKED & FORFEITED</p>
         
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-toxic-500/10 border border-toxic-600/30 mb-4">
           <span className="text-[10px] text-toxic-100/50 font-mono uppercase">STAKED:</span>
           <span className="font-display font-bold text-toxic-400">{formatPP(safeStake)} Puke Points</span>
         </div>
 
+        {/* Wheel */}
         <div className="relative mx-auto mb-4" style={{ width: 220, height: 220 }}>
           <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30" style={{ marginTop: -4 }}>
             <div
@@ -182,6 +190,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           </div>
         </div>
 
+        {/* Result Display */}
         {phase === 'result' && outcome && (
           <div className="animate-pop mb-3">
             <div className="text-4xl mb-1">
@@ -194,7 +203,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
               className={`font-display font-black text-xl ${
                 outcome.id === 'double' ? 'text-toxic-400 neon-text' :
                 outcome.id === 'lose' ? 'text-red-400' :
-                outcome.id === 'half' ? 'text-hazard-amber' : 'text-blue-400'
+                outcome.id === 'half' ? 'text-hazard-amber' : 'text-green-400'
               }`}
             >
               {outcome.id === 'double' && `x2 = +${formatPP(winAmount)} PP`}
@@ -211,18 +220,17 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           </div>
         )}
 
+        {/* Buttons */}
         {phase === 'idle' && (
           <button onClick={handleSpin} className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2 text-sm">
             <Play size={18} /> SPIN — STAKE RISKED
           </button>
         )}
-
         {phase === 'spinning' && (
           <div className="py-3">
             <span className="font-display text-sm text-toxic-300/60 animate-pulse tracking-[0.3em]">CONTAMINATING...</span>
           </div>
         )}
-
         {phase === 'result' && outcome && outcome.id !== 'lose' && (
           <>
             <button onClick={handleWatchAd} className="toxic-btn w-full py-3 flex items-center justify-center gap-2 text-sm">
@@ -233,7 +241,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             </button>
           </>
         )}
-
         {phase === 'result' && outcome && outcome.id === 'lose' && (
           <button onClick={handleClose} className="ghost-btn w-full py-3 text-sm text-red-400">
             Close — Stake Lost
