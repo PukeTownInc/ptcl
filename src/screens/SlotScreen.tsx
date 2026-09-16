@@ -226,13 +226,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
-  // ✅ DECIMAL-PRESERVING WHEEL HANDLER — NO Math.floor on half
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
     const stake = state.doubleUpPending ?? 0;
-    actions.useDoubleUp(); // Stake consumed — never returned automatically
+    actions.useDoubleUp();
     if (result.outcome === 'double') {
       actions.addPP(result.amount);
       toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} PP (x2 stake)`);
@@ -254,12 +253,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [state.doubleUpPending, actions, toast]);
-  // ✅ FORFEIT = 0 RETURN — STAKE GONE
   const handleForfeit = useCallback(() => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
-    actions.useDoubleUp(); // Stake consumed — 0 returned
+    actions.useDoubleUp();
     toast('info', '☣️ FORFEITED', 'Stake lost — nothing returned');
     setSpinHistory((prev) => [{ kind: 'forfeit', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
   }, [actions, toast]);
@@ -324,6 +322,26 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
   return (
     <div className="space-y-4">
+      {/* ✅ MOVED: Mystery Goop Vat + Sludge Accelerator to TOP */}
+      <div className="grid grid-cols-2 gap-2">
+        <BonusBtn
+          icon={<Package size={16} />}
+          label="Mystery Goop Vat"
+          sub="15-25 Twists • only when empty"
+          ad
+          onClick={handleMysteryPack}
+          disabled={state.spinsRemaining > 0 || spinning}
+        />
+        <BonusBtn
+          icon={<Zap size={16} />}
+          label="Sludge Accelerator"
+          sub={`${2 - state.dailyPotAccel} left • x2 flow for 5 min`}
+          ad
+          onClick={handlePotAccel}
+          disabled={state.dailyPotAccel >= 2 || spinning}
+        />
+      </div>
+
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
         <div className="flex flex-wrap gap-2">
           {freeSpinsLeft > 0 && (
@@ -432,24 +450,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <BonusBtn
-          icon={<Package size={16} />}
-          label="Mystery Goop Vat"
-          sub="15-25 Twists • only when empty"
-          ad
-          onClick={handleMysteryPack}
-          disabled={state.spinsRemaining > 0 || spinning}
-        />
-        <BonusBtn
-          icon={<Zap size={16} />}
-          label="Sludge Accelerator"
-          sub={`${2 - state.dailyPotAccel} left • x2 flow for 5 min`}
-          ad
-          onClick={handlePotAccel}
-          disabled={state.dailyPotAccel >= 2 || spinning}
-        />
-      </div>
       <SpinHistory entries={spinHistory} />
       <div className="grunge-panel overflow-hidden">
         <button
@@ -506,7 +506,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         )}
       </div>
-      {/* ✅ UPDATED: onWatchAd triggers ad gate before reward */}
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
           stake={state.doubleUpPending}
