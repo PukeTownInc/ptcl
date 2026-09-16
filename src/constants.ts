@@ -14,7 +14,6 @@ export const WITHDRAW_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 export const DAILY_XP_FREE_CAP = 150;
 export const DAILY_XP_BONUS_CAP = 100;
 export const DAILY_XP_MAX = 250;
-
 const XP_PER_LEVEL = 1000;
 export function getLevel(xp: number): number {
   return Math.floor(xp / XP_PER_LEVEL) + 1;
@@ -28,7 +27,6 @@ export function getNextLevelXp(_xp: number): number {
 export function getLevelPercent(xp: number): number {
   return Math.min(100, (getLevelProgress(xp) / XP_PER_LEVEL) * 100);
 }
-
 export interface TierInfo {
   id: Tier;
   label: string;
@@ -41,21 +39,17 @@ export interface TierInfo {
   dailySpinsBase: number;
   dailyMissions: number;
 }
-
 export const TIERS: TierInfo[] = [
   { id: 'bronze', label: 'Bronze', badge: '🥉', minXp: 0, maxXp: 500, potCap: 15000, dailyUnlocks: 1, multiplier: 1.0, dailySpinsBase: 25, dailyMissions: 3 },
   { id: 'silver', label: 'Silver', badge: '🥈', minXp: 500, maxXp: 2500, potCap: 30000, dailyUnlocks: 2, multiplier: 1.05, dailySpinsBase: 40, dailyMissions: 5 },
   { id: 'gold', label: 'Gold', badge: '🥇', minXp: 2500, maxXp: 10000, potCap: 60000, dailyUnlocks: 3, multiplier: 1.1, dailySpinsBase: 55, dailyMissions: 8 },
   { id: 'platinum', label: 'Platinum', badge: '💎', minXp: 10000, maxXp: Infinity, potCap: 150000, dailyUnlocks: 5, multiplier: 1.2, dailySpinsBase: 85, dailyMissions: 12 },
 ];
-
 export function getTier(xp: number): TierInfo {
   return [...TIERS].reverse().find(t => xp >= t.minXp) || TIERS[0];
 }
-
 export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 10;
-
 export interface MissionDef {
   id: string;
   label: string;
@@ -64,7 +58,6 @@ export interface MissionDef {
   adXp: number;
   adSpins: number;
 }
-
 export const MISSIONS: MissionDef[] = [
   { id: 'claistreak', label: 'Claim Daily Streak', target: 1, baseXp: 50, adXp: 75, adSpins: 5 },
   { id: 'spins', label: 'Spin 50 Times', target: 50, baseXp: 50, adXp: 75, adSpins: 5 },
@@ -72,14 +65,12 @@ export const MISSIONS: MissionDef[] = [
   { id: 'wheel', label: 'Claim Radioactive Risk 5 Times', target: 5, baseXp: 50, adXp: 75, adSpins: 5 },
   { id: 'ads', label: 'Watch 10 Ads', target: 10, baseXp: 50, adXp: 75, adSpins: 5 },
 ];
-
 export const ALL_MISSIONS_BONUS = {
   baseXp: 100,
   baseSpins: 0,
   adXp: 150,
   adSpins: 10,
 };
-
 export interface StreakDayReward {
   day: number;
   spins: number;
@@ -87,7 +78,6 @@ export interface StreakDayReward {
   ppBoost?: boolean;
   label: string;
 }
-
 export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 1, spins: 2, xp: 10, label: 'Day 1' },
   { day: 2, spins: 3, xp: 15, label: 'Day 2' },
@@ -97,14 +87,11 @@ export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 6, spins: 8, xp: 40, label: 'Day 6' },
   { day: 7, spins: 15, xp: 75, ppBoost: true, label: 'Day 7 — MAX!' },
 ];
-
 export const MAX_STREAK_DAY = 7;
-
 export const ppToUsd = (pp: number) => pp * PP_TO_USD;
 export function formatPP(pp: number): string {
   return pp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
 export const CRYPTO_OPTIONS = [
   { id: 'BTC', label: 'Bitcoin (BTC)', network: 'bitcoin' },
   { id: 'LTC', label: 'Litecoin (LTC)', network: 'litecoin' },
@@ -112,7 +99,6 @@ export const CRYPTO_OPTIONS = [
   { id: 'TRX', label: 'Tron (TRX)', network: 'tron' },
   { id: 'SOL', label: 'Solana (SOL)', network: 'solana' },
 ];
-
 export const SYMBOLS: Record<SymbolId, any> = {
   cashlab: { id: 'cashlab', emoji: '🤑', label: 'Cash Lab', pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cash-lab.png` },
   puke: { id: 'puke', emoji: '🤢', label: 'Puke Town', pays: [2, 3, 9], weight: 26, image: `${SYMBOL_IMAGE_PATH}symbol-puke-town.png` },
@@ -133,10 +119,8 @@ export const SYMBOLS: Record<SymbolId, any> = {
   hazard: { id: 'hazard', emoji: '☣️', label: 'Hazard', pays: [0, 0, 0], weight: 1.2, special: 'hazard', image: `${SYMBOL_IMAGE_PATH}symbol-hazard.png` },
   jackpot: { id: 'jackpot', emoji: '🏆', label: 'Jackpot', pays: [0, 0, 0], weight: 1, special: 'jackpot', image: `${SYMBOL_IMAGE_PATH}symbol-jackpot.png` },
 };
-
 export const REEL_COUNT = 5;
 export const ROW_COUNT = 3;
-
 export const JACKPOT_TYPES = [
   { type: 'mini' as const, amount: 30, label: 'Mini' },
   { type: 'minor' as const, amount: 60, label: 'Minor' },
