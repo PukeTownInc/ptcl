@@ -203,7 +203,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
       <div className="grunge-panel p-4 text-center space-y-3 mt-4">
         <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
         <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
-
+        <p className="text-toxic-300 text-sm font-semibold">Claim Daily • +10 Exposure • +3 Twists</p>
         <button
           onClick={handleClaim}
           disabled={!canClaim}
