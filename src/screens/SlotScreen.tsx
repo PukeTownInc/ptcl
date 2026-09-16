@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Lock, Tv, Zap, Package, RefreshCw, Layers, Play, X, Coins, Flame, Square, History, Timer } from 'lucide-react';
 import type { GameState, SpinResult, SymbolId, WinLine } from '../types';
-import { MIN_UNLOCK_PP, SYMBOLS } from '../constants';
+import { MIN_UNLOCK_PP, SYMBOLS, formatPP } from '../constants';
 import * as engine from '../slotEngine';
 import type { GameActions } from '../useGameState';
 import { isHotStreakActive, isPotAccelActive } from '../useGameState';
@@ -239,54 +239,44 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
 
-  // ✅ FIXED: Clean logic — result.finalPP is the TOTAL amount to add
-  const handleWheelClaim = (result: WheelResult) => {
+  // ✅ UPDATED: Correct result handling matching SpinWheelModal rules
+  const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
-    
+
     setShowDoubleUp(false);
-    
-    // ✅ Add the calculated amount directly — NO extra math
-    actions.addPP(result.finalPP);
+    const stake = state.doubleUpPending ?? 0;
     actions.useDoubleUp();
-    
-    // ✅ Correct toast messages
-    if (result.outcome === 'double') {
-      toast('success', '☢️ DOUBLED!', `+${result.finalPP} Puke Points!`);
+
+    // ✅ Rules applied:
+    // Safe → return stake (no change to balance, just confirm)
+    // Double → gain = finalPP - stake
+    // Half → gain = finalPP - stake
+    // Lose → full stake lost, nothing added
+    if (result.outcome === 'lose') {
+      // Lost full stake — already deducted by not adding anything
+      setWinPP(0);
+      toast('error', '☠️ SPILLED!', 'All lost — better containment next time!');
+      setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
+    } else if (result.outcome === 'safe') {
+      // Stake returned exactly — no gain, no loss
+      actions.addPP(result.finalPP);
+      toast('success', '🛡️ SECURED', `${formatPP(result.finalPP)} PP — stake kept!`);
+      setSpinHistory((prev) => [{ kind: 'safe', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
+    } else if (result.outcome === 'double') {
+      // Double — add the profit (finalPP - stake)
+      const gain = result.finalPP - stake;
+      if (gain > 0) actions.addPP(gain);
+      toast('success', '☢️ DOUBLED!', `+${formatPP(result.finalPP)} PP total!`);
+      setSpinHistory((prev) => [{ kind: 'double', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
     } else if (result.outcome === 'half') {
-      toast('info', '⚠️ HALVED', `+${result.finalPP} Puke Points`);
-    } else {
-      toast('success', '✅ SECURED', `+${result.finalPP} Puke Points`);
+      // Half — add the reduced amount
+      const gain = result.finalPP - stake;
+      if (gain > 0) actions.addPP(gain);
+      toast('info', '⚠️ HALVED', `${formatPP(result.finalPP)} PP returned`);
+      setSpinHistory((prev) => [{ kind: 'half', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
     }
-    
-    const kind = result.outcome === 'double' ? 'double' : 
-                 result.outcome === 'half' ? 'half' : 'safe';
-    setSpinHistory((prev) => [{ kind, pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
-  };
-
-  const handleWheelLose = () => {
-    if (doubleUpResolvedRef.current) return;
-    doubleUpResolvedRef.current = true;
-    
-    setShowDoubleUp(false);
-    actions.useDoubleUp();
-    setWinPP(0);
-    toast('error', '☠️ SPILLED!', 'All lost — better containment next time!');
-    setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
-  };
-
-  const handleWheelForfeit = () => {
-    if (doubleUpResolvedRef.current) return;
-    doubleUpResolvedRef.current = true;
-    
-    const original = state.doubleUpPending ?? 0;
-    setShowDoubleUp(false);
-    // ✅ Skip = keep ONLY the original stake
-    actions.addPP(original);
-    actions.useDoubleUp();
-    toast('info', '🧪 BANKED', `+${original} Puke Points secured`);
-    setSpinHistory((prev) => [{ kind: 'safe', pp: original }, ...prev].slice(0, MAX_HISTORY));
-  };
+  }, [state.doubleUpPending, actions, toast]);
 
   const handleMysteryPack = () => {
     if (state.spinsRemaining > 0) {
@@ -372,7 +362,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -410,7 +399,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             );
           })}
         </div>
-
         <div className="mt-3 min-h-[60px] flex items-center justify-center">
           {spinning ? (
             <div className="text-center">
@@ -433,13 +421,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </div>
           )}
         </div>
-
         <div className="flex items-center justify-center mb-2 mt-2">
           <span className="font-display font-bold text-sm text-toxic-300">
             Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
           </span>
         </div>
-
         <button
           onClick={doSpin}
           disabled={!canSpin || spinning}
@@ -451,7 +437,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             <><Play size={22} /> CONTAMINATE</>
           )}
         </button>
-
         <div className="mt-2 flex items-center gap-2">
           <button
             onClick={toggleAutoSpin}
@@ -466,7 +451,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </button>
         </div>
       </div>
-
       <div className="grid grid-cols-2 gap-2">
         <BonusBtn
           icon={<Package size={16} />}
@@ -485,9 +469,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           disabled={state.dailyPotAccel >= 2 || spinning}
         />
       </div>
-
       <SpinHistory entries={spinHistory} />
-
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -543,16 +525,14 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         )}
       </div>
-
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
           stake={state.doubleUpPending}
-          onClaim={handleWheelClaim}
-          onLose={handleWheelLose}
-          onForfeit={handleWheelForfeit}
+          isOpen={showDoubleUp}
+          onClose={() => setShowDoubleUp(false)}
+          onResult={handleWheelResult}
         />
       )}
-
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
