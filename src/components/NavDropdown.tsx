@@ -98,7 +98,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
         </div>
         <div className="text-left">
           <h1 className="font-display font-black text-sm text-toxic-400 neon-text leading-none tracking-wide">PUKE TOWN</h1>
-          <p className="text-[8px] font-mono text-radioactive-400/70 leading-none mt-0.5">CASH LAB ☢️</p>
+          <p className="text-[8px] font-mono text-radioactive-400/70 leading-none mt-0.5">CASH LAB</p>
         </div>
       </button>
       {open && (
@@ -130,7 +130,6 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subAlliesOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            <Users size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_ALLIES_LABEL}</span>
           </button>
           {subAlliesOpen && (
@@ -158,7 +157,6 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subInfectionOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            <AlertTriangle size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_INFECTION_LABEL}</span>
           </button>
           {subInfectionOpen && (
@@ -186,7 +184,6 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subGamingOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            <Gamepad2 size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_GAMING_LABEL}</span>
           </button>
           {subGamingOpen && (
@@ -214,7 +211,6 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             }`}
           >
             {subEcosystemOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-            <Globe size={18} />
             <span className="flex-1 text-left font-semibold">{SUBMENU_ECOSYSTEM_LABEL}</span>
           </button>
           {subEcosystemOpen && (
