@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Tv, X, Play } from 'lucide-react';
 import { formatPP } from '../constants';
+
 export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
+
 export interface WheelResult {
   outcome: WheelOutcome;
-  amount: number; // ✅ Exact decimal — stake × multiplier, NO rounding
+  amount: number;
 }
+
 interface Segment {
   id: WheelOutcome;
   label: string;
@@ -13,14 +16,15 @@ interface Segment {
   startAngle: number;
   endAngle: number;
 }
-// ✅ MATCHES YOUR WHEEL IMAGE — CORRECTED ORDER & PROBABILITIES
-// ODDS: Double 10% • Half 30% • Lose 40% • Safe 20%
+
+// ✅ DEFINITIVE: Double 10% • Half 30% • Lose 40% • Safe 20%
 const SEGMENTS: Segment[] = [
   { id: 'double', label: 'DOUBLE', probability: 10, startAngle: 0,   endAngle: 90 },
   { id: 'half',   label: 'HALF',   probability: 30, startAngle: 90,  endAngle: 180 },
   { id: 'lose',   label: 'LOSE',   probability: 40, startAngle: 180, endAngle: 270 },
   { id: 'safe',   label: 'SAFE',   probability: 20, startAngle: 270, endAngle: 360 },
 ];
+
 function pickWeightedIndex(): number {
   let r = Math.random() * 100;
   for (let i = 0; i < SEGMENTS.length; i++) {
@@ -29,24 +33,28 @@ function pickWeightedIndex(): number {
   }
   return 0;
 }
-// ✅ EXACT DECIMAL — NO Math.floor / NO Math.round
+
+// ✅ EXACT PAYOUTS — NO ROUNDING
 function getAmount(outcome: WheelOutcome, stake: number): number {
   switch (outcome) {
-    case 'double': return stake * 2;   // Exact ×2
-    case 'safe':   return stake * 1;   // Exact ×1
-    case 'half':   return stake * 0.5; // Exact 0.5 — preserves decimals e.g. 11×0.5=5.5
-    case 'lose':   return 0;           // Zero
+    case 'double': return stake * 2;
+    case 'safe':   return stake * 1;
+    case 'half':   return stake * 0.5;
+    case 'lose':   return 0;
   }
 }
+
 interface Props {
   stake: number;
   onClaim: (result: WheelResult) => void;
   onLose: () => void;
-  onForfeit: () => void; // ✅ FORFEIT = stake GONE
+  onForfeit: () => void;
 }
+
 type Phase = 'idle' | 'spinning' | 'result';
+
 export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
-  const safeStake = Math.max(0, stake); // Keep original precision
+  const safeStake = Math.max(0, stake);
   const [rotation, setRotation] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
   const [resultIndex, setResultIndex] = useState<number | null>(null);
@@ -55,23 +63,27 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   const spinFiredRef = useRef(false);
   const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
   const winAmount = outcome ? getAmount(outcome.id, safeStake) : 0;
+
   useEffect(() => {
     return () => {
       if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
     };
   }, []);
+
   const handleSpin = useCallback(() => {
     if (phase !== 'idle' || spinFiredRef.current) return;
     spinFiredRef.current = true;
     setPhase('spinning');
     setResultIndex(null);
     setEffect(null);
+
     const targetIndex = pickWeightedIndex();
     const targetSeg = SEGMENTS[targetIndex];
     const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
     const fullRotations = 5 + Math.floor(Math.random() * 3);
     const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
     setRotation(targetRotation);
+
     spinTimerRef.current = setTimeout(() => {
       setResultIndex(targetIndex);
       setPhase('result');
@@ -82,13 +94,12 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
       spinFiredRef.current = false;
     }, 3800);
   }, [phase, rotation]);
+
   const handleWatchAd = () => {
     if (!outcome || phase !== 'result') return;
-    onClaim({ 
-      outcome: outcome.id, 
-      amount: winAmount // Exact decimal sent directly
-    });
+    onClaim({ outcome: outcome.id, amount: winAmount });
   };
+
   const handleClose = () => {
     if (phase === 'spinning') {
       onForfeit();
@@ -99,12 +110,14 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
       else onForfeit();
     } else onForfeit();
   };
+
   useEffect(() => {
     if (effect === 'redflash' || effect === 'amberflash' || effect === 'greenflash') {
       const t = setTimeout(() => setEffect(null), 1000);
       return () => clearTimeout(t);
     }
   }, [effect]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
       {effect === 'redflash' && <div className="absolute inset-0 bg-red-600/30 animate-fade-in pointer-events-none" />}
@@ -163,6 +176,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             <img src="/logo-192.png" alt="Puke Town" className="w-12 h-12 object-contain" />
           </div>
         </div>
+
         {phase === 'result' && outcome && (
           <div className="animate-pop mb-3">
             <div className="text-4xl mb-1">
@@ -191,6 +205,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             )}
           </div>
         )}
+
         {phase === 'idle' && (
           <button onClick={handleSpin} className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2 text-sm">
             <Play size={18} /> SPIN — STAKE RISKED
@@ -220,6 +235,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     </div>
   );
 }
+
 function ConfettiBurst() {
   const particles = Array.from({ length: 24 }, (_, i) => i);
   return (
