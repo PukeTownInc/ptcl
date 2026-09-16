@@ -6,7 +6,7 @@ export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
 
 export interface WheelResult {
   outcome: WheelOutcome;
-  amount: number; // ✅ EXACT value to add — stake × multiplier ONLY
+  amount: number; // ✅ Exact value to add — stake × multiplier ONLY
 }
 
 interface Segment {
@@ -35,10 +35,10 @@ function pickWeightedIndex(): number {
 
 function getAmount(outcome: WheelOutcome, stake: number): number {
   switch (outcome) {
-    case 'double': return Math.round(stake * 2); // ✅ stake × 2 ONLY
-    case 'lose':   return 0;                      // ✅ nothing
-    case 'half':   return Math.round(stake * 0.5); // ✅ stake × 0.5 ONLY
-    case 'safe':   return Math.round(stake * 1);   // ✅ stake × 1 ONLY
+    case 'double': return Math.round(stake * 2);
+    case 'lose':   return 0;
+    case 'half':   return Math.round(stake * 0.5);
+    case 'safe':   return Math.round(stake * 1);
   }
 }
 
@@ -46,7 +46,7 @@ interface Props {
   stake: number;
   onClaim: (result: WheelResult) => void;
   onLose: () => void;
-  onForfeit: () => void; // ✅ Skip = return full stake
+  onForfeit: () => void; // ✅ FORFEIT = stake GONE — never returned
 }
 
 type Phase = 'idle' | 'spinning' | 'result';
@@ -99,19 +99,19 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     if (!outcome || phase !== 'result') return;
     onClaim({ 
       outcome: outcome.id, 
-      amount: winAmount // ✅ Clean exact value — no stake duplication
+      amount: winAmount
     });
   };
 
   const handleClose = () => {
     if (phase === 'spinning') {
-      onForfeit(); // ✅ Skip = return full stake
+      onForfeit(); // ✅ SPINNING = FORFEIT — stake GONE
       return;
     }
     if (phase === 'result' && outcome) {
       if (outcome.id === 'lose') onLose();
-      else onForfeit(); // ✅ Skip = return full stake
-    } else onForfeit();
+      else onForfeit(); // ✅ SKIP = FORFEIT — stake GONE
+    } else onForfeit(); // ✅ ANY CLOSE = FORFEIT — stake GONE
   };
 
   useEffect(() => {
@@ -138,10 +138,10 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
         </button>
 
         <h3 className="font-display font-black text-lg text-radioactive-400 neon-text-yellow mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
-        <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Stake: {formatPP(safeStake)} PP</p>
+        <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Stake: {formatPP(safeStake)} PP — RISKED & GONE</p>
         
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-toxic-500/10 border border-toxic-600/30 mb-4">
-          <span className="text-[10px] text-toxic-100/50 font-mono uppercase">Stake:</span>
+          <span className="text-[10px] text-toxic-100/50 font-mono uppercase">STAKED:</span>
           <span className="font-display font-bold text-toxic-400">{formatPP(safeStake)} Puke Points</span>
         </div>
 
@@ -203,14 +203,17 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
               {outcome.id === 'safe' && `x1 = +${formatPP(winAmount)} PP`}
             </div>
             {outcome.id !== 'lose' && (
-              <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Watch ad → add above amount</p>
+              <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Watch ad → claim above amount</p>
+            )}
+            {outcome.id === 'lose' && (
+              <p className="text-[10px] text-red-400/60 font-mono mt-1">Stake risked — nothing returned</p>
             )}
           </div>
         )}
 
         {phase === 'idle' && (
           <button onClick={handleSpin} className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2 text-sm">
-            <Play size={18} /> SPIN THE WHEEL
+            <Play size={18} /> SPIN — STAKE RISKED
           </button>
         )}
 
@@ -225,14 +228,14 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             <button onClick={handleWatchAd} className="toxic-btn w-full py-3 flex items-center justify-center gap-2 text-sm">
               <Tv size={16} /> Absorb Radiation to Claim
             </button>
-            <button onClick={handleClose} className="w-full mt-2 py-2 text-[11px] text-toxic-100/30 hover:text-toxic-100/50 font-mono">
-              Skip — Get Stake Back {formatPP(safeStake)} PP
+            <button onClick={handleClose} className="w-full mt-2 py-2 text-[11px] text-red-400/50 hover:text-red-400/80 font-mono">
+              Forfeit — Stake Lost Forever
             </button>
           </>
         )}
 
         {phase === 'result' && outcome && outcome.id === 'lose' && (
-          <button onClick={handleClose} className="ghost-btn w-full py-3 text-sm">
+          <button onClick={handleClose} className="ghost-btn w-full py-3 text-sm text-red-400">
             Close — Stake Lost
           </button>
         )}
