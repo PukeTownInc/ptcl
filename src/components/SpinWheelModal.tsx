@@ -12,21 +12,22 @@ export interface WheelResult {
 interface Segment {
   id: WheelOutcome;
   label: string;
-  color: string;
   probability: number;
   startAngle: number;
   endAngle: number;
 }
 
-// ✅ PERFECT MATCH TO YOUR PNG — CLOCKWISE FROM TOP:
-// DOUBLE (top-left green) → HALF (top-right orange) → LOSE (bottom-right red) → SAFE (bottom-left blue)
+// ✅ VISUALS = 4 EQUAL QUADRANTS (matches your PNG exactly — NO visual change!)
+// ✅ PROBABILITIES = YOUR WEIGHTED RATES (only math changes behind the scenes)
+// PNG ORDER (clockwise from top): Half → Lose → Safe → Double
 const SEGMENTS: Segment[] = [
-  { id: 'double',  label: 'DOUBLE', color: '#39ff14', probability: 10, startAngle: 0,   endAngle: 90 },   // Top-Left Green  — 10% = 36° scaled → 0–90° quadrant
-  { id: 'half',    label: 'HALF',   color: '#ffaa00', probability: 30, startAngle: 90,  endAngle: 180 },  // Top-Right Orange — 30% = 108° scaled → 90–180°
-  { id: 'lose',    label: 'LOSE',   color: '#ff2d2d', probability: 40, startAngle: 180, endAngle: 270 },  // Bottom-Right Red — 40% = 144° scaled → 180–270°
-  { id: 'safe',    label: 'SAFE',   color: '#3399FF', probability: 20, startAngle: 270, endAngle: 360 },  // Bottom-Left Blue — 20% = 72° scaled → 270–360°
+  { id: 'half',    label: 'HALF',   probability: 30, startAngle: 0,   endAngle: 90 },   // Top — 30% chance
+  { id: 'lose',    label: 'LOSE',   probability: 40, startAngle: 90,  endAngle: 180 },  // Right — 40% chance
+  { id: 'safe',    label: 'SAFE',   probability: 20, startAngle: 180, endAngle: 270 },  // Bottom — 20% chance
+  { id: 'double',  label: 'DOUBLE', probability: 10, startAngle: 270, endAngle: 360 },  // Left — 10% chance
 ];
 
+// ✅ Weighted pick — ONLY the probability is weighted, angles stay equal for visuals!
 function pickWeightedIndex(): number {
   let r = Math.random() * 100;
   for (let i = 0; i < SEGMENTS.length; i++) {
@@ -80,8 +81,11 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     setResultIndex(null);
     setEffect(null);
 
+    // Pick weighted outcome (behind the scenes — visuals stay equal!)
     const targetIndex = pickWeightedIndex();
     const targetSeg = SEGMENTS[targetIndex];
+
+    // ✅ Visual angles are EQUAL 90° quadrants — pointer lands perfectly in the visual segment
     const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
     const fullRotations = 5 + Math.floor(Math.random() * 3);
     const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
