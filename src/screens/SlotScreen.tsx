@@ -237,7 +237,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
 
-  // ✅ FINAL RULES — EXACT MULTIPLIERS: Double=x2, Safe=x1, Half=x0.5, Lose=0, Forfeit=0
+  // ✅ DECIMAL-PRESERVING WHEEL HANDLER — NO Math.floor on half
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
@@ -246,22 +246,19 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     actions.useDoubleUp(); // Stake consumed — never returned automatically
 
     if (result.outcome === 'double') {
-      const payout = stake * 2;
-      actions.addPP(payout);
-      toast('success', '☢️ DOUBLED!', `+${formatPP(payout)} PP (x2 stake)`);
-      setSpinHistory((prev) => [{ kind: 'double', pp: payout }, ...prev].slice(0, MAX_HISTORY));
+      actions.addPP(result.amount);
+      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} PP (x2 stake)`);
+      setSpinHistory((prev) => [{ kind: 'double', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'safe') {
-      const payout = stake * 1;
-      actions.addPP(payout);
-      toast('success', '🛡️ SECURED', `+${formatPP(payout)} PP (x1 stake)`);
-      setSpinHistory((prev) => [{ kind: 'safe', pp: payout }, ...prev].slice(0, MAX_HISTORY));
+      actions.addPP(result.amount);
+      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} PP (x1 stake)`);
+      setSpinHistory((prev) => [{ kind: 'safe', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'half') {
-      const payout = Math.floor(stake * 0.5);
-      actions.addPP(payout);
-      toast('info', '⚠️ HALVED', `+${formatPP(payout)} PP (0.5× stake)`);
-      setSpinHistory((prev) => [{ kind: 'half', pp: payout }, ...prev].slice(0, MAX_HISTORY));
+      actions.addPP(result.amount);
+      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} PP (0.5× stake)`);
+      setSpinHistory((prev) => [{ kind: 'half', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'lose') {
       setWinPP(0);
@@ -364,6 +361,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
+
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -401,6 +399,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             );
           })}
         </div>
+
         <div className="mt-3 min-h-[60px] flex items-center justify-center">
           {spinning ? (
             <div className="text-center">
@@ -409,7 +408,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </div>
           ) : winPP > 0 ? (
             <div className="text-center animate-pop">
-              <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{winPP} Puke Points</div>
+              <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{formatPP(winPP)} Puke Points</div>
               {lastResult && lastResult.wins.length > 0 && (
                 <div className="text-[10px] text-toxic-100/50 font-mono mt-1">
                   {lastResult.wins.length} way{lastResult.wins.length > 1 ? 's' : ''} • {lastResult.wins.map((w) => SYMBOLS[w.symbols[0]].label).join(', ')}
@@ -423,11 +422,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </div>
           )}
         </div>
+
         <div className="flex items-center justify-center mb-2 mt-2">
           <span className="font-display font-bold text-sm text-toxic-300">
             Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
           </span>
         </div>
+
         <button
           onClick={doSpin}
           disabled={!canSpin || spinning}
@@ -439,6 +440,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             <><Play size={22} /> CONTAMINATE</>
           )}
         </button>
+
         <div className="mt-2 flex items-center gap-2">
           <button
             onClick={toggleAutoSpin}
@@ -453,6 +455,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </button>
         </div>
       </div>
+
       <div className="grid grid-cols-2 gap-2">
         <BonusBtn
           icon={<Package size={16} />}
@@ -471,7 +474,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           disabled={state.dailyPotAccel >= 2 || spinning}
         />
       </div>
+
       <SpinHistory entries={spinHistory} />
+
       <div className="grunge-panel overflow-hidden">
         <button
           onClick={() => setShowPaytable((o) => !o)}
@@ -527,6 +532,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         )}
       </div>
+
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
           stake={state.doubleUpPending}
@@ -535,6 +541,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           onForfeit={handleForfeit}
         />
       )}
+
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
@@ -604,28 +611,28 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                         <span className="text-[11px] font-mono text-toxic-100/30">No contamination</span>
                       )}
                     </div>
-                    <span className={`font-mono text-sm tabular-nums ${entry.multiplied ? 'text-radioactive-400 font-bold' : 'text-toxic-300'}`}>+{entry.pp}</span>
+                    <span className={`font-mono text-sm tabular-nums ${entry.multiplied ? 'text-radioactive-400 font-bold' : 'text-toxic-300'}`}>+{formatPP(entry.pp)}</span>
                   </div>
                 );
               } else if (entry.kind === 'double') {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-toxic-500/10 border border-toxic-500/30">
                     <span className="text-sm font-mono text-toxic-400">☢️ DOUBLED!</span>
-                    <span className="font-mono text-sm text-toxic-400 font-bold tabular-nums">+{entry.pp}</span>
+                    <span className="font-mono text-sm text-toxic-400 font-bold tabular-nums">+{formatPP(entry.pp)}</span>
                   </div>
                 );
               } else if (entry.kind === 'half') {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-hazard-amber/10 border border-hazard-amber/30">
                     <span className="text-sm font-mono text-hazard-amber">⚠️ HALVED</span>
-                    <span className="font-mono text-sm text-hazard-amber tabular-nums">+{entry.pp}</span>
+                    <span className="font-mono text-sm text-hazard-amber tabular-nums">+{formatPP(entry.pp)}</span>
                   </div>
                 );
               } else if (entry.kind === 'safe') {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-radioactive-500/10 border border-radioactive-600/30">
                     <span className="text-sm font-mono text-radioactive-400">☣️ SECURED</span>
-                    <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{entry.pp}</span>
+                    <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{formatPP(entry.pp)}</span>
                   </div>
                 );
               } else if (entry.kind === 'forfeit') {
