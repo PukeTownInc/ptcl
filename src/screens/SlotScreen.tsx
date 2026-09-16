@@ -19,6 +19,7 @@ type SpinHistoryEntry =
   | { kind: 'lose'; pp: number };
 
 const MAX_HISTORY = 20;
+
 const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
@@ -239,33 +240,30 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
 
-  // ✅ FIXED: Exact payout logic — no double-adding, no overpayment
+  // ✅ FULLY FIXED WHEEL RESULT HANDLER
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
     const stake = state.doubleUpPending ?? 0;
-    actions.useDoubleUp(); // Stake already removed from pending — now apply wheel result
+    actions.useDoubleUp(); // Stake already removed from pending
 
     if (result.outcome === 'lose') {
-      // Lost — stake already gone, nothing added
       setWinPP(0);
       toast('error', '☠️ SPILLED!', 'All lost — better containment next time!');
       setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
     } else if (result.outcome === 'safe') {
-      // Return EXACT stake amount — result.finalPP = stake × 1
       actions.addPP(result.finalPP);
       toast('success', '🛡️ SECURED', `${formatPP(result.finalPP)} PP — stake returned!`);
       setSpinHistory((prev) => [{ kind: 'safe', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
     } else if (result.outcome === 'double') {
-      // ✅ FIXED: Add ONLY the bonus profit, not full amount
-      // result.finalPP = stake × 2 → profit = stake exactly
-      const profit = stake;
-      actions.addPP(profit);
+      // result.finalPP = stake × 2 → add profit = stake exactly
+      const profit = result.finalPP - stake;
+      if (profit > 0) actions.addPP(profit);
       toast('success', '☢️ DOUBLED!', `+${formatPP(profit)} PP profit!`);
       setSpinHistory((prev) => [{ kind: 'double', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
     } else if (result.outcome === 'half') {
-      // ✅ FIXED: Return half of stake only
+      // ✅ FIXED: result.finalPP = stake × 0.5 → add exactly half the stake back
       actions.addPP(result.finalPP);
       toast('info', '⚠️ HALVED', `${formatPP(result.finalPP)} PP returned`);
       setSpinHistory((prev) => [{ kind: 'half', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
