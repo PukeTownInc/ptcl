@@ -12,18 +12,19 @@ interface HeaderProps {
   xp: number;
 }
 
-const XP_PER_LEVEL = 1000; // ✅ 1,000 XP = 1 Level — NO CAP
+// ✅ INFINITE LEVELS — 1,000 XP per level, NO CAP
+const XP_PER_LEVEL = 1000;
 
-export function Header({ 
-  active, 
-  onChange, 
-  children, 
-  lockedPP, 
-  withdrawablePP, 
-  xp 
+export function Header({
+  active,
+  onChange,
+  children,
+  lockedPP,
+  withdrawablePP,
+  xp,
 }: HeaderProps) {
   const [time, setTime] = useState('');
-  
+
   useEffect(() => {
     const tick = () => {
       const now = new Date();
@@ -35,11 +36,12 @@ export function Header({
     return () => clearInterval(i);
   }, []);
 
+  // Vault unlock at 50,000 — matches your requirement
   const UNLOCK_THRESHOLD = 50000;
   const progressPct = Math.min(100, (lockedPP / UNLOCK_THRESHOLD) * 100);
   const isUnlocked = lockedPP >= UNLOCK_THRESHOLD;
 
-  // ✅ CLEAN INFINITE LEVELING — 1,000 XP per level, NO CAP
+  // ✅ PERFECT INFINITE LEVEL CALCS
   const currentLevel = Math.floor(xp / XP_PER_LEVEL) + 1;
   const xpIntoLevel = xp % XP_PER_LEVEL;
   const xpProgressPct = Math.min(100, (xpIntoLevel / XP_PER_LEVEL) * 100);
@@ -66,7 +68,7 @@ export function Header({
       {/* BALANCE + XP SUB-HEADER */}
       <div className="bg-ink-800/60 backdrop-blur-sm border-b border-toxic-900/30 relative z-30">
         <div className="mx-auto max-w-md px-3 py-2 space-y-2">
-          {/* Vault Row */}
+          {/* VAULT ROW */}
           <div className="grid grid-cols-2 gap-3">
             <div className="text-left">
               <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70">
@@ -94,7 +96,7 @@ export function Header({
             </div>
           </div>
 
-          {/* RADIATION EXPOSURE — TRACKS PERFECTLY */}
+          {/* RADIATION EXPOSURE — LEVEL + PROGRESS */}
           <div className="flex items-center gap-3 pt-1 border-t border-toxic-900/20">
             <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70 whitespace-nowrap">
               ☢️ RADIATION EXPOSURE
