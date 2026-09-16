@@ -1,259 +1,659 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Tv, X, Play } from 'lucide-react';
-import { formatPP } from '../constants';
+import { Lock, Tv, Zap, Package, RefreshCw, Layers, Play, X, Coins, Flame, Square, History, Timer } from 'lucide-react';
+import type { GameState, SpinResult, SymbolId, WinLine } from '../types';
+import { MIN_UNLOCK_PP, SYMBOLS, formatPP } from '../constants';
+import * as engine from '../slotEngine';
+import type { GameActions } from '../useGameState';
+import { isHotStreakActive, isPotAccelActive } from '../useGameState';
+import { useToast } from '../components/Toast';
+import { AdModal } from '../components/AdModal';
+import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
 
-export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
+const REEL_DISPLAY = 3;
+type ReelPhase = 'idle' | 'spinning' | 'stopped';
+type SpinHistoryEntry =
+  | { kind: 'spin'; pp: number; symbols: string[]; multiplied?: boolean; multiplier?: string | null }
+  | { kind: 'double'; pp: number }
+  | { kind: 'half'; pp: number }
+  | { kind: 'safe'; pp: number }
+  | { kind: 'lose'; pp: number }
+  | { kind: 'forfeit'; pp: number };
 
-export interface WheelResult {
-  outcome: WheelOutcome;
-  amount: number;
+const MAX_HISTORY = 20;
+const PAYTABLE = Object.values(SYMBOLS)
+  .filter(s => !s.special)
+  .sort((a, b) => b.pays[2] - a.pays[2]);
+
+function SpecialIcon({ symId, label }: { symId: SymbolId; label: string }) {
+  const sym = SYMBOLS[symId];
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {sym.image ? (
+        <img 
+          src={sym.image} 
+          alt={label} 
+          className="w-5 h-5 object-contain inline-block"
+          style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
+        />
+      ) : (
+        <span>{sym.emoji}</span>
+      )}
+      {label}
+    </span>
+  );
 }
 
-interface Segment {
-  id: WheelOutcome;
-  label: string;
-  probability: number;
-  startAngle: number;
-  endAngle: number;
+function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
+  const sym = SYMBOLS[symId];
+  return (
+    <span className="inline-flex items-center justify-center">
+      {sym.image ? (
+        <img 
+          src={sym.image} 
+          alt={symId} 
+          className="w-5 h-5 object-contain"
+          style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
+        />
+      ) : (
+        <span className="text-lg">{sym.emoji}</span>
+      )}
+    </span>
+  );
 }
 
-// ✅ DEFINITIVE ODDS: Double 10% • Lose 40% • Half 30% • Safe 20%
-const SEGMENTS: Segment[] = [
-  { id: 'double', label: 'DOUBLE', probability: 10, startAngle: 0,   endAngle: 90 },
-  { id: 'lose',   label: 'LOSE',   probability: 40, startAngle: 90,  endAngle: 234 },
-  { id: 'half',   label: 'HALF',   probability: 30, startAngle: 234, endAngle: 342 },
-  { id: 'safe',   label: 'SAFE',   probability: 20, startAngle: 342, endAngle: 360 },
-];
-
-function pickWeightedIndex(): number {
-  let r = Math.random() * 100;
-  for (let i = 0; i < SEGMENTS.length; i++) {
-    r -= SEGMENTS[i].probability;
-    if (r <= 0) return i;
-  }
-  return 0;
-}
-
-// ✅ EXACT PAYOUTS
-function getAmount(outcome: WheelOutcome, stake: number): number {
-  switch (outcome) {
-    case 'double': return stake * 2;
-    case 'safe':   return stake * 1;
-    case 'half':   return stake * 0.5;
-    case 'lose':   return 0;
-  }
-}
-
-interface Props {
-  stake: number;
-  onClaim: (result: WheelResult) => void;
-  onLose: () => void;
-  onForfeit: () => void;
-}
-
-type Phase = 'idle' | 'spinning' | 'result';
-
-export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
-  const safeStake = Math.max(0, stake);
-  const [rotation, setRotation] = useState(0);
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [resultIndex, setResultIndex] = useState<number | null>(null);
-  const [effect, setEffect] = useState<'confetti' | 'redflash' | 'amberflash' | 'greenflash' | null>(null);
-  const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const spinFiredRef = useRef(false);
-  const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
-  const winAmount = outcome ? getAmount(outcome.id, safeStake) : 0;
+export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
+  const toast = useToast();
+  const [grid, setGrid] = useState<SymbolId[][]>(() => {
+    const init: SymbolId[][] = [];
+    for (let r = 0; r < 5; r++) {
+      const col: SymbolId[] = [];
+      for (let i = 0; i < REEL_DISPLAY; i++) col.push(engine.randomReelStrip(1)[0]);
+      init.push(col);
+    }
+    return init;
+  });
+  const [spinning, setSpinning] = useState(false);
+  const [lastResult, setLastResult] = useState<SpinResult | null>(null);
+  const [winPositions, setWinPositions] = useState<Set<string>>(new Set());
+  const [winPP, setWinPP] = useState(0);
+  const [showJackpot, setShowJackpot] = useState<string | null>(null);
+  const [showDoubleUp, setShowDoubleUp] = useState(false);
+  const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
+  const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
+  const [activeWinIndex, setActiveWinIndex] = useState(0);
+  const [spinId, setSpinId] = useState(0);
+  const [reelsDims, setReelsDims] = useState({ w: 0, h: 0 });
+  const reelsRef = useRef<HTMLDivElement>(null);
+  const [reelPhases, setReelPhases] = useState<ReelPhase[]>(['idle', 'idle', 'idle', 'idle', 'idle']);
+  const [cyclingSymbols, setCyclingSymbols] = useState<SymbolId[][]>(() => {
+    const init: SymbolId[][] = [];
+    for (let r = 0; r < 5; r++) init.push(engine.randomReelStrip(REEL_DISPLAY));
+    return init;
+  });
+  const cycleInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [autoSpin, setAutoSpin] = useState(false);
+  const autoSpinRef = useRef(false);
+  const doubleUpResolvedRef = useRef(false);
+  const [spinHistory, setSpinHistory] = useState<SpinHistoryEntry[]>([]);
+  const [potAccelCountdown, setPotAccelCountdown] = useState('');
+  const [showPaytable, setShowPaytable] = useState(false);
 
   useEffect(() => {
     return () => {
-      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
+      if (cycleInterval.current) clearInterval(cycleInterval.current);
+      stopTimers.current.forEach(clearTimeout);
     };
   }, []);
 
-  const handleSpin = useCallback(() => {
-    if (phase !== 'idle' || spinFiredRef.current) return;
-    spinFiredRef.current = true;
-    setPhase('spinning');
-    setResultIndex(null);
-    setEffect(null);
-
-    const targetIndex = pickWeightedIndex();
-    const targetSeg = SEGMENTS[targetIndex];
-    const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
-    const fullRotations = 5 + Math.floor(Math.random() * 3);
-    const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
-    setRotation(targetRotation);
-
-    spinTimerRef.current = setTimeout(() => {
-      setResultIndex(targetIndex);
-      setPhase('result');
-      if (targetSeg.id === 'double') setEffect('confetti');
-      else if (targetSeg.id === 'lose') setEffect('redflash');
-      else if (targetSeg.id === 'half') setEffect('amberflash');
-      else if (targetSeg.id === 'safe') setEffect('greenflash');
-      spinFiredRef.current = false;
-    }, 3800);
-  }, [phase, rotation]);
-
-  const handleWatchAd = () => {
-    if (!outcome || phase !== 'result') return;
-    onClaim({ outcome: outcome.id, amount: winAmount });
-  };
-
-  const handleClose = () => {
-    if (phase === 'spinning') {
-      onForfeit();
-      return;
-    }
-    if (phase === 'result' && outcome) {
-      if (outcome.id === 'lose') onLose();
-      else onForfeit();
-    } else onForfeit();
-  };
+  useEffect(() => {
+    if (!state.potAccelUntil) return;
+    const update = () => {
+      const remaining = state.potAccelUntil! - Date.now();
+      if (remaining <= 0) {
+        setPotAccelCountdown('');
+        return;
+      }
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      setPotAccelCountdown(`${mins}:${String(secs).padStart(2, '0')}`);
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [state.potAccelUntil]);
 
   useEffect(() => {
-    if (effect === 'redflash' || effect === 'amberflash' || effect === 'greenflash') {
-      const t = setTimeout(() => setEffect(null), 1000);
-      return () => clearTimeout(t);
+    if (!reelsRef.current) return;
+    const measure = () => {
+      const rect = reelsRef.current!.getBoundingClientRect();
+      setReelsDims({ w: rect.width, h: rect.height });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
+  useEffect(() => {
+    if (!spinning || !lastResult || lastResult.wins.length === 0) return;
+    setActiveWinIndex(0);
+    if (lastResult.wins.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveWinIndex((i) => (i + 1) % lastResult!.wins.length);
+    }, 900);
+    return () => clearInterval(interval);
+  }, [spinning, lastResult]);
+
+  const doSpin = useCallback(() => {
+    if (spinning) return;
+    if (state.spinsRemaining <= 0 && freeSpinsLeft <= 0) {
+      toast('error', 'No Toxic Twists Left', 'Absorb radiation or wait for daily dose');
+      return;
     }
-  }, [effect]);
+    setSpinning(true);
+    setWinPositions(new Set());
+    setWinPP(0);
+    setLastResult(null);
+    setSpinId((n) => n + 1);
+    setReelPhases(['spinning', 'spinning', 'spinning', 'spinning', 'spinning']);
+    const result = engine.spin();
+    cycleInterval.current = setInterval(() => {
+      const next: SymbolId[][] = [];
+      for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
+      setCyclingSymbols(next);
+    }, 70);
+    const baseDelay = 1000;
+    const stagger = 320;
+    for (let r = 0; r < 5; r++) {
+      const t = setTimeout(() => {
+        setGrid((prev) => {
+          const next = [...prev];
+          next[r] = result.grid[r].slice(0, REEL_DISPLAY);
+          return next;
+        });
+        setReelPhases((prev) => {
+          const next = [...prev];
+          next[r] = 'stopped';
+          return next;
+        });
+        if (r === 4) {
+          if (cycleInterval.current) {
+            clearInterval(cycleInterval.current);
+            cycleInterval.current = null;
+          }
+          setTimeout(() => finishSpin(result), 500);
+        }
+      }, baseDelay + r * stagger);
+      stopTimers.current.push(t);
+    }
+    function finishSpin(res: SpinResult) {
+      setSpinning(false);
+      setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
+      setLastResult(res);
+      let finalPP = res.totalPP;
+      const hadPotAccel = isPotAccelActive(state);
+      const hadHotStreak = isHotStreakActive(state);
+      if (hadPotAccel) finalPP *= 2;
+      if (hadHotStreak) finalPP = Math.floor(finalPP * 1.5);
+      const posSet = new Set<string>();
+      res.wins.forEach((w) => w.positions.forEach(([r, row]) => posSet.add(`${r}-${row}`)));
+      res.jackpot && res.grid.forEach((col, r) => col.forEach((s, row) => s === 'jackpot' && posSet.add(`${r}-${row}`)));
+      setWinPositions(posSet);
+      setWinPP(finalPP);
+      const eligibleDoubleUp = finalPP >= 10;
+      if (finalPP > 0) {
+        if (eligibleDoubleUp) {
+          doubleUpResolvedRef.current = false;
+          actions.setDoubleUpPending(finalPP);
+          setShowDoubleUp(true);
+        } else {
+          actions.addPP(finalPP);
+        }
+      }
+      actions.addXP(1, false);
+      actions.recordSpin();
+      if (freeSpinsLeft > 0) {
+        setFreeSpinsLeft((n) => n - 1);
+      }
+      if (res.freeSpinsAwarded > 0) {
+        setFreeSpinsLeft((n) => n + res.freeSpinsAwarded);
+        toast('success', `${res.freeSpinsAwarded} Toxic Twists!`, 'Contamination scatter triggered ☢️');
+      }
+      if (res.jackpot) {
+        setShowJackpot(res.jackpot.type);
+        actions.recordJackpot();
+        setTimeout(() => setShowJackpot(null), 3000);
+      }
+      const winSymbols = res.wins.length > 0
+        ? [...new Set(res.wins.map((w) => w.symbols[0]))]
+        : [];
+      setSpinHistory((prev) => [{
+        kind: 'spin',
+        pp: finalPP,
+        symbols: winSymbols,
+        multiplied: hadPotAccel || hadHotStreak,
+        multiplier: hadPotAccel ? 'x2' : hadHotStreak ? 'x1.5' : null,
+      }, ...prev].slice(0, MAX_HISTORY));
+    }
+  }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
+
+  // ✅ DECIMAL-PRESERVING WHEEL HANDLER — NO Math.floor on half
+  const handleWheelResult = useCallback((result: WheelResult) => {
+    if (doubleUpResolvedRef.current) return;
+    doubleUpResolvedRef.current = true;
+    setShowDoubleUp(false);
+    const stake = state.doubleUpPending ?? 0;
+    actions.useDoubleUp(); // Stake consumed — never returned automatically
+
+    if (result.outcome === 'double') {
+      actions.addPP(result.amount);
+      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} PP (x2 stake)`);
+      setSpinHistory((prev) => [{ kind: 'double', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
+    } 
+    else if (result.outcome === 'safe') {
+      actions.addPP(result.amount);
+      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} PP (x1 stake)`);
+      setSpinHistory((prev) => [{ kind: 'safe', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
+    } 
+    else if (result.outcome === 'half') {
+      actions.addPP(result.amount);
+      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} PP (0.5× stake)`);
+      setSpinHistory((prev) => [{ kind: 'half', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
+    } 
+    else if (result.outcome === 'lose') {
+      setWinPP(0);
+      toast('error', '☠️ SPILLED!', 'Stake lost — nothing returned');
+      setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
+    }
+  }, [state.doubleUpPending, actions, toast]);
+
+  // ✅ FORFEIT = 0 RETURN — STAKE GONE
+  const handleForfeit = useCallback(() => {
+    if (doubleUpResolvedRef.current) return;
+    doubleUpResolvedRef.current = true;
+    setShowDoubleUp(false);
+    actions.useDoubleUp(); // Stake consumed — 0 returned
+    toast('info', '☣️ FORFEITED', 'Stake lost — nothing returned');
+    setSpinHistory((prev) => [{ kind: 'forfeit', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
+  }, [actions, toast]);
+
+  const handleMysteryPack = () => {
+    if (state.spinsRemaining > 0) {
+      toast('info', 'TWISTS STILL AVAILABLE', 'Mystery Goop Vat only empty when contaminated');
+      return;
+    }
+    setAdModal({
+      title: 'Mystery Goop Vat',
+      subtitle: 'Absorb radiation to crack open a random sludge barrel',
+      reward: '+15 to +25 Toxic Twists',
+      onComplete: () => {
+        const got = actions.openMysteryPack();
+        actions.watchAd();
+        toast('success', '🧪 BARREL OPENED!', `+${got} Toxic Twists contaminated!`);
+      },
+    });
+  };
+
+  const handlePotAccel = () => {
+    if (state.dailyPotAccel >= 2) {
+      toast('info', 'ACCELERATOR OVERHEATED', 'Return after radiation cools');
+      return;
+    }
+    if (isPotAccelActive(state)) {
+      toast('info', '☢️ ALREADY ACTIVE', 'Sludge fill rate doubled right now!');
+      return;
+    }
+    setAdModal({
+      title: 'Sludge Accelerator',
+      subtitle: 'Absorb radiation — fill vat TWICE as fast for 5 minutes',
+      reward: 'x2 Flow • 5 Minutes',
+      onComplete: () => {
+        actions.activatePotAccel();
+        actions.watchAd();
+        toast('success', '☢️ ACCELERATOR ACTIVE', 'Sludge flowing at x2 speed!');
+      },
+    });
+  };
+
+  const canSpin = state.spinsRemaining > 0 || freeSpinsLeft > 0;
+  
+  const toggleAutoSpin = useCallback(() => {
+    setAutoSpin((prev) => {
+      const next = !prev;
+      autoSpinRef.current = next;
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!autoSpin) return;
+    if (spinning || showDoubleUp || showJackpot || adModal) return;
+    if (state.spinsRemaining <= 0 && freeSpinsLeft <= 0) {
+      setAutoSpin(false);
+      autoSpinRef.current = false;
+      toast('info', 'OUT OF GOOPS', 'Auto-contamination halted — get more Twists to continue');
+      return;
+    }
+    const t = setTimeout(() => {
+      if (autoSpinRef.current) doSpin();
+    }, 600);
+    return () => clearTimeout(t);
+  }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
-      {effect === 'redflash' && <div className="absolute inset-0 bg-red-600/30 animate-fade-in pointer-events-none" />}
-      {effect === 'amberflash' && <div className="absolute inset-0 bg-amber-500/20 animate-fade-in pointer-events-none" />}
-      {effect === 'greenflash' && <div className="absolute inset-0 bg-green-500/20 animate-fade-in pointer-events-none" />}
-      {effect === 'confetti' && <ConfettiBurst />}
-      
-      <div className="grunge-panel neon-border p-5 max-w-xs w-full text-center animate-slide-up relative">
+    <div className="space-y-4">
+      {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {freeSpinsLeft > 0 && (
+            <span className="px-2 py-1 rounded-full bg-toxic-500/15 border border-toxic-600/40 text-toxic-300 text-[10px] font-display font-bold flex items-center gap-1 animate-pulse">
+              <Play size={10} /> {freeSpinsLeft} TOXIC TWISTS
+            </span>
+          )}
+          {isHotStreakActive(state) && (
+            <span className="px-2 py-1 rounded-full bg-hazard-amber/15 border border-hazard-amber/40 text-hazard-amber text-[10px] font-display font-bold flex items-center gap-1">
+              <Flame size={10} /> FEVER PITCH x1.5
+            </span>
+          )}
+          {isPotAccelActive(state) && potAccelCountdown && (
+            <span className="px-2 py-1 rounded-full bg-radioactive-500/15 border border-radioactive-600/30 text-radioactive-400 text-[10px] font-display font-bold flex items-center gap-1">
+              <Timer size={10} /> VAT FLOW x2 • {potAccelCountdown}
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="relative grunge-panel p-3 overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
+        <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
+        <div ref={reelsRef} className="relative grid grid-cols-5 gap-1.5 bg-ink-900 rounded-lg p-2 border border-toxic-900/40">
+          {grid.map((reel, ri) => {
+            const phase = reelPhases[ri];
+            const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
+            return (
+              <div key={ri} className={`relative overflow-hidden rounded-md border-0 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`} style={{ background: 'transparent !important', backgroundColor: 'transparent !important' }}>
+                {displayReel.map((symId, row) => {
+                  const isWin = winPositions.has(`${ri}-${row}`);
+                  const sym = SYMBOLS[symId];
+                  return (
+                    <div
+                      key={row}
+                      className={`aspect-square flex items-center justify-center reel-symbol border-0 p-0 m-0 ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
+                      style={{ backgroundColor: '#ffffff' }}
+                    >
+                      <span className={isWin ? 'win-symbol-pop' : ''} style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important', ...(isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : {}) }}>
+                        {sym.image ? (
+                          <img 
+                            src={sym.image} 
+                            alt={sym.label} 
+                            className="w-10 h-10 object-contain"
+                            style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important', border: 'none !important' }}
+                          />
+                        ) : (
+                          sym.emoji
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 min-h-[60px] flex items-center justify-center">
+          {spinning ? (
+            <div className="text-center">
+              <RefreshCw size={22} className="text-toxic-400/70 animate-spin mx-auto" />
+              <div className="font-display text-xs text-toxic-300/50 mt-1.5 tracking-[0.3em] animate-pulse">CONTAMINATING</div>
+            </div>
+          ) : winPP > 0 ? (
+            <div className="text-center animate-pop">
+              <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{formatPP(winPP)} Puke Points</div>
+              {lastResult && lastResult.wins.length > 0 && (
+                <div className="text-[10px] text-toxic-100/50 font-mono mt-1">
+                  {lastResult.wins.length} way{lastResult.wins.length > 1 ? 's' : ''} • {lastResult.wins.map((w) => SYMBOLS[w.symbols[0]].label).join(', ')}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center text-toxic-100/30">
+              <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
+              <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-center mb-2 mt-2">
+          <span className="font-display font-bold text-sm text-toxic-300">
+            Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
+          </span>
+        </div>
+
         <button
-          onClick={handleClose}
-          disabled={phase === 'spinning'}
-          className="absolute top-2 right-2 p-1.5 rounded-full bg-ink-700/80 text-toxic-200 hover:text-toxic-400 disabled:opacity-30"
+          onClick={doSpin}
+          disabled={!canSpin || spinning}
+          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2 mt-1"
         >
-          <X size={16} />
+          {spinning ? (
+            <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
+          ) : (
+            <><Play size={22} /> CONTAMINATE</>
+          )}
         </button>
-        <h3 className="font-display font-black text-lg text-radioactive-400 neon-text-yellow mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
-        <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Stake: {formatPP(safeStake)} PP — RISKED & FORFEITED</p>
-        
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-toxic-500/10 border border-toxic-600/30 mb-4">
-          <span className="text-[10px] text-toxic-100/50 font-mono uppercase">STAKED:</span>
-          <span className="font-display font-bold text-toxic-400">{formatPP(safeStake)} Puke Points</span>
-        </div>
-        <div className="relative mx-auto mb-4" style={{ width: 220, height: 220 }}>
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30" style={{ marginTop: -4 }}>
-            <div
-              className="w-0 h-0"
-              style={{
-                borderLeft: '12px solid transparent',
-                borderRight: '12px solid transparent',
-                borderTop: '20px solid #ffff00',
-                filter: 'drop-shadow(0 0 8px #ffff00)',
-              }}
-            />
-          </div>
-          <div
-            className="absolute inset-0 rounded-full overflow-hidden"
-            style={{
-              transform: `rotate(${rotation}deg)`,
-              transition: phase === 'spinning'
-                ? 'transform 3.8s cubic-bezier(0.17, 0.67, 0.12, 0.99)'
-                : 'none',
-              boxShadow: '0 0 25px #39ff1466, 0 0 50px #39ff1433',
-              border: '4px solid #39ff14',
-            }}
-          >
-            <img
-              src="/radioactive-risk-wheel.png"
-              alt="Radioactive Risk Wheel"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center"
-            style={{ width: 56, height: 56, boxShadow: '0 0 15px #39ff14' }}
-          >
-            <img src="/logo-192.png" alt="Puke Town" className="w-12 h-12 object-contain" />
-          </div>
-        </div>
 
-        {phase === 'result' && outcome && (
-          <div className="animate-pop mb-3">
-            <div className="text-4xl mb-1">
-              {outcome.id === 'double' && '☢️'}
-              {outcome.id === 'lose' && '☠️'}
-              {outcome.id === 'half' && '⚠️'}
-              {outcome.id === 'safe' && '🛡️'}
-            </div>
-            <div
-              className={`font-display font-black text-xl ${
-                outcome.id === 'double' ? 'text-green-400 neon-text' :
-                outcome.id === 'lose' ? 'text-red-400' :
-                outcome.id === 'half' ? 'text-hazard-amber' : 'text-blue-400'
-              }`}
-            >
-              {outcome.id === 'double' && `x2 = +${formatPP(winAmount)} PP`}
-              {outcome.id === 'lose' && `NOTHING — Stake Lost`}
-              {outcome.id === 'half' && `x0.5 = +${formatPP(winAmount)} PP`}
-              {outcome.id === 'safe' && `x1 = +${formatPP(winAmount)} PP`}
-            </div>
-            {outcome.id !== 'lose' && (
-              <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Watch ad → claim above amount</p>
-            )}
-            {outcome.id === 'lose' && (
-              <p className="text-[10px] text-red-400/60 font-mono mt-1">Stake risked — nothing returned</p>
-            )}
-          </div>
-        )}
+        <div className="mt-2 flex items-center gap-2">
+          <button
+            onClick={toggleAutoSpin}
+            className={`flex-1 py-2.5 rounded-lg font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
+              autoSpin
+                ? 'bg-toxic-500/20 border border-toxic-400 text-toxic-400'
+                : 'bg-ink-700/50 border border-toxic-900/40 text-toxic-100/40 hover:text-toxic-100/70'
+            }`}
+            style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
+          >
+            {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
+          </button>
+        </div>
+      </div>
 
-        {phase === 'idle' && (
-          <button onClick={handleSpin} className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2 text-sm">
-            <Play size={18} /> SPIN — STAKE RISKED
-          </button>
-        )}
-        {phase === 'spinning' && (
-          <div className="py-3">
-            <span className="font-display text-sm text-toxic-300/60 animate-pulse tracking-[0.3em]">CONTAMINATING...</span>
+      <div className="grid grid-cols-2 gap-2">
+        <BonusBtn
+          icon={<Package size={16} />}
+          label="Mystery Goop Vat"
+          sub="15-25 Twists • only when empty"
+          ad
+          onClick={handleMysteryPack}
+          disabled={state.spinsRemaining > 0 || spinning}
+        />
+        <BonusBtn
+          icon={<Zap size={16} />}
+          label="Sludge Accelerator"
+          sub={`${2 - state.dailyPotAccel} left • x2 flow for 5 min`}
+          ad
+          onClick={handlePotAccel}
+          disabled={state.dailyPotAccel >= 2 || spinning}
+        />
+      </div>
+
+      <SpinHistory entries={spinHistory} />
+
+      <div className="grunge-panel overflow-hidden">
+        <button
+          onClick={() => setShowPaytable((o) => !o)}
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5"
+        >
+          <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2">
+            <Layers size={16} /> ☢️ GOOP PAYTABLE
+          </span>
+          <span className="text-toxic-100/40 text-xs">{showPaytable ? 'Collapse' : 'Reveal'}</span>
+        </button>
+        {showPaytable && (
+          <div className="px-3 pb-3 space-y-2 animate-slide-up">
+            <div className="grid grid-cols-12 gap-2 text-[10px] font-mono text-toxic-100/50 border-b border-toxic-900/40 pb-2">
+              <span className="col-span-5">SYMBOL</span>
+              <span className="col-span-2 text-center">MATCH 3</span>
+              <span className="col-span-2 text-center">MATCH 4</span>
+              <span className="col-span-3 text-center">MATCH 5 ☢️</span>
+            </div>
+            {PAYTABLE.map((sym, i) => (
+              <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
+                <span className="col-span-5 font-mono text-sm flex items-center gap-2">
+                  {sym.image ? (
+                    <img 
+                      src={sym.image} 
+                      alt={sym.label} 
+                      className="w-6 h-6 object-contain"
+                      style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
+                    />
+                  ) : (
+                    sym.emoji
+                  )}
+                  {sym.label}
+                </span>
+                <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
+                <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
+                <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
+              </div>
+            ))}
+            <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
+              <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
+              <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
+              <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
+              <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
+              <div className="flex items-center gap-2">
+                <img 
+                  src="/radioactive-risk-wheel.png" 
+                  alt="Risk Wheel" 
+                  className="w-4 h-4 object-contain"
+                />
+                <span>= Radioactive Risk Wheel</span>
+              </div>
+            </div>
           </div>
-        )}
-        {phase === 'result' && outcome && outcome.id !== 'lose' && (
-          <>
-            <button onClick={handleWatchAd} className="toxic-btn w-full py-3 flex items-center justify-center gap-2 text-sm">
-              <Tv size={16} /> Absorb Radiation to Claim
-            </button>
-            <button onClick={handleClose} className="w-full mt-2 py-2 text-[11px] text-red-400/50 hover:text-red-400/80 font-mono">
-              Forfeit — Stake Lost Forever
-            </button>
-          </>
-        )}
-        {phase === 'result' && outcome && outcome.id === 'lose' && (
-          <button onClick={handleClose} className="ghost-btn w-full py-3 text-sm text-red-400">
-            Close — Stake Lost
-          </button>
         )}
       </div>
+
+      {showDoubleUp && state.doubleUpPending && (
+        <SpinWheelModal
+          stake={state.doubleUpPending}
+          onClaim={handleWheelResult}
+          onLose={() => { setShowDoubleUp(false); handleWheelResult({ outcome: 'lose', amount: 0 }); }}
+          onForfeit={handleForfeit}
+        />
+      )}
+
+      <AdModal
+        open={!!adModal}
+        onClose={() => setAdModal(null)}
+        onComplete={() => {
+          adModal?.onComplete();
+          setAdModal(null);
+        }}
+        title={adModal?.title ?? ''}
+        subtitle={adModal?.subtitle}
+        reward={adModal?.reward ?? ''}
+      />
     </div>
   );
 }
 
-function ConfettiBurst() {
-  const particles = Array.from({ length: 24 }, (_, i) => i);
+function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { 
+  icon: React.ReactNode; 
+  label: string; 
+  sub: string; 
+  ad?: boolean; 
+  onClick: () => void; 
+  disabled?: boolean 
+}) {
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {particles.map((i) => {
-        const angle = (i / particles.length) * 360;
-        const distance = 80 + Math.random() * 120;
-        const x = Math.cos((angle * Math.PI) / 180) * distance;
-        const y = Math.sin((angle * Math.PI) / 180) * distance;
-        return (
-          <div
-            key={i}
-            className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full"
-            style={{
-              background: ['#39ff14', '#ffff00', '#ff2d2d'][i % 3],
-              animation: `confetti-burst 1.2s ease-out ${i * 0.05}s forwards`,
-              '--tx': `${x}px`, '--ty': `${y}px`,
-            } as React.CSSProperties}
-          />
-        );
-     
+    <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <span className="text-toxic-400">{icon}</span>
+        <span className="font-display font-bold text-xs text-toxic-200">{label}</span>
+      </div>
+      <div className="text-[10px] text-toxic-100/40 font-mono">{sub}</div>
+      {ad && <div className="ad-badge mt-1.5"><Tv size={8} /> Absorb Radiation</div>}
+    </button>
+  );
+}
+
+function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="grunge-panel overflow-hidden">
+      <button onClick={() => setOpen((o) => !o)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5">
+        <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2"><History size={16} /> Contamination Log</span>
+        <span className="text-toxic-100/40 text-xs">{open ? 'Hide' : 'Reveal'}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-1 max-h-64 overflow-y-auto">
+          {entries.length === 0 ? (
+            <p className="text-[11px] text-toxic-100/30 font-mono text-center py-4">No contamination yet — start the infection!</p>
+          ) : (
+            entries.map((entry, i) => {
+              if (entry.kind === 'spin') {
+                return (
+                  <div key={i} className={`flex items-center justify-between px-2 py-1.5 rounded ${entry.multiplied ? 'bg-radioactive-500/10 border border-radioactive-600/30' : 'bg-ink-700/40'}`}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[10px] font-mono text-toxic-100/30 shrink-0">#{entries.length - i}</span>
+                      {entry.pp > 0 && entry.symbols.length > 0 ? (
+                        <span className="flex items-center gap-1">
+                          {entry.symbols.map((symId, idx) => (
+                            <HistorySymbolIcon key={idx} symId={symId as SymbolId} />
+                          ))}
+                          {entry.multiplied && entry.multiplier && (
+                            <span className="text-radioactive-400 text-[10px] font-bold font-mono px-1 py-0.5 rounded bg-radioactive-500/15 border border-radioactive-500/30">
+                              ☢️ {entry.multiplier}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-mono text-toxic-100/30">No contamination</span>
+                      )}
+                    </div>
+                    <span className={`font-mono text-sm tabular-nums ${entry.multiplied ? 'text-radioactive-400 font-bold' : 'text-toxic-300'}`}>+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'double') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-toxic-500/10 border border-toxic-500/30">
+                    <span className="text-sm font-mono text-toxic-400">☢️ DOUBLED!</span>
+                    <span className="font-mono text-sm text-toxic-400 font-bold tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'half') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-hazard-amber/10 border border-hazard-amber/30">
+                    <span className="text-sm font-mono text-hazard-amber">⚠️ HALVED</span>
+                    <span className="font-mono text-sm text-hazard-amber tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'safe') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-radioactive-500/10 border border-radioactive-600/30">
+                    <span className="text-sm font-mono text-radioactive-400">☣️ SECURED</span>
+                    <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'forfeit') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
+                    <span className="text-sm font-mono text-red-400">☣️ FORFEITED</span>
+                    <span className="font-mono text-sm text-red-400">— 0 —</span>
+                  </div>
+                );
+              } else {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
+                    <span className="text-sm font-mono text-red-400">☠️ SPILLED</span>
+                    <span className="font-mono text-sm text-red-400">— 0 —</span>
+                  </div>
+                );
+              }
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
