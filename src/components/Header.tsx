@@ -14,9 +14,16 @@ interface HeaderProps {
 
 const XP_PER_LEVEL = 1000; // ✅ 1,000 XP = 1 Level — NO CAP
 
-export function Header({ active, onChange, children, lockedPP, withdrawablePP, xp }: HeaderProps) {
+export function Header({ 
+  active, 
+  onChange, 
+  children, 
+  lockedPP, 
+  withdrawablePP, 
+  xp 
+}: HeaderProps) {
   const [time, setTime] = useState('');
-
+  
   useEffect(() => {
     const tick = () => {
       const now = new Date();
@@ -32,7 +39,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
   const progressPct = Math.min(100, (lockedPP / UNLOCK_THRESHOLD) * 100);
   const isUnlocked = lockedPP >= UNLOCK_THRESHOLD;
 
-  // ✅ SIMPLE INFINITE LEVELING — 1,000 XP per level, NO CAP
+  // ✅ CLEAN INFINITE LEVELING — 1,000 XP per level, NO CAP
   const currentLevel = Math.floor(xp / XP_PER_LEVEL) + 1;
   const xpIntoLevel = xp % XP_PER_LEVEL;
   const xpProgressPct = Math.min(100, (xpIntoLevel / XP_PER_LEVEL) * 100);
@@ -40,7 +47,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
 
   return (
     <header className="sticky top-0 z-40 safe-top">
-      {/* ✅ TOP NAV BAR */}
+      {/* TOP NAV BAR */}
       <div className="bg-ink-900/80 backdrop-blur-md border-b border-toxic-900/40 relative z-40">
         <div className="mx-auto max-w-md px-4 py-3 flex items-center justify-between">
           <div className="relative z-50">
@@ -56,7 +63,7 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
         </div>
       </div>
 
-      {/* ✅ BALANCE + XP SUB-HEADER */}
+      {/* BALANCE + XP SUB-HEADER */}
       <div className="bg-ink-800/60 backdrop-blur-sm border-b border-toxic-900/30 relative z-30">
         <div className="mx-auto max-w-md px-3 py-2 space-y-2">
           {/* Vault Row */}
@@ -79,12 +86,15 @@ export function Header({ active, onChange, children, lockedPP, withdrawablePP, x
                 ⚡ UNLOCKED CONTAGION VAULT
               </div>
               <div className="font-mono text-sm font-bold text-radioactive-400 neon-text-yellow">
-                {formatPP(withdrawablePP)} PP <span className="text-radioactive-300/60 font-normal">${ppToUsd(withdrawablePP).toFixed(2)}</span>
+                {formatPP(withdrawablePP)} PP{' '}
+                <span className="text-radioactive-300/60 font-normal">
+                  ${ppToUsd(withdrawablePP).toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* ✅ RADIATION EXPOSURE — NOW TRACKS PERFECTLY */}
+          {/* RADIATION EXPOSURE — TRACKS PERFECTLY */}
           <div className="flex items-center gap-3 pt-1 border-t border-toxic-900/20">
             <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70 whitespace-nowrap">
               ☢️ RADIATION EXPOSURE
