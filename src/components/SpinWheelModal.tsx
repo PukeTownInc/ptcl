@@ -16,8 +16,9 @@ interface Segment {
   endAngle: number;
 }
 
-// ✅ FIXED: MATCHES YOUR WHEEL IMAGE EXACTLY (clockwise from top pointer)
-// Lose 40% → Safe 20% → Double 10% → Half 30%
+// ✅ MATCHES YOUR WHEEL IMAGE EXACTLY — CLOCKWISE FROM TOP:
+// LOSE (red top) → SAFE (blue right) → DOUBLE (green bottom) → HALF (orange left)
+// ✅ ODDS: Lose 40% • Safe 20% • Double 10% • Half 30%
 const SEGMENTS: Segment[] = [
   { id: 'lose',   label: 'LOSE',   probability: 40, startAngle: 0,   endAngle: 144 },
   { id: 'safe',   label: 'SAFE',   probability: 20, startAngle: 144, endAngle: 216 },
@@ -34,7 +35,8 @@ function pickWeightedIndex(): number {
   return 0;
 }
 
-// ✅ PAYOUTS — CORRECT & NOT SWAPPED
+// ✅ PAYOUTS — NEVER SWAPPED:
+// Lose → 0 | Safe → ×1 | Double → ×2 | Half → ×0.5
 function getAmount(outcome: WheelOutcome, stake: number): number {
   switch (outcome) {
     case 'double': return stake * 2;
@@ -65,9 +67,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   const winAmount = outcome ? getAmount(outcome.id, safeStake) : 0;
 
   useEffect(() => {
-    return () => {
-      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
-    };
+    return () => { if (spinTimerRef.current) clearTimeout(spinTimerRef.current); };
   }, []);
 
   const handleSpin = useCallback(() => {
@@ -81,8 +81,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     const targetSeg = SEGMENTS[targetIndex];
     const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
     const fullRotations = 5 + Math.floor(Math.random() * 3);
-    const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
-    setRotation(targetRotation);
+    setRotation(rotation + fullRotations * 360 + (360 - targetCenter));
 
     spinTimerRef.current = setTimeout(() => {
       setResultIndex(targetIndex);
@@ -101,14 +100,11 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   };
 
   const handleClose = () => {
-    if (phase === 'spinning') {
-      onForfeit();
-      return;
-    }
+    if (phase === 'spinning') return onForfeit();
     if (phase === 'result' && outcome) {
-      if (outcome.id === 'lose') onLose();
-      else onForfeit();
-    } else onForfeit();
+      return outcome.id === 'lose' ? onLose() : onForfeit();
+    }
+    onForfeit();
   };
 
   useEffect(() => {
