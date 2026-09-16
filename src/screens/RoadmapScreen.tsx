@@ -1,9 +1,16 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, Check, Gift } from 'lucide-react';
 import type { Screen } from '../types';
+import type { GameActions } from '../useGameState';
+import { useToast } from '../components/Toast';
+
 interface Props {
   onNavigate: (s: Screen) => void;
+  actions: GameActions;
 }
+
+const STORAGE_KEY = 'puketown_roadmap_thanks_v1';
+
 const roadmapData = [
   {
     title: '✅ CONTAMINATED — PHASE 0',
@@ -121,7 +128,13 @@ const roadmapData = [
     ],
   },
 ];
-export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
+
+function getTodayUTC(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function RoadmapScreen({ onNavigate, actions }: Props) {
+  const toast = useToast();
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
     0: true,
     1: true,
@@ -131,9 +144,23 @@ export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void 
     5: false,
     6: false,
   });
+
+  const today = getTodayUTC();
+  const lastClaimed = localStorage.getItem(STORAGE_KEY);
+  const canClaim = lastClaimed !== today;
+
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
+
+  const handleClaim = () => {
+    if (!canClaim) return;
+    actions.addXP(10);
+    actions.addFreeSpins(3);
+    localStorage.setItem(STORAGE_KEY, today);
+    toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
+  };
+
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
       <div className="grunge-panel p-5 text-center space-y-2">
@@ -144,6 +171,7 @@ export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void 
         <p className="text-toxic-300/90 text-sm">☣️ Created for YOUR benefit ☣️</p>
         <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere!</p>
       </div>
+
       {roadmapData.map((section, idx) => (
         <div
           key={idx}
@@ -171,9 +199,32 @@ export function RoadmapScreen({ onNavigate }: { onNavigate: (s: Screen) => void 
           )}
         </div>
       ))}
-      <div className="grunge-panel p-4 text-center space-y-2 mt-4">
+
+      <div className="grunge-panel p-4 text-center space-y-3 mt-4">
         <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
         <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
+
+        <button
+          onClick={handleClaim}
+          disabled={!canClaim}
+          className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all ${
+            canClaim
+              ? 'bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]'
+              : 'bg-toxic-900/30 text-toxic-500/50 cursor-not-allowed'
+          }`}
+        >
+          {canClaim ? (
+            <>
+              <Gift size={16} />
+              <span>Thanks for reading</span>
+            </>
+          ) : (
+            <>
+              <Check size={16} />
+              <span>Claimed today • +10 Exposure • +3 Twists</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
