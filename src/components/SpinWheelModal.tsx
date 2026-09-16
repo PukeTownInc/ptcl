@@ -3,7 +3,6 @@ import { Tv, X, Play } from 'lucide-react';
 import { formatPP } from '../constants';
 
 export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
-
 export interface WheelResult {
   outcome: WheelOutcome;
   amount: number;
@@ -17,12 +16,13 @@ interface Segment {
   endAngle: number;
 }
 
-// ✅ DEFINITIVE: Double 10% • Half 30% • Lose 40% • Safe 20%
+// ✅ FIXED: MATCHES YOUR WHEEL IMAGE EXACTLY (clockwise from top pointer)
+// Lose 40% → Safe 20% → Double 10% → Half 30%
 const SEGMENTS: Segment[] = [
-  { id: 'double', label: 'DOUBLE', probability: 10, startAngle: 0,   endAngle: 90 },
-  { id: 'half',   label: 'HALF',   probability: 30, startAngle: 90,  endAngle: 180 },
-  { id: 'lose',   label: 'LOSE',   probability: 40, startAngle: 180, endAngle: 270 },
-  { id: 'safe',   label: 'SAFE',   probability: 20, startAngle: 270, endAngle: 360 },
+  { id: 'lose',   label: 'LOSE',   probability: 40, startAngle: 0,   endAngle: 144 },
+  { id: 'safe',   label: 'SAFE',   probability: 20, startAngle: 144, endAngle: 216 },
+  { id: 'double', label: 'DOUBLE', probability: 10, startAngle: 216, endAngle: 252 },
+  { id: 'half',   label: 'HALF',   probability: 30, startAngle: 252, endAngle: 360 },
 ];
 
 function pickWeightedIndex(): number {
@@ -34,11 +34,11 @@ function pickWeightedIndex(): number {
   return 0;
 }
 
-// ✅ EXACT PAYOUTS — NO ROUNDING
+// ✅ PAYOUTS — CORRECT & NOT SWAPPED
 function getAmount(outcome: WheelOutcome, stake: number): number {
   switch (outcome) {
     case 'double': return stake * 2;
-    case 'safe':   return stake * 1;
+    case 'safe':   return stake;
     case 'half':   return stake * 0.5;
     case 'lose':   return 0;
   }
@@ -176,7 +176,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             <img src="/logo-192.png" alt="Puke Town" className="w-12 h-12 object-contain" />
           </div>
         </div>
-
         {phase === 'result' && outcome && (
           <div className="animate-pop mb-3">
             <div className="text-4xl mb-1">
@@ -205,7 +204,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             )}
           </div>
         )}
-
         {phase === 'idle' && (
           <button onClick={handleSpin} className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2 text-sm">
             <Play size={18} /> SPIN — STAKE RISKED
