@@ -20,13 +20,12 @@ interface Segment {
   endAngle: number;
 }
 
-// 4 segments with proportional sizes:
-// DOUBLE: 90° (25%) | LOSE ALL: 180° (50%) | HALF: 45° (12.5%) | SAFE: 45° (12.5%)
+// ✅ UPDATED ODDS: Lose 40% • Half 30% • Safe 20% • Double 10%
 const SEGMENTS: Segment[] = [
-  { id: 'double', label: 'DOUBLE', emoji: '🤮', color: '#39ff14', textColor: '#0a0a0a', probability: 25, startAngle: 0, endAngle: 90 },
-  { id: 'lose', label: 'LOSE ALL', emoji: '☢️', color: '#ff2d2d', textColor: '#fff', probability: 50, startAngle: 90, endAngle: 270 },
-  { id: 'half', label: 'HALF', emoji: '⚠️', color: '#ffaa00', textColor: '#0a0a0a', probability: 12.5, startAngle: 270, endAngle: 315 },
-  { id: 'safe', label: 'SAFE', emoji: '✅', color: '#666', textColor: '#fff', probability: 12.5, startAngle: 315, endAngle: 360 },
+  { id: 'double', label: 'DOUBLE', emoji: '🤮', color: '#39ff14', textColor: '#0a0a0a', probability: 10, startAngle: 0, endAngle: 36 },
+  { id: 'lose', label: 'LOSE ALL', emoji: '☢️', color: '#ff2d2d', textColor: '#fff', probability: 40, startAngle: 36, endAngle: 180 },
+  { id: 'half', label: 'HALF', emoji: '⚠️', color: '#ffaa00', textColor: '#0a0a0a', probability: 30, startAngle: 180, endAngle: 288 },
+  { id: 'safe', label: 'SAFE', emoji: '✅', color: '#3399FF', textColor: '#fff', probability: 20, startAngle: 288, endAngle: 360 },
 ];
 
 function pickWeightedIndex(): number {
@@ -49,7 +48,7 @@ interface Props {
   stake: number;
   onClaim: (result: WheelResult) => void;
   onLose: () => void;
-  onForfeit: () => void;
+  onForfeit: () => void; // ✅ Close = keep original stake
 }
 
 type Phase = 'idle' | 'spinning' | 'result';
@@ -62,6 +61,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   const [effect, setEffect] = useState<'confetti' | 'redflash' | 'neutral' | null>(null);
   const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spinFiredRef = useRef(false);
+
   const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
   const multiplier = outcome ? getMultiplier(outcome.id) : 0;
   const finalPP = outcome ? Math.round(safeStake * multiplier) : 0;
@@ -84,9 +84,9 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
     const fullRotations = 4 + Math.floor(Math.random() * 3);
     const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
-
+    
     setRotation(targetRotation);
-
+    
     spinTimerRef.current = setTimeout(() => {
       setResultIndex(targetIndex);
       setPhase('result');
@@ -102,15 +102,22 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     onClaim({ outcome: outcome.id, multiplier, finalPP });
   };
 
+  // ✅ FIXED CLOSE LOGIC
   const handleClose = () => {
-    if (phase === 'spinning') return;
+    if (phase === 'spinning') {
+      // Still spinning → user bailed early → keep original stake
+      onForfeit();
+      return;
+    }
     if (phase === 'result' && outcome) {
       if (outcome.id === 'lose') {
         onLose();
       } else {
+        // User sees result but closes → forfeit = keep original
         onForfeit();
       }
     } else if (phase === 'idle') {
+      // Not spun yet → skip entirely
       onForfeit();
     }
   };
@@ -128,7 +135,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
         <div className="absolute inset-0 bg-red-600/30 animate-fade-in pointer-events-none" />
       )}
       {effect === 'confetti' && <ConfettiBurst />}
-
+      
       <div className="grunge-panel neon-border p-5 max-w-xs w-full text-center animate-slide-up relative">
         <button
           onClick={handleClose}
@@ -140,15 +147,15 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
 
         <h3 className="font-display font-black text-lg text-radioactive-400 neon-text-yellow mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
         <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Risk it all for DOUBLE?</p>
-
+        
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-toxic-500/10 border border-toxic-600/30 mb-4">
           <span className="text-[10px] text-toxic-100/50 font-mono uppercase">Stake:</span>
           <span className="font-display font-bold text-toxic-400">+{formatPP(safeStake)} Puke Points</span>
         </div>
 
-        {/* === NEW PNG WHEEL WITH SPIN ANIMATION === */}
+        {/* WHEEL */}
         <div className="relative mx-auto mb-4" style={{ width: 220, height: 220 }}>
-          {/* Fixed Pointer — sits on top, always points down */}
+          {/* Fixed Pointer */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30" style={{ marginTop: -4 }}>
             <div
               className="w-0 h-0"
@@ -177,43 +184,27 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
               src="/radioactive-risk-wheel.png"
               alt="Radioactive Risk Wheel"
               className="w-full h-full object-contain"
-              style={{
-                transform: 'rotate(0deg)',
-              }}
             />
           </div>
 
-          {/* Center Hub — Logo-192 */}
+          {/* Center Hub */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center overflow-hidden"
-            style={{
-              width: 56,
-              height: 56,
-              boxShadow: '0 0 15px #39ff14, 0 0 30px #39ff1444',
-            }}
+            style={{ width: 56, height: 56, boxShadow: '0 0 15px #39ff14, 0 0 30px #39ff1444' }}
           >
-            <img
-              src="/logo-192.png"
-              alt="Puke Town"
-              className="w-12 h-12 object-contain"
-            />
+            <img src="/logo-192.png" alt="Puke Town" className="w-12 h-12 object-contain" />
           </div>
         </div>
-        {/* === END WHEEL === */}
 
-        {/* Result display */}
+        {/* RESULT DISPLAY */}
         {phase === 'result' && outcome && (
           <div className="animate-pop mb-3">
             <div className="text-4xl mb-1">{outcome.emoji}</div>
             <div
               className={`font-display font-black text-xl ${
-                outcome.id === 'double'
-                  ? 'text-toxic-400 neon-text'
-                  : outcome.id === 'lose'
-                  ? 'text-red-400'
-                  : outcome.id === 'half'
-                  ? 'text-hazard-amber'
-                  : 'text-toxic-100/60'
+                outcome.id === 'double' ? 'text-toxic-400 neon-text' :
+                outcome.id === 'lose' ? 'text-red-400' :
+                outcome.id === 'half' ? 'text-hazard-amber' : 'text-blue-400'
               }`}
             >
               {outcome.id === 'double' && `☢️ DOUBLED! +${formatPP(finalPP)} Puke Points`}
@@ -227,33 +218,30 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           </div>
         )}
 
-        {/* Action buttons */}
+        {/* BUTTONS */}
         {phase === 'idle' && (
           <button onClick={handleSpin} className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2 text-sm">
             <Play size={18} /> SPIN THE WHEEL
           </button>
         )}
+
         {phase === 'spinning' && (
           <div className="py-3">
             <span className="font-display text-sm text-toxic-300/60 animate-pulse tracking-[0.3em]">CONTAMINATING...</span>
           </div>
         )}
+
         {phase === 'result' && outcome && outcome.id !== 'lose' && (
           <>
-            <button
-              onClick={handleWatchAd}
-              className="toxic-btn w-full py-3 flex items-center justify-center gap-2 text-sm"
-            >
+            <button onClick={handleWatchAd} className="toxic-btn w-full py-3 flex items-center justify-center gap-2 text-sm">
               <Tv size={16} /> Absorb Radiation to Claim
             </button>
-            <button
-              onClick={handleClose}
-              className="w-full mt-2 py-2 text-[11px] text-toxic-100/30 hover:text-toxic-100/50 font-mono transition-colors"
-            >
-              Close — Forfeit Result
+            <button onClick={handleClose} className="w-full mt-2 py-2 text-[11px] text-toxic-100/30 hover:text-toxic-100/50 font-mono transition-colors">
+              Skip — Keep Original {formatPP(safeStake)} PP
             </button>
           </>
         )}
+
         {phase === 'result' && outcome && outcome.id === 'lose' && (
           <button onClick={handleClose} className="ghost-btn w-full py-3 text-sm">
             Close
@@ -281,13 +269,10 @@ function ConfettiBurst() {
             key={i}
             className="absolute top-1/2 left-1/2"
             style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
+              width: 6, height: 6, borderRadius: '50%',
               background: colors[i % colors.length],
               animation: `confetti-burst ${duration}s ease-out ${delay}s forwards`,
-              '--tx': `${x}px`,
-              '--ty': `${y}px`,
+              '--tx': `${x}px`, '--ty': `${y}px`,
             } as React.CSSProperties}
           />
         );
