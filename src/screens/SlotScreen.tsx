@@ -8,6 +8,7 @@ import { isHotStreakActive, isPotAccelActive } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
 import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
+
 const REEL_DISPLAY = 3;
 type ReelPhase = 'idle' | 'spinning' | 'stopped';
 type SpinHistoryEntry =
@@ -16,10 +17,12 @@ type SpinHistoryEntry =
   | { kind: 'half'; pp: number }
   | { kind: 'safe'; pp: number }
   | { kind: 'lose'; pp: number };
+
 const MAX_HISTORY = 20;
 const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
+
 function SpecialIcon({ symId, label }: { symId: SymbolId; label: string }) {
   const sym = SYMBOLS[symId];
   return (
@@ -38,6 +41,7 @@ function SpecialIcon({ symId, label }: { symId: SymbolId; label: string }) {
     </span>
   );
 }
+
 function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
   const sym = SYMBOLS[symId];
   return (
@@ -55,6 +59,7 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
     </span>
   );
 }
+
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
@@ -92,12 +97,14 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [spinHistory, setSpinHistory] = useState<SpinHistoryEntry[]>([]);
   const [potAccelCountdown, setPotAccelCountdown] = useState('');
   const [showPaytable, setShowPaytable] = useState(false);
+
   useEffect(() => {
     return () => {
       if (cycleInterval.current) clearInterval(cycleInterval.current);
       stopTimers.current.forEach(clearTimeout);
     };
   }, []);
+
   useEffect(() => {
     if (!state.potAccelUntil) return;
     const update = () => {
@@ -114,6 +121,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [state.potAccelUntil]);
+
   useEffect(() => {
     if (!reelsRef.current) return;
     const measure = () => {
@@ -124,6 +132,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, []);
+
   useEffect(() => {
     if (!spinning || !lastResult || lastResult.wins.length === 0) return;
     setActiveWinIndex(0);
@@ -133,6 +142,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 900);
     return () => clearInterval(interval);
   }, [spinning, lastResult]);
+
   const doSpin = useCallback(() => {
     if (spinning) return;
     if (state.spinsRemaining <= 0 && freeSpinsLeft <= 0) {
@@ -229,37 +239,37 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
 
-  // ✅ PERFECTED WHEEL RESULT HANDLER — ONLY PROFITS ADDED
+  // ✅ 100% YOUR RULES — STAKE NEVER RETURNED ON WIN, ONLY SKIP RETURNS STAKE
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
     const stake = state.doubleUpPending ?? 0;
-    actions.useDoubleUp(); // Stake already removed from pending
+    actions.useDoubleUp(); // ✅ Stake removed from pending — NOT returned
 
     if (result.outcome === 'lose') {
+      // ✅ LOSE = 0 added, nothing returned
       setWinPP(0);
-      toast('error', '☠️ SPILLED!', 'All lost — better containment next time!');
+      toast('error', '☠️ SPILLED!', 'Stake lost — nothing returned');
       setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'safe') {
-      // ✅ Safe = stake returned exactly → $0 profit, nothing added
-      toast('success', '🛡️ SECURED', `${formatPP(stake)} PP — stake returned!`);
-      setSpinHistory((prev) => [{ kind: 'safe', pp: stake }, ...prev].slice(0, MAX_HISTORY));
+      // ✅ SAFE = stake × 1 ONLY added
+      actions.addPP(result.amount);
+      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} PP (x1 stake)`);
+      setSpinHistory((prev) => [{ kind: 'safe', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'double') {
-      // ✅ Double = add ONLY profit (stake × 2 − stake = stake)
-      const profit = result.finalPP - stake;
-      if (profit > 0) actions.addPP(profit);
-      toast('success', '☢️ DOUBLED!', `+${formatPP(profit)} PP profit!`);
-      setSpinHistory((prev) => [{ kind: 'double', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
+      // ✅ DOUBLE = stake × 2 ONLY added
+      actions.addPP(result.amount);
+      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} PP (x2 stake)`);
+      setSpinHistory((prev) => [{ kind: 'double', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'half') {
-      // ✅ Half = add ONLY half back (stake × 0.5 = returned portion)
-      const halfReturn = result.finalPP; // already = stake * 0.5
-      if (halfReturn > 0) actions.addPP(halfReturn);
-      toast('info', '⚠️ HALVED', `${formatPP(halfReturn)} PP returned`);
-      setSpinHistory((prev) => [{ kind: 'half', pp: halfReturn }, ...prev].slice(0, MAX_HISTORY));
+      // ✅ HALF = stake × 0.5 ONLY added
+      actions.addPP(result.amount);
+      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} PP (x0.5 stake)`);
+      setSpinHistory((prev) => [{ kind: 'half', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [state.doubleUpPending, actions, toast]);
 
@@ -279,6 +289,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       },
     });
   };
+
   const handlePotAccel = () => {
     if (state.dailyPotAccel >= 2) {
       toast('info', 'ACCELERATOR OVERHEATED', 'Return after radiation cools');
@@ -299,6 +310,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       },
     });
   };
+
   const canSpin = state.spinsRemaining > 0 || freeSpinsLeft > 0;
   
   const toggleAutoSpin = useCallback(() => {
@@ -308,6 +320,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       return next;
     });
   }, []);
+
   useEffect(() => {
     if (!autoSpin) return;
     if (spinning || showDoubleUp || showJackpot || adModal) return;
@@ -322,6 +335,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 600);
     return () => clearTimeout(t);
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
+
   return (
     <div className="space-y-4">
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
@@ -510,7 +524,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <SpinWheelModal
           stake={state.doubleUpPending}
           onClaim={handleWheelResult}
-          onLose={() => { setShowDoubleUp(false); toast('error', '☠️ SPILLED!', 'All lost!'); }}
+          onLose={() => { setShowDoubleUp(false); toast('error', '☠️ SPILLED!', 'Stake lost!'); }}
           onForfeit={() => { setShowDoubleUp(false); actions.addPP(state.doubleUpPending || 0); }}
         />
       )}
@@ -528,6 +542,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     </div>
   );
 }
+
 function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { 
   icon: React.ReactNode; 
   label: string; 
@@ -547,6 +562,7 @@ function BonusBtn({ icon, label, sub, ad, onClick, disabled }: {
     </button>
   );
 }
+
 function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
   const [open, setOpen] = useState(true);
   return (
