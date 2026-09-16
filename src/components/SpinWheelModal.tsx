@@ -8,8 +8,8 @@ export interface WheelResult {
   amount: number;
 }
 
-// ✅ MATCHES YOUR IMAGE EXACTLY — 4 EQUAL 90° SEGMENTS
-// Top = DOUBLE (green) → Clockwise: HALF (orange) → LOSE (red) → SAFE (blue)
+// ✅ MATCHES YOUR IMAGE — Top=DOUBLE → Clockwise: HALF → LOSE → SAFE
+// WEIGHTS: Double 25% • Half 30% • Lose 40% • Safe 20%
 const SEGMENTS = [
   { id: 'double' as const, label: 'DOUBLE',  multiplier: 2,   weight: 25, startAngle: 0,   endAngle: 90 },
   { id: 'half'   as const, label: 'HALF',    multiplier: 0.5, weight: 30, startAngle: 90,  endAngle: 180 },
@@ -54,10 +54,12 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     const targetIndex = pickSegmentIndex();
     const targetSeg = SEGMENTS[targetIndex];
     
-    // ✅ Calculate rotation so the LANDED segment lands at TOP pointer
-    const segmentCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
+    // ✅ FIXED: Spin COUNTER-CLOCKWISE so the CORRECT segment lands at the pointer
+    // Calculate: rotate so the TOP of the target segment lands exactly at the top pointer
+    const targetTop = targetSeg.startAngle;
     const fullSpins = 5 + Math.floor(Math.random() * 3);
-    const totalRotation = rotation + fullSpins * 360 + (360 - segmentCenter);
+    // NEGATIVE = counter-clockwise — matches visual flow
+    const totalRotation = rotation - (fullSpins * 360 + targetTop);
     
     setRotation(totalRotation);
 
@@ -117,7 +119,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             }} />
           </div>
 
-          {/* Rotating wheel */}
+          {/* Rotating wheel — ✅ spins COUNTER-CLOCKWISE */}
           <div
             className="absolute inset-0 rounded-full overflow-hidden"
             style={{
