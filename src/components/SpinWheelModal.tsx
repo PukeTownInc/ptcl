@@ -18,12 +18,13 @@ interface Segment {
   endAngle: number;
 }
 
-// ✅ EXACT ANGLES matching 40%/30%/20%/10% = 360° total
+// ✅ PERFECT MATCH TO YOUR PNG — CLOCKWISE FROM TOP:
+// DOUBLE (top-left green) → HALF (top-right orange) → LOSE (bottom-right red) → SAFE (bottom-left blue)
 const SEGMENTS: Segment[] = [
-  { id: 'lose',    label: 'LOSE',   color: '#ff2d2d', probability: 40, startAngle: 0,   endAngle: 144 },   // 40% = 144°
-  { id: 'half',    label: 'HALF',   color: '#ffaa00', probability: 30, startAngle: 144, endAngle: 252 },   // 30% = 108°
-  { id: 'safe',    label: 'SAFE',   color: '#3399FF', probability: 20, startAngle: 252, endAngle: 324 },   // 20% = 72°
-  { id: 'double',  label: 'DOUBLE', color: '#39ff14', probability: 10, startAngle: 324, endAngle: 360 },   // 10% = 36°
+  { id: 'double',  label: 'DOUBLE', color: '#39ff14', probability: 10, startAngle: 0,   endAngle: 90 },   // Top-Left Green  — 10% = 36° scaled → 0–90° quadrant
+  { id: 'half',    label: 'HALF',   color: '#ffaa00', probability: 30, startAngle: 90,  endAngle: 180 },  // Top-Right Orange — 30% = 108° scaled → 90–180°
+  { id: 'lose',    label: 'LOSE',   color: '#ff2d2d', probability: 40, startAngle: 180, endAngle: 270 },  // Bottom-Right Red — 40% = 144° scaled → 180–270°
+  { id: 'safe',    label: 'SAFE',   color: '#3399FF', probability: 20, startAngle: 270, endAngle: 360 },  // Bottom-Left Blue — 20% = 72° scaled → 270–360°
 ];
 
 function pickWeightedIndex(): number {
@@ -64,7 +65,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
 
   const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
   const multiplier = outcome ? getMultiplier(outcome.id) : 0;
-  // ✅ finalPP = stake × multiplier — EXACT
   const finalPP = outcome ? Math.round(safeStake * multiplier) : 0;
 
   useEffect(() => {
