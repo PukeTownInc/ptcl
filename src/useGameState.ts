@@ -206,7 +206,6 @@ export function useGameState(userId: string | null) {
   const update = useCallback((fn: (s: GameState) => GameState) => {
     setState((prev) => fn(prev));
   }, []);
-  // addXP — skipDailyCap = true → ALWAYS adds, no daily limit
   const addXP = useCallback((baseXp: number, viaAd: boolean, skipDailyCap = false) => {
     setState((prev) => {
       const tier = getTier(prev.xp);
@@ -275,7 +274,6 @@ export function useGameState(userId: string | null) {
       };
     });
   }, []);
-  // recordSpin — +1 XP per spin
   const recordSpin = useCallback(() => {
     setState((prev) => {
       const tier = getTier(prev.xp);
@@ -401,7 +399,6 @@ export function useGameState(userId: string | null) {
   const claimMission = useCallback((missionId: string, viaAd: boolean) => {
     return { missionId, viaAd };
   }, []);
-  // ✅ FIXED: Now adds spins from mission.adSpins when claimed via ad
   const claimMissionReward = useCallback((missionId: string, viaAd: boolean = false): boolean => {
     let accepted = false;
     setState((prev) => {
@@ -431,8 +428,8 @@ export function useGameState(userId: string | null) {
         newXp = prev.xp + actual;
         newDailyFree = prev.dailyXpFree + actual;
       }
-      // ✅ Add spins ONLY if via ad, using value from constants
-      const spinsToAdd = viaAd ? (mission as any).adSpins || 0 : 0;
+      // ✅ Direct read with fallback — guaranteed works
+      const spinsToAdd = viaAd ? (mission as { adSpins?: number }).adSpins ?? 0 : 0;
       return {
         ...prev,
         dailyMissionClaims: [...prev.dailyMissionClaims, missionId],
@@ -444,7 +441,6 @@ export function useGameState(userId: string | null) {
     });
     return accepted;
   }, []);
-  // ✅ FIXED: All-missions base bonus now gives XP from ALL_MISSIONS_BONUS
   const claimAllMissionsBonus = useCallback((): boolean => {
     let accepted = false;
     setState((prev) => {
@@ -466,7 +462,6 @@ export function useGameState(userId: string | null) {
     });
     return accepted;
   }, []);
-  // ✅ FIXED: All-missions AD bonus now gives BOTH XP + spins from ALL_MISSIONS_BONUS
   const claimAllMissionsAdBonus = useCallback((): boolean => {
     let accepted = false;
     setState((prev) => {
