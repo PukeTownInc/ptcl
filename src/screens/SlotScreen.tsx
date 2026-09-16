@@ -16,7 +16,8 @@ type SpinHistoryEntry =
   | { kind: 'double'; pp: number }
   | { kind: 'half'; pp: number }
   | { kind: 'safe'; pp: number }
-  | { kind: 'lose'; pp: number };
+  | { kind: 'lose'; pp: number }
+  | { kind: 'forfeit'; pp: number };
 
 const MAX_HISTORY = 20;
 const PAYTABLE = Object.values(SYMBOLS)
@@ -239,16 +240,16 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
 
-  // ✅ 100% YOUR RULES — STAKE NEVER RETURNED ON WIN, ONLY SKIP RETURNS STAKE
+  // ✅ FINAL RULE: STAKE NEVER RETURNED — ANY FORFEIT = GONE
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
     const stake = state.doubleUpPending ?? 0;
-    actions.useDoubleUp(); // ✅ Stake removed from pending — NOT returned
+    actions.useDoubleUp(); // ✅ Stake removed — GONE FOREVER
 
     if (result.outcome === 'lose') {
-      // ✅ LOSE = 0 added, nothing returned
+      // ✅ LOSE = 0 added, stake GONE
       setWinPP(0);
       toast('error', '☠️ SPILLED!', 'Stake lost — nothing returned');
       setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
@@ -256,22 +257,32 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     else if (result.outcome === 'safe') {
       // ✅ SAFE = stake × 1 ONLY added
       actions.addPP(result.amount);
-      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} PP (x1 stake)`);
+      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} PP claimed`);
       setSpinHistory((prev) => [{ kind: 'safe', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'double') {
       // ✅ DOUBLE = stake × 2 ONLY added
       actions.addPP(result.amount);
-      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} PP (x2 stake)`);
+      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} PP claimed`);
       setSpinHistory((prev) => [{ kind: 'double', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'half') {
       // ✅ HALF = stake × 0.5 ONLY added
       actions.addPP(result.amount);
-      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} PP (x0.5 stake)`);
+      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} PP claimed`);
       setSpinHistory((prev) => [{ kind: 'half', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [state.doubleUpPending, actions, toast]);
+
+  // ✅ FORFEIT HANDLER — STAKE GONE, NEVER RETURNED
+  const handleForfeit = useCallback(() => {
+    if (doubleUpResolvedRef.current) return;
+    doubleUpResolvedRef.current = true;
+    setShowDoubleUp(false);
+    actions.useDoubleUp(); // ✅ Stake removed — NOTHING returned
+    toast('info', '☣️ FORFEITED', 'Stake lost — no return');
+    setSpinHistory((prev) => [{ kind: 'forfeit', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
+  }, [actions, toast]);
 
   const handleMysteryPack = () => {
     if (state.spinsRemaining > 0) {
@@ -524,8 +535,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <SpinWheelModal
           stake={state.doubleUpPending}
           onClaim={handleWheelResult}
-          onLose={() => { setShowDoubleUp(false); toast('error', '☠️ SPILLED!', 'Stake lost!'); }}
-          onForfeit={() => { setShowDoubleUp(false); actions.addPP(state.doubleUpPending || 0); }}
+          onLose={() => { setShowDoubleUp(false); toast('error', '☠️ SPILLED!', 'Stake lost forever'); }}
+          onForfeit={handleForfeit} // ✅ FORFEIT = STAKE GONE
         />
       )}
       <AdModal
@@ -621,18 +632,14 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                     <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{entry.pp}</span>
                   </div>
                 );
+              } else if (entry.kind === 'forfeit') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
+                    <span className="text-sm font-mono text-red-400">☣️ FORFEITED</span>
+                    <span className="font-mono text-sm text-red-400 tabular-nums">— LOST —</span>
+                  </div>
+                );
               } else {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
-                    <span className="text-sm font-mono text-red-400">☠️ SPILLED</span>
-                    <span className="font-mono text-sm text-red-400 tabular-nums">+{entry.pp}</span>
-                  </div>
-                );
-              }
-            })
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+                   
