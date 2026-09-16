@@ -7,6 +7,7 @@ import {
   FREE_SPINS_DAILY_BONUS,
   getTier,
   MIN_UNLOCK_PP,
+  MISSIONS,
 } from './constants';
 import { supabase } from './lib/supabase';
 
@@ -225,7 +226,6 @@ export function useGameState(userId: string | null) {
       const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
       let xpToAdd = Math.round(baseXp * multiplier);
 
-      // ✅ Spins bypass daily cap entirely
       if (skipDailyCap) {
         return {
           ...prev,
@@ -234,7 +234,6 @@ export function useGameState(userId: string | null) {
         };
       }
 
-      // Missions/ads still use daily caps
       let freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       let bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
 
@@ -296,28 +295,50 @@ export function useGameState(userId: string | null) {
     });
   }, []);
 
-  // ✅ FIXED: recordSpin NOW adds +1 XP with NO daily cap
+  // ✅ FIXED: recordSpin — XP added inside setState so it updates instantly
   const recordSpin = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      spinsRemaining: Math.max(0, prev.spinsRemaining - 1),
-      spinsToday: prev.spinsToday + 1,
-      totalSpins: prev.totalSpins + 1,
-      missions: { ...prev.missions, spins: prev.missions.spins + 1 },
-    }));
-    addXP(1, false, true); // ✅ +1 XP PER SPIN — skipDailyCap = true
-  }, [addXP]);
+    setState((prev) => {
+      const tier = getTier(prev.xp);
+      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
+      const xpToAdd = Math.round(1 * multiplier); // +1 XP per spin, no cap
+
+      return {
+        ...prev,
+        spinsRemaining: Math.max(0, prev.spinsRemaining - 1),
+        spinsToday: prev.spinsToday + 1,
+        totalSpins: prev.totalSpins + 1,
+        missions: { ...prev.missions, spins: prev.missions.spins + 1 },
+        xp: prev.xp + xpToAdd,
+        dailyXpFree: prev.dailyXpFree + xpToAdd,
+      };
+    });
+  }, []);
 
   const addSpins = useCallback((n: number) => {
     setState((prev) => ({ ...prev, spinsRemaining: prev.spinsRemaining + n }));
   }, []);
 
+  // ✅ FIXED: watchAd — now gives XP
   const watchAd = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      dailyAdVideosWatched: prev.dailyAdVideosWatched + 1,
-      missions: { ...prev.missions, adsWatched: prev.missions.adsWatched + 1 },
-    }));
+    setState((prev) => {
+      const tier = getTier(prev.xp);
+      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
+      const baseXp = 10;
+      const xpToAdd = Math.round(baseXp * multiplier);
+      const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
+      const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
+      const freePart = Math.min(xpToAdd, freeRemaining);
+      const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
+
+      return {
+        ...prev,
+        dailyAdVideosWatched: prev.dailyAdVideosWatched + 1,
+        missions: { ...prev.missions, adsWatched: prev.missions.adsWatched + 1 },
+        xp: prev.xp + freePart + bonusPart,
+        dailyXpFree: prev.dailyXpFree + freePart,
+        dailyXpBonus: prev.dailyXpBonus + bonusPart,
+      };
+    });
   }, []);
 
   const claimDailyBonusSpins = useCallback(() => {
@@ -431,16 +452,52 @@ export function useGameState(userId: string | null) {
   }, []);
 
   const claimMission = useCallback((missionId: string, viaAd: boolean) => {
-    setState((prev) => ({ ...prev, missions: { ...prev.missions, allClaimed: prev.missions.allClaimed } }));
     return { missionId, viaAd };
   }, []);
 
-  const claimMissionReward = useCallback((missionId: string): boolean => {
+  // ✅ FIXED: claimMissionReward — now gives XP from MISSIONS config
+  const claimMissionReward = useCallback((missionId: string, viaAd: boolean = false): boolean => {
     let accepted = false;
     setState((prev) => {
       if (prev.dailyMissionClaims.includes(missionId)) return prev;
       accepted = true;
-      return { ...prev, dailyMissionClaims: [...prev.dailyMissionClaims, missionId] };
+
+      const mission = MISSIONS.find(m => m.id === missionId);
+      if (!mission) {
+        return { ...prev, dailyMissionClaims: [...prev.dailyMissionClaims, missionId] };
+      }
+
+      const baseXp = viaAd ? mission.adXp : mission.baseXp;
+      const tier = getTier(prev.xp);
+      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
+      const xpToAdd = Math.round(baseXp * multiplier);
+
+      const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
+      const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
+
+      let newXp = prev.xp;
+      let newDailyFree = prev.dailyXpFree;
+      let newDailyBonus = prev.dailyXpBonus;
+
+      if (viaAd) {
+        const freePart = Math.min(xpToAdd, freeRemaining);
+        const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
+        newXp = prev.xp + freePart + bonusPart;
+        newDailyFree = prev.dailyXpFree + freePart;
+        newDailyBonus = prev.dailyXpBonus + bonusPart;
+      } else {
+        const actual = Math.min(xpToAdd, freeRemaining);
+        newXp = prev.xp + actual;
+        newDailyFree = prev.dailyXpFree + actual;
+      }
+
+      return {
+        ...prev,
+        dailyMissionClaims: [...prev.dailyMissionClaims, missionId],
+        xp: newXp,
+        dailyXpFree: newDailyFree,
+        dailyXpBonus: newDailyBonus,
+      };
     });
     return accepted;
   }, []);
