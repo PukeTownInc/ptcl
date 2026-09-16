@@ -210,9 +210,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           actions.addPP(finalPP);
         }
       }
-      if (finalPP === 0) {
-        // Pot full check removed
-      }
       actions.addXP(1, false);
       actions.recordSpin();
       if (freeSpinsLeft > 0) {
@@ -240,47 +237,46 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
 
-  // ✅ FINAL RULE: STAKE NEVER RETURNED — ANY FORFEIT = GONE
+  // ✅ FINAL RULES — EXACT MULTIPLIERS: Double=x2, Safe=x1, Half=x0.5, Lose=0, Forfeit=0
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
     const stake = state.doubleUpPending ?? 0;
-    actions.useDoubleUp(); // ✅ Stake removed — GONE FOREVER
+    actions.useDoubleUp(); // Stake consumed — never returned automatically
 
-    if (result.outcome === 'lose') {
-      // ✅ LOSE = 0 added, stake GONE
+    if (result.outcome === 'double') {
+      const payout = stake * 2;
+      actions.addPP(payout);
+      toast('success', '☢️ DOUBLED!', `+${formatPP(payout)} PP (x2 stake)`);
+      setSpinHistory((prev) => [{ kind: 'double', pp: payout }, ...prev].slice(0, MAX_HISTORY));
+    } 
+    else if (result.outcome === 'safe') {
+      const payout = stake * 1;
+      actions.addPP(payout);
+      toast('success', '🛡️ SECURED', `+${formatPP(payout)} PP (x1 stake)`);
+      setSpinHistory((prev) => [{ kind: 'safe', pp: payout }, ...prev].slice(0, MAX_HISTORY));
+    } 
+    else if (result.outcome === 'half') {
+      const payout = Math.floor(stake * 0.5);
+      actions.addPP(payout);
+      toast('info', '⚠️ HALVED', `+${formatPP(payout)} PP (0.5× stake)`);
+      setSpinHistory((prev) => [{ kind: 'half', pp: payout }, ...prev].slice(0, MAX_HISTORY));
+    } 
+    else if (result.outcome === 'lose') {
       setWinPP(0);
       toast('error', '☠️ SPILLED!', 'Stake lost — nothing returned');
       setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
-    } 
-    else if (result.outcome === 'safe') {
-      // ✅ SAFE = stake × 1 ONLY added
-      actions.addPP(result.amount);
-      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} PP claimed`);
-      setSpinHistory((prev) => [{ kind: 'safe', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
-    } 
-    else if (result.outcome === 'double') {
-      // ✅ DOUBLE = stake × 2 ONLY added
-      actions.addPP(result.amount);
-      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} PP claimed`);
-      setSpinHistory((prev) => [{ kind: 'double', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
-    } 
-    else if (result.outcome === 'half') {
-      // ✅ HALF = stake × 0.5 ONLY added
-      actions.addPP(result.amount);
-      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} PP claimed`);
-      setSpinHistory((prev) => [{ kind: 'half', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [state.doubleUpPending, actions, toast]);
 
-  // ✅ FORFEIT HANDLER — STAKE GONE, NEVER RETURNED
+  // ✅ FORFEIT = 0 RETURN — STAKE GONE
   const handleForfeit = useCallback(() => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
-    actions.useDoubleUp(); // ✅ Stake removed — NOTHING returned
-    toast('info', '☣️ FORFEITED', 'Stake lost — no return');
+    actions.useDoubleUp(); // Stake consumed — 0 returned
+    toast('info', '☣️ FORFEITED', 'Stake lost — nothing returned');
     setSpinHistory((prev) => [{ kind: 'forfeit', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
   }, [actions, toast]);
 
@@ -535,8 +531,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <SpinWheelModal
           stake={state.doubleUpPending}
           onClaim={handleWheelResult}
-          onLose={() => { setShowDoubleUp(false); toast('error', '☠️ SPILLED!', 'Stake lost forever'); }}
-          onForfeit={handleForfeit} // ✅ FORFEIT = STAKE GONE
+          onLose={() => { setShowDoubleUp(false); handleWheelResult({ outcome: 'lose', amount: 0 }); }}
+          onForfeit={handleForfeit}
         />
       )}
       <AdModal
@@ -636,10 +632,21 @@ function SpinHistory({ entries }: { entries: SpinHistoryEntry[] }) {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
                     <span className="text-sm font-mono text-red-400">☣️ FORFEITED</span>
-                    <span className="font-mono text-sm text-red-400 tabular-nums">— LOST —</span>
+                    <span className="font-mono text-sm text-red-400">— 0 —</span>
                   </div>
                 );
               } else {
                 return (
                   <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
-                   
+                    <span className="text-sm font-mono text-red-400">☠️ SPILLED</span>
+                    <span className="font-mono text-sm text-red-400">— 0 —</span>
+                  </div>
+                );
+              }
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
