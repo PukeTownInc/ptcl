@@ -12,26 +12,25 @@ interface Props {
   actions: GameActions;
 }
 
-// ✅ FIXED: Match NEW target numbers
+// ✅ MATCHES YOUR UPDATED TARGETS from constants
 function isMissionComplete(state: GameState, id: string): boolean {
   switch (id) {
-    case 'spins': return state.missions.spins >= 50;        // ✅ Was 20 → Now 50
-    case 'ads': return state.missions.adsWatched >= 10;     // ✅ Already correct
-    case 'wheel': return state.missions.wheelSpins >= 5;    // ✅ Already correct
-    case 'claistreak': return state.streakClaimedToday;     // ✅ Unchanged
-    case 'earnpp': return state.ppEarnedToday >= 250;       // ✅ Was 100 → Now 250
+    case 'spins': return state.missions.spins >= 50;
+    case 'ads': return state.missions.adsWatched >= 10;
+    case 'wheel': return state.missions.wheelSpins >= 5;
+    case 'claistreak': return state.streakClaimedToday;
+    case 'earnpp': return state.ppEarnedToday >= 250;
     default: return false;
   }
 }
 
-// ✅ FIXED: Match NEW target numbers
 function missionProgress(state: GameState, id: string): number {
   switch (id) {
-    case 'spins': return Math.min(state.missions.spins, 50);        // ✅ Was 20 → Now 50
-    case 'ads': return Math.min(state.missions.adsWatched, 10);     // ✅ Already correct
-    case 'wheel': return Math.min(state.missions.wheelSpins, 5);    // ✅ Already correct
-    case 'claistreak': return state.streakClaimedToday ? 1 : 0;     // ✅ Unchanged
-    case 'earnpp': return Math.min(state.ppEarnedToday, 250);       // ✅ Was 100 → Now 250
+    case 'spins': return Math.min(state.missions.spins, 50);
+    case 'ads': return Math.min(state.missions.adsWatched, 10);
+    case 'wheel': return Math.min(state.missions.wheelSpins, 5);
+    case 'claistreak': return state.streakClaimedToday ? 1 : 0;
+    case 'earnpp': return Math.min(state.ppEarnedToday, 250);
     default: return 0;
   }
 }
@@ -57,7 +56,12 @@ function useResetCountdown() {
 
 export function MissionsScreen({ state, actions }: Props) {
   const toast = useToast();
-  const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
+  const [adModal, setAdModal] = useState<null | { 
+    title: string; 
+    subtitle?: string; 
+    reward: string; 
+    onComplete: () => void 
+  }>(null);
   const countdown = useResetCountdown();
   const claimsUsed = state.dailyMissionClaims.length;
   const completedCount = MISSIONS.filter((m) => isMissionComplete(state, m.id)).length;
@@ -85,20 +89,26 @@ export function MissionsScreen({ state, actions }: Props) {
     });
   };
 
-  const handleClaimBase = (id: string, baseXp: number, baseSpins?: number) => {
+  // ✅ FIXED: Uses claimMissionReward — XP calculated inside useGameState
+  const handleClaimBase = (id: string) => {
     if (state.dailyMissionClaims.includes(id)) {
       toast('info', 'Already Collected', 'Base supply gathered today');
       return;
     }
-    const accepted = actions.claimMissionReward(id);
+    const mission = MISSIONS.find(m => m.id === id);
+    if (!mission) return;
+
+    const accepted = actions.claimMissionReward(id, false);
     if (!accepted) return;
-    actions.addXP(baseXp, false);
-    if (baseSpins) actions.addSpins(baseSpins);
-    toast('success', 'Contamination Secured!', `+${baseXp} Exposure${baseSpins ? ` + ${baseSpins} Twists` : ''}`);
+
+    if (mission.baseSpins) actions.addSpins(mission.baseSpins);
+    toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure${mission.baseSpins ? ` + ${mission.baseSpins} Twists` : ''}`);
   };
 
-  const handleClaimAdBonus = (id: string, adXp: number, adSpins?: number) => {
-    if (state.dailyMissionClaims.includes(`${id}:ad`)) {
+  // ✅ FIXED: Uses claimMissionReward with viaAd=true — XP calculated inside
+  const handleClaimAdBonus = (id: string) => {
+    const adClaimId = `${id}:ad`;
+    if (state.dailyMissionClaims.includes(adClaimId)) {
       toast('info', 'Bonus Contaminated', 'Already absorbed today');
       return;
     }
@@ -106,17 +116,19 @@ export function MissionsScreen({ state, actions }: Props) {
       toast('error', 'Base First', 'Claim primary supply before bonus');
       return;
     }
+    const mission = MISSIONS.find(m => m.id === id);
+    if (!mission) return;
+
     setAdModal({
       title: '☢️ Radiation Bonus',
       subtitle: 'Absorb broadcast for extra contamination',
-      reward: `+75 Exposure + 5 Twists`,
+      reward: `+${mission.adXp} Exposure + ${mission.adSpins} Twists`,
       onComplete: () => {
-        const accepted = actions.claimMissionReward(`${id}:ad`);
+        const accepted = actions.claimMissionReward(adClaimId, true);
         if (!accepted) return;
-        actions.addXP(adXp, true);
-        if (adSpins) actions.addSpins(adSpins);
+        if (mission.adSpins) actions.addSpins(mission.adSpins);
         actions.watchAd();
-        toast('success', 'Radiation Absorbed!', `+${adXp} Exposure${adSpins ? ` + ${adSpins} Twists` : ''}`);
+        toast('success', 'Radiation Absorbed!', `+${mission.adXp} Exposure${mission.adSpins ? ` + ${mission.adSpins} Twists` : ''}`);
       },
     });
   };
@@ -129,8 +141,9 @@ export function MissionsScreen({ state, actions }: Props) {
     }
     const accepted = actions.claimAllMissionsBonus();
     if (!accepted) return;
-    actions.claimMissionReward('allBonus');
+    // Give all-missions bonus XP directly
     actions.addXP(ALL_MISSIONS_BONUS.baseXp, false);
+    if (ALL_MISSIONS_BONUS.baseSpins) actions.addSpins(ALL_MISSIONS_BONUS.baseSpins);
     toast('success', '☢️ FULL CONTAMINATION!', `+${ALL_MISSIONS_BONUS.baseXp} Exposure Bonus`);
   };
 
@@ -147,9 +160,8 @@ export function MissionsScreen({ state, actions }: Props) {
       onComplete: () => {
         const accepted = actions.claimAllMissionsAdBonus();
         if (!accepted) return;
-        actions.claimMissionReward('allAdBonus');
         actions.addXP(ALL_MISSIONS_BONUS.adXp, true);
-        actions.addSpins(ALL_MISSIONS_BONUS.adSpins);
+        if (ALL_MISSIONS_BONUS.adSpins) actions.addSpins(ALL_MISSIONS_BONUS.adSpins);
         actions.watchAd();
         toast('success', '☢️ CRITICAL EXPOSURE!', `+${ALL_MISSIONS_BONUS.adXp} Exposure + ${ALL_MISSIONS_BONUS.adSpins} Twists`);
       },
@@ -163,7 +175,6 @@ export function MissionsScreen({ state, actions }: Props) {
         <Target size={28} className="text-toxic-400 mx-auto mb-2" />
         <h2 className="font-display font-black text-lg text-toxic-400 neon-text">☢️ DAILY CONTAMINATION ☢️</h2>
         <p className="text-[11px] text-toxic-100/50 mt-1">Infect every target → Unlock maximum radiation exposure!</p>
-        {/* Reset countdown */}
         <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-mono text-toxic-100/50">
           <Calendar size={10} className="text-toxic-400" />
           <span>Radiation levels reset in: <span className="text-toxic-400 font-bold tabular-nums">{countdown}</span></span>
@@ -289,7 +300,7 @@ export function MissionsScreen({ state, actions }: Props) {
                 </div>
                 <div className="flex gap-2 mt-2.5">
                   <button
-                    onClick={() => handleClaimBase(m.id, m.baseXp, m.baseSpins)}
+                    onClick={() => handleClaimBase(m.id)}
                     disabled={!complete || hasClaimed}
                     className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
                       hasClaimed ? 'toxic-btn opacity-60' : !complete ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
@@ -298,13 +309,13 @@ export function MissionsScreen({ state, actions }: Props) {
                     {hasClaimed ? <><CheckCircle2 size={12} /> Contaminated</> : <><Gift size={12} /> +{m.baseXp} Exposure</>}
                   </button>
                   <button
-                    onClick={() => handleClaimAdBonus(m.id, m.adXp, m.adSpins)}
+                    onClick={() => handleClaimAdBonus(m.id)}
                     disabled={!hasClaimed || hasAdClaimed}
                     className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
                       hasAdClaimed ? 'yellow-btn opacity-60' : !hasClaimed ? 'ghost-btn opacity-40 cursor-not-allowed' : 'yellow-btn'
                     }`}
                   >
-                    {hasAdClaimed ? <><CheckCircle2 size={12} /> Absorbed</> : <><Tv size={12} /> +75 Exposure + 5 Twists</>}
+                    {hasAdClaimed ? <><CheckCircle2 size={12} /> Absorbed</> : <><Tv size={12} /> +{m.adXp} Exposure + {m.adSpins} Twists</>}
                   </button>
                 </div>
               </div>
