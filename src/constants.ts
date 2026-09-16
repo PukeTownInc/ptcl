@@ -1,20 +1,51 @@
 import type { SlotSymbol, SymbolId, Tier } from './types';
+
 export const SYMBOL_IMAGE_PATH = '/symbols/';
 export const COLORS = {
   toxic: '#39FF14',
   radioactive: '#FFFF00',
   black: '#000000',
 };
-export const PP_TO_USD = 0.000025; // 10,000 PP = $0.25 USD
+
+export const PP_TO_USD = 0.000025;
 export const PLATFORM_FEE = 0.10;
 export const MIN_UNLOCK_PP = 5000;
 export const MIN_WITHDRAW_PP = 50000;
 export const MAX_WITHDRAW_PP = 500000;
 export const WITHDRAW_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
 export const DAILY_XP_FREE_CAP = 150;
 export const DAILY_XP_BONUS_CAP = 100;
 export const DAILY_XP_MAX = 250;
 
+// ==============================================
+// ✅ PURE LEVEL SYSTEM — 1000 XP per level, NO CAP
+// ==============================================
+const XP_PER_LEVEL = 1000;
+
+// Current Level — 1, 2, 3, ... endless
+export function getLevel(xp: number): number {
+  return Math.floor(xp / XP_PER_LEVEL) + 1;
+}
+
+// Progress inside CURRENT level — always 0 → 999
+export function getLevelProgress(xp: number): number {
+  return xp % XP_PER_LEVEL;
+}
+
+// Target always 1000 — resets every level
+export function getNextLevelXp(_xp: number): number {
+  return XP_PER_LEVEL;
+}
+
+// Percentage for bar — 0 → 100
+export function getLevelPercent(xp: number): number {
+  return Math.min(100, (getLevelProgress(xp) / XP_PER_LEVEL) * 100);
+}
+
+// ==============================================
+// TIERS — kept separate for rewards/unlocks ONLY
+// ==============================================
 export interface TierInfo {
   id: Tier;
   label: string;
@@ -43,24 +74,9 @@ export function getNextTier(xp: number): TierInfo | null {
   return TIERS.find((t) => t.minXp > xp) ?? null;
 }
 
-// ✅ === NEW LEVELS SYSTEM ===
-// Maps XP → Level using existing tier thresholds
-export function getLevel(xp: number): number {
-  if (xp >= 10000) return 4; // Platinum
-  if (xp >= 2500) return 3;  // Gold
-  if (xp >= 500) return 2;    // Silver
-  return 1;                    // Bronze
-}
-
-// Returns XP needed to reach NEXT level
-export function getNextLevelXp(xp: number): number {
-  if (xp < 500) return 500;    // Bronze → Silver
-  if (xp < 2500) return 2500;  // Silver → Gold
-  if (xp < 10000) return 10000; // Gold → Platinum
-  return 10000; // Max level
-}
-
-// ✅ ALL SYMBOLS
+// ==============================================
+// SYMBOLS — all yours, unchanged
+// ==============================================
 export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
   cashlab: { id: 'cashlab', emoji: '🤑', label: 'Cash Lab',      pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cash-lab.png?v=11` },
   puke:    { id: 'puke',    emoji: '🤢', label: 'Puke Town',     pays: [2, 3, 9],     weight: 26,  image: `${SYMBOL_IMAGE_PATH}symbol-puke-town.png?v=11` },
@@ -88,14 +104,13 @@ export const JACKPOT_TYPES = [
   { type: 'major' as const, amount: 120, label: 'Major' },
   { type: 'grand' as const, amount: 300, label: 'Grand' },
 ];
-
 export const JACKPOT_WEIGHTS = [50, 30, 15, 5];
+
 export const REEL_COUNT = 5;
 export const ROW_COUNT = 3;
 export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 10;
 
-// ✅ UPDATED: Watch 10 Ads
 export const MISSIONS = [
   { id: 'claistreak',label: 'Claim Daily Streak',            target: 1,  baseXp: 50,  adXp: 75,  icon: '📅', adSpins: 5 },
   { id: 'spins',     label: 'Spin 50 Times',                target: 50,  baseXp: 50,  adXp: 75,  icon: '🎰', adSpins: 5 },
@@ -113,7 +128,6 @@ export interface StreakDayReward {
   ppBoost?: boolean;
   label: string;
 }
-
 export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 1, spins: 2, xp: 10, label: 'Day 1' },
   { day: 2, spins: 3, xp: 15, label: 'Day 2' },
@@ -123,8 +137,8 @@ export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 6, spins: 8, xp: 40, label: 'Day 6' },
   { day: 7, spins: 15, xp: 75, ppBoost: true, label: 'Day 7 — MAX!' },
 ];
-
 export const MAX_STREAK_DAY = 7;
+
 export const ppToUsd = (pp: number) => pp * PP_TO_USD;
 export function formatPP(pp: number): string {
   return pp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
