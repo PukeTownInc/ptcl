@@ -151,18 +151,22 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       toast('error', 'No Toxic Twists Left', 'Absorb radiation or wait for daily dose');
       return;
     }
+
     setSpinning(true);
     setWinPositions(new Set());
     setWinPP(0);
     setLastResult(null);
     setSpinId((n) => n + 1);
     setReelPhases(['spinning', 'spinning', 'spinning', 'spinning', 'spinning']);
+
     const result = engine.spin();
+
     cycleInterval.current = setInterval(() => {
       const next: SymbolId[][] = [];
       for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
       setCyclingSymbols(next);
     }, 70);
+
     const baseDelay = 1000;
     const stagger = 320;
     for (let r = 0; r < 5; r++) {
@@ -187,20 +191,24 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, baseDelay + r * stagger);
       stopTimers.current.push(t);
     }
+
     function finishSpin(res: SpinResult) {
       setSpinning(false);
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
       setLastResult(res);
+
       let finalPP = res.totalPP;
       const hadPotAccel = isPotAccelActive(state);
       const hadHotStreak = isHotStreakActive(state);
       if (hadPotAccel) finalPP *= 2;
       if (hadHotStreak) finalPP = Math.floor(finalPP * 1.5);
+
       const posSet = new Set<string>();
       res.wins.forEach((w) => w.positions.forEach(([r, row]) => posSet.add(`${r}-${row}`)));
       res.jackpot && res.grid.forEach((col, r) => col.forEach((s, row) => s === 'jackpot' && posSet.add(`${r}-${row}`)));
       setWinPositions(posSet);
       setWinPP(finalPP);
+
       const eligibleDoubleUp = finalPP >= 10;
       if (finalPP > 0) {
         if (eligibleDoubleUp) {
@@ -214,8 +222,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       if (finalPP === 0) {
         // Pot full check removed — tier logic removed
       }
-      actions.addXP(res.xpGained, false);
+
+      // ✅ FIXED: Guaranteed +1 XP per spin — ALWAYS adds
+      actions.addXP(1, false);
       actions.recordSpin();
+
       if (freeSpinsLeft > 0) {
         setFreeSpinsLeft((n) => n - 1);
       }
@@ -228,6 +239,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         actions.recordJackpot();
         setTimeout(() => setShowJackpot(null), 3000);
       }
+
       const winSymbols = res.wins.length > 0
         ? [...new Set(res.wins.map((w) => w.symbols[0]))]
         : [];
@@ -323,6 +335,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   };
 
   const canSpin = state.spinsRemaining > 0 || freeSpinsLeft > 0;
+
   const toggleAutoSpin = useCallback(() => {
     setAutoSpin((prev) => {
       const next = !prev;
