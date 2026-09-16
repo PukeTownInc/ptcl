@@ -239,40 +239,34 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
 
-  // ✅ UPDATED: Correct result handling matching SpinWheelModal rules
+  // ✅ FIXED: Exact payout logic — no double-adding, no overpayment
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
-
     setShowDoubleUp(false);
     const stake = state.doubleUpPending ?? 0;
-    actions.useDoubleUp();
+    actions.useDoubleUp(); // Stake already removed from pending — now apply wheel result
 
-    // ✅ Rules applied:
-    // Safe → return stake (no change to balance, just confirm)
-    // Double → gain = finalPP - stake
-    // Half → gain = finalPP - stake
-    // Lose → full stake lost, nothing added
     if (result.outcome === 'lose') {
-      // Lost full stake — already deducted by not adding anything
+      // Lost — stake already gone, nothing added
       setWinPP(0);
       toast('error', '☠️ SPILLED!', 'All lost — better containment next time!');
       setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
     } else if (result.outcome === 'safe') {
-      // Stake returned exactly — no gain, no loss
+      // Return EXACT stake amount — result.finalPP = stake × 1
       actions.addPP(result.finalPP);
-      toast('success', '🛡️ SECURED', `${formatPP(result.finalPP)} PP — stake kept!`);
+      toast('success', '🛡️ SECURED', `${formatPP(result.finalPP)} PP — stake returned!`);
       setSpinHistory((prev) => [{ kind: 'safe', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
     } else if (result.outcome === 'double') {
-      // Double — add the profit (finalPP - stake)
-      const gain = result.finalPP - stake;
-      if (gain > 0) actions.addPP(gain);
-      toast('success', '☢️ DOUBLED!', `+${formatPP(result.finalPP)} PP total!`);
+      // ✅ FIXED: Add ONLY the bonus profit, not full amount
+      // result.finalPP = stake × 2 → profit = stake exactly
+      const profit = stake;
+      actions.addPP(profit);
+      toast('success', '☢️ DOUBLED!', `+${formatPP(profit)} PP profit!`);
       setSpinHistory((prev) => [{ kind: 'double', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
     } else if (result.outcome === 'half') {
-      // Half — add the reduced amount
-      const gain = result.finalPP - stake;
-      if (gain > 0) actions.addPP(gain);
+      // ✅ FIXED: Return half of stake only
+      actions.addPP(result.finalPP);
       toast('info', '⚠️ HALVED', `${formatPP(result.finalPP)} PP returned`);
       setSpinHistory((prev) => [{ kind: 'half', pp: result.finalPP }, ...prev].slice(0, MAX_HISTORY));
     }
@@ -528,9 +522,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
           stake={state.doubleUpPending}
-          isOpen={showDoubleUp}
-          onClose={() => setShowDoubleUp(false)}
-          onResult={handleWheelResult}
+          onClaim={handleWheelResult}
+          onLose={() => { setShowDoubleUp(false); toast('error', '☠️ SPILLED!', 'All lost!'); }}
+          onForfeit={() => { setShowDoubleUp(false); actions.addPP(state.doubleUpPending || 0); }}
         />
       )}
       <AdModal
