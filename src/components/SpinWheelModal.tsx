@@ -7,6 +7,7 @@ export interface WheelResult {
   outcome: WheelOutcome;
   multiplier: number;
   finalPP: number;
+  profit: number; // ✅ NEW — clear separation
 }
 
 interface Segment {
@@ -17,17 +18,14 @@ interface Segment {
   endAngle: number;
 }
 
-// ✅ VISUALS = 4 EQUAL QUADRANTS (matches your PNG exactly — NO visual change!)
-// ✅ PROBABILITIES = YOUR WEIGHTED RATES (only math changes behind the scenes)
-// PNG ORDER (clockwise from top): Half → Lose → Safe → Double
+// ✅ Matches your PNG visually — weighted probabilities behind scenes
 const SEGMENTS: Segment[] = [
-  { id: 'half',    label: 'HALF',   probability: 30, startAngle: 0,   endAngle: 90 },   // Top — 30% chance
-  { id: 'lose',    label: 'LOSE',   probability: 40, startAngle: 90,  endAngle: 180 },  // Right — 40% chance
-  { id: 'safe',    label: 'SAFE',   probability: 20, startAngle: 180, endAngle: 270 },  // Bottom — 20% chance
-  { id: 'double',  label: 'DOUBLE', probability: 10, startAngle: 270, endAngle: 360 },  // Left — 10% chance
+  { id: 'half',    label: 'HALF',   probability: 30, startAngle: 0,   endAngle: 90 },
+  { id: 'lose',    label: 'LOSE',   probability: 40, startAngle: 90,  endAngle: 180 },
+  { id: 'safe',    label: 'SAFE',   probability: 20, startAngle: 180, endAngle: 270 },
+  { id: 'double',  label: 'DOUBLE', probability: 10, startAngle: 270, endAngle: 360 },
 ];
 
-// ✅ Weighted pick — ONLY the probability is weighted, angles stay equal for visuals!
 function pickWeightedIndex(): number {
   let r = Math.random() * 100;
   for (let i = 0; i < SEGMENTS.length; i++) {
@@ -67,6 +65,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
   const multiplier = outcome ? getMultiplier(outcome.id) : 0;
   const finalPP = outcome ? Math.round(safeStake * multiplier) : 0;
+  const profit = finalPP - safeStake; // ✅ Pure profit only
 
   useEffect(() => {
     return () => {
@@ -81,11 +80,8 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     setResultIndex(null);
     setEffect(null);
 
-    // Pick weighted outcome (behind the scenes — visuals stay equal!)
     const targetIndex = pickWeightedIndex();
     const targetSeg = SEGMENTS[targetIndex];
-
-    // ✅ Visual angles are EQUAL 90° quadrants — pointer lands perfectly in the visual segment
     const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
     const fullRotations = 5 + Math.floor(Math.random() * 3);
     const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
@@ -105,7 +101,12 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
 
   const handleWatchAd = () => {
     if (!outcome || phase !== 'result') return;
-    onClaim({ outcome: outcome.id, multiplier, finalPP });
+    onClaim({ 
+      outcome: outcome.id, 
+      multiplier, 
+      finalPP,
+      profit // ✅ Pass clean profit value up
+    });
   };
 
   const handleClose = () => {
@@ -202,10 +203,10 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
                 outcome.id === 'half' ? 'text-hazard-amber' : 'text-blue-400'
               }`}
             >
-              {outcome.id === 'double' && `DOUBLED! +${formatPP(finalPP)} Puke Points`}
+              {outcome.id === 'double' && `DOUBLED! +${formatPP(profit)} Puke Points`}
               {outcome.id === 'lose' && `SPILLED! All lost`}
-              {outcome.id === 'half' && `HALVED! +${formatPP(finalPP)} Puke Points`}
-              {outcome.id === 'safe' && `SECURED! +${formatPP(finalPP)} Puke Points`}
+              {outcome.id === 'half' && `HALVED! ${profit === 0 ? 'Even' : formatPP(profit)} Puke Points`}
+              {outcome.id === 'safe' && `SECURED! Stake Kept`}
             </div>
             {outcome.id !== 'lose' && (
               <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Absorb radiation to secure reward</p>
