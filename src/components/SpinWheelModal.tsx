@@ -6,7 +6,7 @@ export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
 
 export interface WheelResult {
   outcome: WheelOutcome;
-  amount: number; // ✅ Exact value to add — stake × multiplier ONLY
+  amount: number; // ✅ Exact decimal — stake × multiplier, NO rounding
 }
 
 interface Segment {
@@ -17,12 +17,13 @@ interface Segment {
   endAngle: number;
 }
 
-// ✅ ODDS: Lose 40% • Half 30% • Safe 20% • Double 10%
+// ✅ MATCHES YOUR WHEEL IMAGE — Top=Double → Clockwise: Half → Lose → Safe
+// ODDS: Double 10% • Half 30% • Lose 40% • Safe 20%
 const SEGMENTS: Segment[] = [
-  { id: 'lose',   label: 'LOSE',   probability: 40, startAngle: 0,   endAngle: 144 },
-  { id: 'half',   label: 'HALF',   probability: 30, startAngle: 144, endAngle: 252 },
-  { id: 'safe',   label: 'SAFE',   probability: 20, startAngle: 252, endAngle: 324 },
-  { id: 'double', label: 'DOUBLE', probability: 10, startAngle: 324, endAngle: 360 },
+  { id: 'double', label: 'DOUBLE', probability: 10, startAngle: 0,   endAngle: 90 },
+  { id: 'half',   label: 'HALF',   probability: 30, startAngle: 90,  endAngle: 180 },
+  { id: 'lose',   label: 'LOSE',   probability: 40, startAngle: 180, endAngle: 270 },
+  { id: 'safe',   label: 'SAFE',   probability: 20, startAngle: 270, endAngle: 360 },
 ];
 
 function pickWeightedIndex(): number {
@@ -34,13 +35,13 @@ function pickWeightedIndex(): number {
   return 0;
 }
 
-// ✅ EXACT PAYOUT RULES — stake already consumed
+// ✅ EXACT DECIMAL — NO Math.floor / NO Math.round
 function getAmount(outcome: WheelOutcome, stake: number): number {
   switch (outcome) {
-    case 'double': return Math.round(stake * 2);   // x2 return
-    case 'safe':   return Math.round(stake * 1);   // x1 return
-    case 'half':   return Math.round(stake * 0.5); // 0.5 return
-    case 'lose':   return 0;                        // 0 — nothing
+    case 'double': return stake * 2;   // Exact ×2
+    case 'safe':   return stake * 1;   // Exact ×1
+    case 'half':   return stake * 0.5; // Exact 0.5 — preserves decimals e.g. 11×0.5=5.5
+    case 'lose':   return 0;           // Zero
   }
 }
 
@@ -54,7 +55,7 @@ interface Props {
 type Phase = 'idle' | 'spinning' | 'result';
 
 export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
-  const safeStake = Math.max(0, Math.round(stake));
+  const safeStake = Math.max(0, stake); // Keep original precision
   const [rotation, setRotation] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
   const [resultIndex, setResultIndex] = useState<number | null>(null);
@@ -95,30 +96,23 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     }, 3800);
   }, [phase, rotation]);
 
-  // ✅ Claim = send exact amount to add
   const handleWatchAd = () => {
     if (!outcome || phase !== 'result') return;
     onClaim({ 
       outcome: outcome.id, 
-      amount: winAmount
+      amount: winAmount // Exact decimal sent directly
     });
   };
 
-  // ✅ Close logic — ALL close paths = stake stays gone
   const handleClose = () => {
     if (phase === 'spinning') {
-      onForfeit(); // Spinning = Forfeit
+      onForfeit();
       return;
     }
     if (phase === 'result' && outcome) {
-      if (outcome.id === 'lose') {
-        onLose(); // Lose = 0
-      } else {
-        onForfeit(); // Skip claiming = Forfeit
-      }
-    } else {
-      onForfeit();
-    }
+      if (outcome.id === 'lose') onLose();
+      else onForfeit();
+    } else onForfeit();
   };
 
   useEffect(() => {
@@ -152,7 +146,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           <span className="font-display font-bold text-toxic-400">{formatPP(safeStake)} Puke Points</span>
         </div>
 
-        {/* Wheel */}
         <div className="relative mx-auto mb-4" style={{ width: 220, height: 220 }}>
           <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30" style={{ marginTop: -4 }}>
             <div
@@ -190,7 +183,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           </div>
         </div>
 
-        {/* Result Display */}
         {phase === 'result' && outcome && (
           <div className="animate-pop mb-3">
             <div className="text-4xl mb-1">
@@ -201,9 +193,9 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             </div>
             <div
               className={`font-display font-black text-xl ${
-                outcome.id === 'double' ? 'text-toxic-400 neon-text' :
+                outcome.id === 'double' ? 'text-green-400 neon-text' :
                 outcome.id === 'lose' ? 'text-red-400' :
-                outcome.id === 'half' ? 'text-hazard-amber' : 'text-green-400'
+                outcome.id === 'half' ? 'text-hazard-amber' : 'text-blue-400'
               }`}
             >
               {outcome.id === 'double' && `x2 = +${formatPP(winAmount)} PP`}
@@ -220,7 +212,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           </div>
         )}
 
-        {/* Buttons */}
         {phase === 'idle' && (
           <button onClick={handleSpin} className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2 text-sm">
             <Play size={18} /> SPIN — STAKE RISKED
