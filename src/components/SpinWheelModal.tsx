@@ -3,133 +3,96 @@ import { Tv, X, Play } from 'lucide-react';
 import { formatPP } from '../constants';
 
 export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
-
 export interface WheelResult {
   outcome: WheelOutcome;
-  amount: number; // ✅ Exact decimal — stake × multiplier, NO rounding
+  amount: number;
 }
 
-interface Segment {
-  id: WheelOutcome;
-  label: string;
-  probability: number;
-  startAngle: number;
-  endAngle: number;
-}
-
-// ✅ MATCHES YOUR WHEEL IMAGE — Top=Double → Clockwise: Half → Lose → Safe
-// ODDS: Double 10% • Half 30% • Lose 40% • Safe 20%
-const SEGMENTS: Segment[] = [
-  { id: 'double', label: 'DOUBLE', probability: 10, startAngle: 0,   endAngle: 90 },
-  { id: 'half',   label: 'HALF',   probability: 30, startAngle: 90,  endAngle: 180 },
-  { id: 'lose',   label: 'LOSE',   probability: 40, startAngle: 180, endAngle: 270 },
-  { id: 'safe',   label: 'SAFE',   probability: 20, startAngle: 270, endAngle: 360 },
+// ✅ MATCHES YOUR IMAGE EXACTLY — 4 EQUAL 90° SEGMENTS
+// Top = DOUBLE (green) → Clockwise: HALF (orange) → LOSE (red) → SAFE (blue)
+const SEGMENTS = [
+  { id: 'double' as const, label: 'DOUBLE',  multiplier: 2,   weight: 25, startAngle: 0,   endAngle: 90 },
+  { id: 'half'   as const, label: 'HALF',    multiplier: 0.5, weight: 30, startAngle: 90,  endAngle: 180 },
+  { id: 'lose'   as const, label: 'LOSE',    multiplier: 0,   weight: 40, startAngle: 180, endAngle: 270 },
+  { id: 'safe'   as const, label: 'SAFE',    multiplier: 1,   weight: 20, startAngle: 270, endAngle: 360 },
 ];
 
-function pickWeightedIndex(): number {
+function pickSegmentIndex(): number {
   let r = Math.random() * 100;
   for (let i = 0; i < SEGMENTS.length; i++) {
-    r -= SEGMENTS[i].probability;
+    r -= SEGMENTS[i].weight;
     if (r <= 0) return i;
   }
   return 0;
-}
-
-// ✅ EXACT DECIMAL — NO Math.floor / NO Math.round
-function getAmount(outcome: WheelOutcome, stake: number): number {
-  switch (outcome) {
-    case 'double': return stake * 2;   // Exact ×2
-    case 'safe':   return stake * 1;   // Exact ×1
-    case 'half':   return stake * 0.5; // Exact 0.5 — preserves decimals e.g. 11×0.5=5.5
-    case 'lose':   return 0;           // Zero
-  }
 }
 
 interface Props {
   stake: number;
   onClaim: (result: WheelResult) => void;
   onLose: () => void;
-  onForfeit: () => void; // ✅ FORFEIT = stake GONE
+  onForfeit: () => void;
 }
 
 type Phase = 'idle' | 'spinning' | 'result';
 
 export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
-  const safeStake = Math.max(0, stake); // Keep original precision
+  const safeStake = Math.max(0, stake);
   const [rotation, setRotation] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
-  const [resultIndex, setResultIndex] = useState<number | null>(null);
-  const [effect, setEffect] = useState<'confetti' | 'redflash' | 'amberflash' | 'greenflash' | null>(null);
-  const spinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const spinFiredRef = useRef(false);
-  const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
-  const winAmount = outcome ? getAmount(outcome.id, safeStake) : 0;
+  const [landedIndex, setLandedIndex] = useState<number | null>(null);
+  const spinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    return () => {
-      if (spinTimerRef.current) clearTimeout(spinTimerRef.current);
-    };
+    return () => { if (spinTimer.current) clearTimeout(spinTimer.current); };
   }, []);
 
   const handleSpin = useCallback(() => {
-    if (phase !== 'idle' || spinFiredRef.current) return;
-    spinFiredRef.current = true;
+    if (phase !== 'idle') return;
     setPhase('spinning');
-    setResultIndex(null);
-    setEffect(null);
+    setLandedIndex(null);
 
-    const targetIndex = pickWeightedIndex();
+    const targetIndex = pickSegmentIndex();
     const targetSeg = SEGMENTS[targetIndex];
-    const targetCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
-    const fullRotations = 5 + Math.floor(Math.random() * 3);
-    const targetRotation = rotation + fullRotations * 360 + (360 - targetCenter);
-    setRotation(targetRotation);
+    
+    // ✅ Calculate rotation so the LANDED segment lands at TOP pointer
+    const segmentCenter = (targetSeg.startAngle + targetSeg.endAngle) / 2;
+    const fullSpins = 5 + Math.floor(Math.random() * 3);
+    const totalRotation = rotation + fullSpins * 360 + (360 - segmentCenter);
+    
+    setRotation(totalRotation);
 
-    spinTimerRef.current = setTimeout(() => {
-      setResultIndex(targetIndex);
+    spinTimer.current = setTimeout(() => {
+      setLandedIndex(targetIndex);
       setPhase('result');
-      if (targetSeg.id === 'double') setEffect('confetti');
-      else if (targetSeg.id === 'lose') setEffect('redflash');
-      else if (targetSeg.id === 'half') setEffect('amberflash');
-      else if (targetSeg.id === 'safe') setEffect('greenflash');
-      spinFiredRef.current = false;
     }, 3800);
   }, [phase, rotation]);
 
-  const handleWatchAd = () => {
-    if (!outcome || phase !== 'result') return;
-    onClaim({ 
-      outcome: outcome.id, 
-      amount: winAmount // Exact decimal sent directly
-    });
-  };
+  const handleClaim = useCallback(() => {
+    if (landedIndex === null || phase !== 'result') return;
+    const seg = SEGMENTS[landedIndex];
+    const amount = safeStake * seg.multiplier;
+    onClaim({ outcome: seg.id, amount });
+  }, [landedIndex, phase, safeStake, onClaim]);
 
-  const handleClose = () => {
-    if (phase === 'spinning') {
+  const handleClose = useCallback(() => {
+    if (phase === 'spinning') return;
+    if (landedIndex === null) {
       onForfeit();
       return;
     }
-    if (phase === 'result' && outcome) {
-      if (outcome.id === 'lose') onLose();
-      else onForfeit();
-    } else onForfeit();
-  };
-
-  useEffect(() => {
-    if (effect === 'redflash' || effect === 'amberflash' || effect === 'greenflash') {
-      const t = setTimeout(() => setEffect(null), 1000);
-      return () => clearTimeout(t);
+    if (SEGMENTS[landedIndex].id === 'lose') {
+      onLose();
+    } else {
+      onForfeit();
     }
-  }, [effect]);
+  }, [phase, landedIndex, onLose, onForfeit]);
+
+  const landed = landedIndex !== null ? SEGMENTS[landedIndex] : null;
+  const winAmount = landed ? safeStake * landed.multiplier : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
-      {effect === 'redflash' && <div className="absolute inset-0 bg-red-600/30 animate-fade-in pointer-events-none" />}
-      {effect === 'amberflash' && <div className="absolute inset-0 bg-amber-500/20 animate-fade-in pointer-events-none" />}
-      {effect === 'greenflash' && <div className="absolute inset-0 bg-green-500/20 animate-fade-in pointer-events-none" />}
-      {effect === 'confetti' && <ConfettiBurst />}
-      
-      <div className="grunge-panel neon-border p-5 max-w-xs w-full text-center animate-slide-up relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+      <div className="grunge-panel neon-border p-5 max-w-xs w-full text-center relative">
         <button
           onClick={handleClose}
           disabled={phase === 'spinning'}
@@ -138,26 +101,23 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           <X size={16} />
         </button>
 
-        <h3 className="font-display font-black text-lg text-radioactive-400 neon-text-yellow mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
-        <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Stake: {formatPP(safeStake)} PP — RISKED & FORFEITED</p>
-        
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-toxic-500/10 border border-toxic-600/30 mb-4">
-          <span className="text-[10px] text-toxic-100/50 font-mono uppercase">STAKED:</span>
-          <span className="font-display font-bold text-toxic-400">{formatPP(safeStake)} Puke Points</span>
-        </div>
+        <h3 className="font-display font-black text-lg text-radioactive-400 mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
+        <p className="text-[11px] text-toxic-100/50 font-mono mb-3">Staked: {formatPP(safeStake)} PP</p>
 
+        {/* WHEEL */}
         <div className="relative mx-auto mb-4" style={{ width: 220, height: 220 }}>
+          {/* Fixed top pointer */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30" style={{ marginTop: -4 }}>
-            <div
-              className="w-0 h-0"
-              style={{
-                borderLeft: '12px solid transparent',
-                borderRight: '12px solid transparent',
-                borderTop: '20px solid #ffff00',
-                filter: 'drop-shadow(0 0 8px #ffff00)',
-              }}
-            />
+            <div style={{
+              width: 0, height: 0,
+              borderLeft: '12px solid transparent',
+              borderRight: '12px solid transparent',
+              borderTop: '20px solid #FFFF00',
+              filter: 'drop-shadow(0 0 8px #FFFF00)',
+            }} />
           </div>
+
+          {/* Rotating wheel */}
           <div
             className="absolute inset-0 rounded-full overflow-hidden"
             style={{
@@ -171,10 +131,12 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           >
             <img
               src="/radioactive-risk-wheel.png"
-              alt="Radioactive Risk Wheel"
+              alt="Risk Wheel"
               className="w-full h-full object-contain"
             />
           </div>
+
+          {/* Center hub */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center"
             style={{ width: 56, height: 56, boxShadow: '0 0 15px #39ff14' }}
@@ -183,86 +145,58 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           </div>
         </div>
 
-        {phase === 'result' && outcome && (
-          <div className="animate-pop mb-3">
-            <div className="text-4xl mb-1">
-              {outcome.id === 'double' && '☢️'}
-              {outcome.id === 'lose' && '☠️'}
-              {outcome.id === 'half' && '⚠️'}
-              {outcome.id === 'safe' && '🛡️'}
+        {/* RESULT — EXACTLY WHAT LANDED */}
+        {phase === 'result' && landed && (
+          <div className="mb-4 space-y-2">
+            <div className="text-4xl">
+              {landed.id === 'double' && '☢️'}
+              {landed.id === 'lose'   && '☠️'}
+              {landed.id === 'half'   && '⚠️'}
+              {landed.id === 'safe'   && '🛡️'}
             </div>
-            <div
-              className={`font-display font-black text-xl ${
-                outcome.id === 'double' ? 'text-green-400 neon-text' :
-                outcome.id === 'lose' ? 'text-red-400' :
-                outcome.id === 'half' ? 'text-hazard-amber' : 'text-blue-400'
-              }`}
-            >
-              {outcome.id === 'double' && `x2 = +${formatPP(winAmount)} PP`}
-              {outcome.id === 'lose' && `NOTHING — Stake Lost`}
-              {outcome.id === 'half' && `x0.5 = +${formatPP(winAmount)} PP`}
-              {outcome.id === 'safe' && `x1 = +${formatPP(winAmount)} PP`}
+            <div className={`font-display font-black text-xl ${
+              landed.id === 'double' ? 'text-green-400' :
+              landed.id === 'lose'   ? 'text-red-400' :
+              landed.id === 'half'   ? 'text-amber-400' : 'text-blue-400'
+            }`}>
+              {landed.label}
             </div>
-            {outcome.id !== 'lose' && (
-              <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Watch ad → claim above amount</p>
-            )}
-            {outcome.id === 'lose' && (
-              <p className="text-[10px] text-red-400/60 font-mono mt-1">Stake risked — nothing returned</p>
+            <p className="font-mono text-lg">
+              {landed.id === 'lose'
+                ? <span className="text-red-400">— 0 — Stake Lost</span>
+                : <span className="text-green-400">+{formatPP(winAmount)} PP</span>
+              }
+            </p>
+            {landed.id !== 'lose' && (
+              <p className="text-[10px] text-toxic-100/40 font-mono">Watch ad → claim amount</p>
             )}
           </div>
         )}
 
         {phase === 'idle' && (
-          <button onClick={handleSpin} className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2 text-sm">
-            <Play size={18} /> SPIN — STAKE RISKED
+          <button onClick={handleSpin} className="toxic-btn w-full py-3.5 flex items-center justify-center gap-2">
+            <Play size={18} /> SPIN
           </button>
         )}
         {phase === 'spinning' && (
-          <div className="py-3">
-            <span className="font-display text-sm text-toxic-300/60 animate-pulse tracking-[0.3em]">CONTAMINATING...</span>
-          </div>
+          <p className="py-3 text-toxic-300/60 font-mono animate-pulse">CONTAMINATING...</p>
         )}
-        {phase === 'result' && outcome && outcome.id !== 'lose' && (
+        {phase === 'result' && landed && landed.id !== 'lose' && (
           <>
-            <button onClick={handleWatchAd} className="toxic-btn w-full py-3 flex items-center justify-center gap-2 text-sm">
+            <button onClick={handleClaim} className="toxic-btn w-full py-3 flex items-center justify-center gap-2">
               <Tv size={16} /> Absorb Radiation to Claim
             </button>
             <button onClick={handleClose} className="w-full mt-2 py-2 text-[11px] text-red-400/50 hover:text-red-400/80 font-mono">
-              Forfeit — Stake Lost Forever
+              Forfeit
             </button>
           </>
         )}
-        {phase === 'result' && outcome && outcome.id === 'lose' && (
-          <button onClick={handleClose} className="ghost-btn w-full py-3 text-sm text-red-400">
+        {phase === 'result' && landed && landed.id === 'lose' && (
+          <button onClick={handleClose} className="ghost-btn w-full py-3 text-red-400">
             Close — Stake Lost
           </button>
         )}
       </div>
-    </div>
-  );
-}
-
-function ConfettiBurst() {
-  const particles = Array.from({ length: 24 }, (_, i) => i);
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {particles.map((i) => {
-        const angle = (i / particles.length) * 360;
-        const distance = 80 + Math.random() * 120;
-        const x = Math.cos((angle * Math.PI) / 180) * distance;
-        const y = Math.sin((angle * Math.PI) / 180) * distance;
-        return (
-          <div
-            key={i}
-            className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full"
-            style={{
-              background: ['#39ff14', '#ffff00', '#ff2d2d'][i % 3],
-              animation: `confetti-burst 1.2s ease-out ${i * 0.05}s forwards`,
-              '--tx': `${x}px`, '--ty': `${y}px`,
-            } as React.CSSProperties}
-          />
-        );
-      })}
     </div>
   );
 }
