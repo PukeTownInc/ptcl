@@ -31,11 +31,12 @@ interface Props {
   onClaim: (result: WheelResult) => void;
   onLose: () => void;
   onForfeit: () => void;
+  onWatchAd: () => void; // ✅ ADDED — triggers ad gate
 }
 
 type Phase = 'idle' | 'spinning' | 'result';
 
-export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
+export function SpinWheelModal({ stake, onClaim, onLose, onForfeit, onWatchAd }: Props) {
   const safeStake = Math.max(0, stake);
   const [rotation, setRotation] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -50,19 +51,15 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     if (phase !== 'idle') return;
     setPhase('spinning');
     setLandedIndex(null);
-
     const targetIndex = pickSegmentIndex();
     const targetSeg = SEGMENTS[targetIndex];
     
     // ✅ FIXED: Spin COUNTER-CLOCKWISE so the CORRECT segment lands at the pointer
-    // Calculate: rotate so the TOP of the target segment lands exactly at the top pointer
     const targetTop = targetSeg.startAngle;
     const fullSpins = 5 + Math.floor(Math.random() * 3);
-    // NEGATIVE = counter-clockwise — matches visual flow
     const totalRotation = rotation - (fullSpins * 360 + targetTop);
     
     setRotation(totalRotation);
-
     spinTimer.current = setTimeout(() => {
       setLandedIndex(targetIndex);
       setPhase('result');
@@ -73,8 +70,9 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     if (landedIndex === null || phase !== 'result') return;
     const seg = SEGMENTS[landedIndex];
     const amount = safeStake * seg.multiplier;
-    onClaim({ outcome: seg.id, amount });
-  }, [landedIndex, phase, safeStake, onClaim]);
+    onWatchAd(); // ✅ Show ad FIRST
+    onClaim({ outcome: seg.id, amount }); // ✅ Then pay
+  }, [landedIndex, phase, safeStake, onWatchAd, onClaim]);
 
   const handleClose = useCallback(() => {
     if (phase === 'spinning') return;
@@ -102,7 +100,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
         >
           <X size={16} />
         </button>
-
         <h3 className="font-display font-black text-lg text-radioactive-400 mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
         <p className="text-[11px] text-toxic-100/50 font-mono mb-3">Staked: {formatPP(safeStake)} PP</p>
 
@@ -118,7 +115,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
               filter: 'drop-shadow(0 0 8px #FFFF00)',
             }} />
           </div>
-
           {/* Rotating wheel — ✅ spins COUNTER-CLOCKWISE */}
           <div
             className="absolute inset-0 rounded-full overflow-hidden"
@@ -137,7 +133,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
               className="w-full h-full object-contain"
             />
           </div>
-
           {/* Center hub */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center"
