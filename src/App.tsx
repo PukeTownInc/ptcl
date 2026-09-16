@@ -72,7 +72,7 @@ function AppContent() {
   return (
     <ToastProvider>
       <div className="min-h-screen flex flex-col">
-        {/* ✅ HEADER — BALANCES + XP LEVELS */}
+        {/* HEADER — BALANCES + XP LEVELS */}
         <Header
           active={screen}
           onChange={navigate}
@@ -89,7 +89,7 @@ function AppContent() {
           {screen === 'missions' && <MissionsScreen state={actions.state} actions={actions} />}
           {screen === 'leaderboards' && <LeaderboardsScreen state={actions.state} actions={actions} />}
           {screen === 'withdraw' && <WithdrawScreen state={actions.state} actions={actions} isLoggedIn={!!user} />}
-          {screen === 'roadmap' && <RoadmapScreen onNavigate={navigate} />}
+          {screen === 'roadmap' && <RoadmapScreen onNavigate={navigate} actions={actions} />}
           {screen === 'profile' && <ProfileScreen state={actions.state} actions={actions} />}
           {screen === 'settings' && <SettingsScreen state={actions.state} actions={actions} />}
           {screen === 'vialmixer' && (
