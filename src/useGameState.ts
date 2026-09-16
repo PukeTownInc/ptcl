@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GameState, MissionState, WithdrawalRecord } from './types';
 import {
+  ALL_MISSIONS_BONUS,
   DAILY_XP_BONUS_CAP,
   DAILY_XP_FREE_CAP,
   FREE_SPINS_BASE,
@@ -294,7 +295,6 @@ export function useGameState(userId: string | null) {
   const addSpins = useCallback((n: number) => {
     setState((prev) => ({ ...prev, spinsRemaining: prev.spinsRemaining + n }));
   }, []);
-  // ✅ FIXED: watchAd — tracks ad count/missions, NO XP added here
   const watchAd = useCallback(() => {
     setState((prev) => ({
       ...prev,
@@ -312,7 +312,6 @@ export function useGameState(userId: string | null) {
       };
     });
   }, []);
-  // ✅ FIXED: claimDailyBoost — explicitly adds 50 XP
   const claimDailyBoost = useCallback(() => {
     setState((prev) => {
       if (prev.dailyBoostClaimed) return prev;
@@ -402,6 +401,7 @@ export function useGameState(userId: string | null) {
   const claimMission = useCallback((missionId: string, viaAd: boolean) => {
     return { missionId, viaAd };
   }, []);
+  // ✅ FIXED: Now adds spins from mission.adSpins when claimed via ad
   const claimMissionReward = useCallback((missionId: string, viaAd: boolean = false): boolean => {
     let accepted = false;
     setState((prev) => {
@@ -411,10 +411,10 @@ export function useGameState(userId: string | null) {
       if (!mission) {
         return { ...prev, dailyMissionClaims: [...prev.dailyMissionClaims, missionId] };
       }
-      const baseXp = viaAd ? mission.adXp : mission.baseXp;
+      const xpValue = viaAd ? mission.adXp : mission.baseXp;
       const tier = getTier(prev.xp);
       const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
-      const xpToAdd = Math.round(baseXp * multiplier);
+      const xpToAdd = Math.round(xpValue * multiplier);
       const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
       let newXp = prev.xp;
@@ -431,31 +431,63 @@ export function useGameState(userId: string | null) {
         newXp = prev.xp + actual;
         newDailyFree = prev.dailyXpFree + actual;
       }
+      // ✅ Add spins ONLY if via ad, using value from constants
+      const spinsToAdd = viaAd ? (mission as any).adSpins || 0 : 0;
       return {
         ...prev,
         dailyMissionClaims: [...prev.dailyMissionClaims, missionId],
         xp: newXp,
         dailyXpFree: newDailyFree,
         dailyXpBonus: newDailyBonus,
+        spinsRemaining: prev.spinsRemaining + spinsToAdd,
       };
     });
     return accepted;
   }, []);
+  // ✅ FIXED: All-missions base bonus now gives XP from ALL_MISSIONS_BONUS
   const claimAllMissionsBonus = useCallback((): boolean => {
     let accepted = false;
     setState((prev) => {
       if (prev.allMissionsBonusClaimed) return prev;
       accepted = true;
-      return { ...prev, allMissionsBonusClaimed: true };
+      const { baseXp, baseSpins } = ALL_MISSIONS_BONUS;
+      const tier = getTier(prev.xp);
+      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
+      const xpToAdd = Math.round(baseXp * multiplier);
+      const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
+      const actual = Math.min(xpToAdd, freeRemaining);
+      return {
+        ...prev,
+        allMissionsBonusClaimed: true,
+        xp: prev.xp + actual,
+        dailyXpFree: prev.dailyXpFree + actual,
+        spinsRemaining: prev.spinsRemaining + baseSpins,
+      };
     });
     return accepted;
   }, []);
+  // ✅ FIXED: All-missions AD bonus now gives BOTH XP + spins from ALL_MISSIONS_BONUS
   const claimAllMissionsAdBonus = useCallback((): boolean => {
     let accepted = false;
     setState((prev) => {
       if (prev.allMissionsAdBonusClaimed) return prev;
       accepted = true;
-      return { ...prev, allMissionsAdBonusClaimed: true };
+      const { adXp, adSpins } = ALL_MISSIONS_BONUS;
+      const tier = getTier(prev.xp);
+      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
+      const xpToAdd = Math.round(adXp * multiplier);
+      const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
+      const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
+      const freePart = Math.min(xpToAdd, freeRemaining);
+      const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
+      return {
+        ...prev,
+        allMissionsAdBonusClaimed: true,
+        xp: prev.xp + freePart + bonusPart,
+        dailyXpFree: prev.dailyXpFree + freePart,
+        dailyXpBonus: prev.dailyXpBonus + bonusPart,
+        spinsRemaining: prev.spinsRemaining + adSpins,
+      };
     });
     return accepted;
   }, []);
