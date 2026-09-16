@@ -20,7 +20,7 @@ interface Segment {
   endAngle: number;
 }
 
-// ✅ UPDATED ODDS: Lose 40% • Half 30% • Safe 20% • Double 10%
+// ✅ CORRECT ODDS: Lose 40% • Half 30% • Safe 20% • Double 10%
 const SEGMENTS: Segment[] = [
   { id: 'double', label: 'DOUBLE', emoji: '🤮', color: '#39ff14', textColor: '#0a0a0a', probability: 10, startAngle: 0, endAngle: 36 },
   { id: 'lose', label: 'LOSE ALL', emoji: '☢️', color: '#ff2d2d', textColor: '#fff', probability: 40, startAngle: 36, endAngle: 180 },
@@ -48,7 +48,7 @@ interface Props {
   stake: number;
   onClaim: (result: WheelResult) => void;
   onLose: () => void;
-  onForfeit: () => void; // ✅ Close = keep original stake
+  onForfeit: () => void;
 }
 
 type Phase = 'idle' | 'spinning' | 'result';
@@ -99,13 +99,12 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
 
   const handleWatchAd = () => {
     if (!outcome || phase !== 'result') return;
+    // ✅ Sends ONLY the calculated final amount — SlotScreen decides how to apply
     onClaim({ outcome: outcome.id, multiplier, finalPP });
   };
 
-  // ✅ FIXED CLOSE LOGIC
   const handleClose = () => {
     if (phase === 'spinning') {
-      // Still spinning → user bailed early → keep original stake
       onForfeit();
       return;
     }
@@ -113,11 +112,9 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
       if (outcome.id === 'lose') {
         onLose();
       } else {
-        // User sees result but closes → forfeit = keep original
         onForfeit();
       }
     } else if (phase === 'idle') {
-      // Not spun yet → skip entirely
       onForfeit();
     }
   };
@@ -155,7 +152,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
 
         {/* WHEEL */}
         <div className="relative mx-auto mb-4" style={{ width: 220, height: 220 }}>
-          {/* Fixed Pointer */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30" style={{ marginTop: -4 }}>
             <div
               className="w-0 h-0"
@@ -168,7 +164,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             />
           </div>
 
-          {/* Spinning PNG Wheel */}
           <div
             className="absolute inset-0 rounded-full overflow-hidden"
             style={{
@@ -187,7 +182,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
             />
           </div>
 
-          {/* Center Hub */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center overflow-hidden"
             style={{ width: 56, height: 56, boxShadow: '0 0 15px #39ff14, 0 0 30px #39ff1444' }}
@@ -196,7 +190,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           </div>
         </div>
 
-        {/* RESULT DISPLAY */}
         {phase === 'result' && outcome && (
           <div className="animate-pop mb-3">
             <div className="text-4xl mb-1">{outcome.emoji}</div>
@@ -218,7 +211,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
           </div>
         )}
 
-        {/* BUTTONS */}
         {phase === 'idle' && (
           <button onClick={handleSpin} className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2 text-sm">
             <Play size={18} /> SPIN THE WHEEL
