@@ -3,11 +3,10 @@ import { Tv, X, Play } from 'lucide-react';
 import { formatPP } from '../constants';
 
 export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
+
 export interface WheelResult {
   outcome: WheelOutcome;
-  multiplier: number;
-  finalPP: number;
-  profit: number; // ✅ NEW — clear separation
+  amount: number; // ✅ EXACT value to add — stake × multiplier ONLY
 }
 
 interface Segment {
@@ -18,7 +17,6 @@ interface Segment {
   endAngle: number;
 }
 
-// ✅ Matches your PNG visually — weighted probabilities behind scenes
 const SEGMENTS: Segment[] = [
   { id: 'half',    label: 'HALF',   probability: 30, startAngle: 0,   endAngle: 90 },
   { id: 'lose',    label: 'LOSE',   probability: 40, startAngle: 90,  endAngle: 180 },
@@ -35,12 +33,12 @@ function pickWeightedIndex(): number {
   return 0;
 }
 
-function getMultiplier(outcome: WheelOutcome): number {
+function getAmount(outcome: WheelOutcome, stake: number): number {
   switch (outcome) {
-    case 'double': return 2;
-    case 'lose':   return 0;
-    case 'half':   return 0.5;
-    case 'safe':   return 1;
+    case 'double': return Math.round(stake * 2); // ✅ stake × 2 ONLY
+    case 'lose':   return 0;                      // ✅ nothing
+    case 'half':   return Math.round(stake * 0.5); // ✅ stake × 0.5 ONLY
+    case 'safe':   return Math.round(stake * 1);   // ✅ stake × 1 ONLY
   }
 }
 
@@ -48,7 +46,7 @@ interface Props {
   stake: number;
   onClaim: (result: WheelResult) => void;
   onLose: () => void;
-  onForfeit: () => void;
+  onForfeit: () => void; // ✅ Skip = return full stake
 }
 
 type Phase = 'idle' | 'spinning' | 'result';
@@ -63,9 +61,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
   const spinFiredRef = useRef(false);
 
   const outcome = resultIndex !== null ? SEGMENTS[resultIndex] : null;
-  const multiplier = outcome ? getMultiplier(outcome.id) : 0;
-  const finalPP = outcome ? Math.round(safeStake * multiplier) : 0;
-  const profit = finalPP - safeStake; // ✅ Pure profit only
+  const winAmount = outcome ? getAmount(outcome.id, safeStake) : 0;
 
   useEffect(() => {
     return () => {
@@ -103,20 +99,18 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
     if (!outcome || phase !== 'result') return;
     onClaim({ 
       outcome: outcome.id, 
-      multiplier, 
-      finalPP,
-      profit // ✅ Pass clean profit value up
+      amount: winAmount // ✅ Clean exact value — no stake duplication
     });
   };
 
   const handleClose = () => {
     if (phase === 'spinning') {
-      onForfeit();
+      onForfeit(); // ✅ Skip = return full stake
       return;
     }
     if (phase === 'result' && outcome) {
       if (outcome.id === 'lose') onLose();
-      else onForfeit();
+      else onForfeit(); // ✅ Skip = return full stake
     } else onForfeit();
   };
 
@@ -144,7 +138,7 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
         </button>
 
         <h3 className="font-display font-black text-lg text-radioactive-400 neon-text-yellow mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
-        <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Risk it all for DOUBLE?</p>
+        <p className="text-[11px] text-toxic-100/50 font-mono mb-2">Stake: {formatPP(safeStake)} PP</p>
         
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-toxic-500/10 border border-toxic-600/30 mb-4">
           <span className="text-[10px] text-toxic-100/50 font-mono uppercase">Stake:</span>
@@ -203,13 +197,13 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
                 outcome.id === 'half' ? 'text-hazard-amber' : 'text-blue-400'
               }`}
             >
-              {outcome.id === 'double' && `DOUBLED! +${formatPP(profit)} Puke Points`}
-              {outcome.id === 'lose' && `SPILLED! All lost`}
-              {outcome.id === 'half' && `HALVED! ${profit === 0 ? 'Even' : formatPP(profit)} Puke Points`}
-              {outcome.id === 'safe' && `SECURED! Stake Kept`}
+              {outcome.id === 'double' && `x2 = +${formatPP(winAmount)} PP`}
+              {outcome.id === 'lose' && `NOTHING — Stake Lost`}
+              {outcome.id === 'half' && `x0.5 = +${formatPP(winAmount)} PP`}
+              {outcome.id === 'safe' && `x1 = +${formatPP(winAmount)} PP`}
             </div>
             {outcome.id !== 'lose' && (
-              <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Absorb radiation to secure reward</p>
+              <p className="text-[10px] text-toxic-100/40 font-mono mt-1">Watch ad → add above amount</p>
             )}
           </div>
         )}
@@ -232,14 +226,14 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit }: Props) {
               <Tv size={16} /> Absorb Radiation to Claim
             </button>
             <button onClick={handleClose} className="w-full mt-2 py-2 text-[11px] text-toxic-100/30 hover:text-toxic-100/50 font-mono">
-              Skip — Keep Original {formatPP(safeStake)} PP
+              Skip — Get Stake Back {formatPP(safeStake)} PP
             </button>
           </>
         )}
 
         {phase === 'result' && outcome && outcome.id === 'lose' && (
           <button onClick={handleClose} className="ghost-btn w-full py-3 text-sm">
-            Close
+            Close — Stake Lost
           </button>
         )}
       </div>
