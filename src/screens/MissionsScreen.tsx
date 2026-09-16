@@ -12,24 +12,26 @@ interface Props {
   actions: GameActions;
 }
 
+// ✅ FIXED: Match NEW target numbers
 function isMissionComplete(state: GameState, id: string): boolean {
   switch (id) {
-    case 'spins': return state.missions.spins >= 20;
-    case 'ads': return state.missions.adsWatched >= 10;
-    case 'wheel': return state.missions.wheelSpins >= 5;
-    case 'claistreak': return state.streakClaimedToday;
-    case 'earnpp': return state.ppEarnedToday >= 100;
+    case 'spins': return state.missions.spins >= 50;        // ✅ Was 20 → Now 50
+    case 'ads': return state.missions.adsWatched >= 10;     // ✅ Already correct
+    case 'wheel': return state.missions.wheelSpins >= 5;    // ✅ Already correct
+    case 'claistreak': return state.streakClaimedToday;     // ✅ Unchanged
+    case 'earnpp': return state.ppEarnedToday >= 250;       // ✅ Was 100 → Now 250
     default: return false;
   }
 }
 
+// ✅ FIXED: Match NEW target numbers
 function missionProgress(state: GameState, id: string): number {
   switch (id) {
-    case 'spins': return Math.min(state.missions.spins, 20);
-    case 'ads': return Math.min(state.missions.adsWatched, 10);
-    case 'wheel': return Math.min(state.missions.wheelSpins, 5);
-    case 'claistreak': return state.streakClaimedToday ? 1 : 0;
-    case 'earnpp': return Math.min(state.ppEarnedToday, 100);
+    case 'spins': return Math.min(state.missions.spins, 50);        // ✅ Was 20 → Now 50
+    case 'ads': return Math.min(state.missions.adsWatched, 10);     // ✅ Already correct
+    case 'wheel': return Math.min(state.missions.wheelSpins, 5);    // ✅ Already correct
+    case 'claistreak': return state.streakClaimedToday ? 1 : 0;     // ✅ Unchanged
+    case 'earnpp': return Math.min(state.ppEarnedToday, 250);       // ✅ Was 100 → Now 250
     default: return 0;
   }
 }
