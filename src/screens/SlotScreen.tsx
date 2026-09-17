@@ -354,7 +354,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         className="relative w-full mx-auto"
         style={{ 
           maxWidth: '480px',
-          aspectRatio: '960 / 1448', // Exact PNG dimensions
+          aspectRatio: '960 / 1448',
         }}
       >
         {/* REELS — positioned EXACTLY inside the 5 transparent windows */}
@@ -395,6 +395,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                               src={sym.image} 
                               alt={sym.label} 
                               className="w-full h-full object-contain p-0.5"
+                              style={{ background: 'transparent' }}
                             />
                           ) : (
                             <span className="text-xl">{sym.emoji}</span>
@@ -493,7 +494,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                 <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
                   <span className="col-span-5 font-mono text-sm flex items-center gap-2">
                     {sym.image ? (
-                      <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain" />
+                      <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain" style={{ background: 'transparent' }} />
                     ) : sym.emoji}
                     {sym.label}
                   </span>
