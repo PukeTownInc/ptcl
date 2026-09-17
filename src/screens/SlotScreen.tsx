@@ -347,7 +347,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
       {/* ============================================== */}
-      {/* Puke Town Cash Lab — REELS LOWERED MORE       */}
+      {/* Puke Town Cash Lab — REELS MUCH LOWER          */}
       {/* ============================================== */}
       <div 
         className="relative w-full mx-auto"
@@ -356,12 +356,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           aspectRatio: '3 / 4',
         }}
       >
-        {/* REELS — moved down further */}
+        {/* REELS — moved much lower */}
         <div 
           className="absolute z-10"
           style={{
-            top: '23.5%',
-            bottom: '9.2%',
+            top: '35.5%',
+            bottom: '2.0%',
             left: '7.8%',
             right: '7.8%',
           }}
@@ -448,196 +448,4 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <button
           onClick={doSpin}
           disabled={!canSpin || spinning}
-          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2"
-        >
-          {spinning ? (
-            <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
-          ) : (
-            <><Play size={22} /> CONTAMINATE</>
-          )}
-        </button>
-        <button
-          onClick={toggleAutoSpin}
-          className={`w-full py-2.5 rounded-lg font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 transition-all ${
-            autoSpin
-              ? 'bg-toxic-500/20 border border-toxic-400 text-toxic-400'
-              : 'bg-ink-700/50 border border-toxic-900/40 text-toxic-100/40'
-          }`}
-          style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
-        >
-          {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
-        </button>
-      </div>
-      {/* Rest of UI — Paytable, History, Modals — unchanged */}
-      <div className="max-w-lg mx-auto">
-        <SpinHistory entries={spinHistory} />
-        <div className="grunge-panel overflow-hidden mt-4">
-          <button
-            onClick={() => setShowPaytable((o) => !o)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5"
-          >
-            <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2">
-              <Layers size={16} /> ☢️ GOOP PAYTABLE
-            </span>
-            <span className="text-toxic-100/40 text-xs">{showPaytable ? 'Collapse' : 'Reveal'}</span>
-          </button>
-          {showPaytable && (
-            <div className="px-3 pb-3 space-y-2 animate-slide-up">
-              <div className="grid grid-cols-12 gap-2 text-[10px] font-mono text-toxic-100/50 border-b border-toxic-900/40 pb-2">
-                <span className="col-span-5">SYMBOL</span>
-                <span className="col-span-2 text-center">MATCH 3</span>
-                <span className="col-span-2 text-center">MATCH 4</span>
-                <span className="col-span-3 text-center">MATCH 5 ☢️</span>
-              </div>
-              {PAYTABLE.map((sym, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
-                  <span className="col-span-5 font-mono text-sm flex items-center gap-2">
-                    {sym.image ? (
-                      <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain" style={{ background: 'transparent' }} />
-                    ) : sym.emoji}
-                    {sym.label}
-                  </span>
-                  <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
-                  <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
-                  <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
-                </div>
-              ))}
-              <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
-                <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
-                <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
-                <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
-                <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      {showDoubleUp && state.doubleUpPending && (
-        <SpinWheelModal
-          stake={state.doubleUpPending}
-          onWatchAd={() => {
-            setAdModal({
-              title: 'Absorb Radiation',
-              subtitle: 'Watch ad to claim your Risk Wheel reward',
-              reward: 'Claim Puke Points',
-              onComplete: () => setAdModal(null),
-            });
-          }}
-          onClaim={handleWheelResult}
-          onLose={() => { setShowDoubleUp(false); handleWheelResult({ outcome: 'lose', amount: 0 }); }}
-          onForfeit={handleForfeit}
-        />
-      )}
-      <AdModal
-        open={!!adModal}
-        onClose={() => setAdModal(null)}
-        onComplete={() => {
-          adModal?.onComplete();
-          setAdModal(null);
-        }}
-        title={adModal?.title ?? ''}
-        subtitle={adModal?.subtitle}
-        reward={adModal?.reward ?? ''}
-      />
-    </div>
-  );
-}
-function BonusBtn({ icon, label, sub, ad, onClick, disabled }: { 
-  icon: React.ReactNode; 
-  label: string; 
-  sub: string; 
-  ad?: boolean; 
-  onClick: () => void; 
-  disabled?: boolean 
-}) {
-  return (
-    <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
-      <div className="flex items-center gap-1.5 mb-0.5">
-        <span className="text-toxic-400">{icon}</span>
-        <span className="font-display font-bold text-xs text-toxic-200">{label}</span>
-      </div>
-      <div className="text-[10px] text-toxic-100/40 font-mono">{sub}</div>
-      {ad && <div className="ad-badge mt-1.5"><Tv size={8} /> Absorb Radiation</div>}
-    </button>
-  );
-}
-function SpinHistory({ entries }: { entries: any[] }) {
-  const [open, setOpen] = useState(true);
-  return (
-    <div className="grunge-panel overflow-hidden">
-      <button onClick={() => setOpen((o) => !o)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5">
-        <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2"><History size={16} /> Contamination Log</span>
-        <span className="text-toxic-100/40 text-xs">{open ? 'Hide' : 'Reveal'}</span>
-      </button>
-      {open && (
-        <div className="px-3 pb-3 space-y-1 max-h-64 overflow-y-auto">
-          {entries.length === 0 ? (
-            <p className="text-[11px] text-toxic-100/30 font-mono text-center py-4">No contamination yet — start the infection!</p>
-          ) : (
-            entries.map((entry, i) => {
-              if (entry.kind === 'spin') {
-                return (
-                  <div key={i} className={`flex items-center justify-between px-2 py-1.5 rounded ${entry.multiplied ? 'bg-radioactive-500/10 border border-radioactive-600/30' : 'bg-ink-700/40'}`}>
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-[10px] font-mono text-toxic-100/30 shrink-0">#{entries.length - i}</span>
-                      {entry.pp > 0 && entry.symbols.length > 0 ? (
-                        <span className="flex items-center gap-1">
-                          {entry.symbols.map((symId: string, idx: number) => (
-                            <HistorySymbolIcon key={idx} symId={symId as SymbolId} />
-                          ))}
-                          {entry.multiplied && entry.multiplier && (
-                            <span className="text-radioactive-400 text-[10px] font-bold font-mono px-1 py-0.5 rounded bg-radioactive-500/15 border border-radioactive-600/30">
-                              ☢️ {entry.multiplier}
-                            </span>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-mono text-toxic-100/30">No contamination</span>
-                      )}
-                    </div>
-                    <span className={`font-mono text-sm tabular-nums ${entry.multiplied ? 'text-radioactive-400 font-bold' : 'text-toxic-300'}`}>+{formatPP(entry.pp)}</span>
-                  </div>
-                );
-              } else if (entry.kind === 'double') {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-toxic-500/10 border border-toxic-500/30">
-                    <span className="text-sm font-mono text-toxic-400">☢️ DOUBLED!</span>
-                    <span className="font-mono text-sm text-toxic-400 font-bold tabular-nums">+{formatPP(entry.pp)}</span>
-                  </div>
-                );
-              } else if (entry.kind === 'half') {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-hazard-amber/10 border border-hazard-amber/30">
-                    <span className="text-sm font-mono text-hazard-amber">⚠️ HALVED</span>
-                    <span className="font-mono text-sm text-hazard-amber tabular-nums">+{formatPP(entry.pp)}</span>
-                  </div>
-                );
-              } else if (entry.kind === 'safe') {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-radioactive-500/10 border border-radioactive-600/30">
-                    <span className="text-sm font-mono text-radioactive-400">☣️ SECURED</span>
-                    <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{formatPP(entry.pp)}</span>
-                  </div>
-                );
-              } else if (entry.kind === 'forfeit') {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
-                    <span className="text-sm font-mono text-red-400">☣️ FORFEITED</span>
-                    <span className="font-mono text-sm text-red-400">— 0 —</span>
-                  </div>
-                );
-              } else {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
-                    <span className="text-sm font-mono text-red-400">☠️ SPILLED</span>
-                    <span className="font-mono text-sm text-red-400">— 0 —</span>
-                  </div>
-                );
-              }
-            })
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+          className="toxic-btn w-full py-4 text-lg
