@@ -144,13 +144,16 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     5: false,
     6: false,
   });
-  const [claimedToday, setClaimedToday] = useState(false);
-  const isProcessing = useRef(false);
+  const [isClaimed, setIsClaimed] = useState(false);
+  const hasClaimedRef = useRef(false); // Immediate click block
 
+  // Load claimed status from storage on mount
   useEffect(() => {
     const today = getTodayUTC();
-    const lastClaimed = localStorage.getItem(STORAGE_KEY);
-    setClaimedToday(lastClaimed === today);
+    const last = localStorage.getItem(STORAGE_KEY);
+    const claimed = last === today;
+    setIsClaimed(claimed);
+    hasClaimedRef.current = claimed;
   }, []);
 
   const toggle = (i: number) => {
@@ -158,14 +161,19 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
   };
 
   const handleClaim = () => {
-    if (claimedToday || isProcessing.current) return;
+    // Double protection: state + ref
+    if (isClaimed || hasClaimedRef.current) return;
 
-    isProcessing.current = true;
+    // Lock IMMEDIATELY — before ANYTHING else
+    hasClaimedRef.current = true;
+    setIsClaimed(true);
 
+    // Save to storage
+    localStorage.setItem(STORAGE_KEY, getTodayUTC());
+
+    // Give rewards
     actions.addXP(10);
     actions.addFreeSpins(3);
-    localStorage.setItem(STORAGE_KEY, getTodayUTC());
-    setClaimedToday(true);
 
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
@@ -213,27 +221,24 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
         <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
         <p className="text-toxic-300 text-sm font-semibold">Claim Daily • +10 Exposure • +3 Twists</p>
-        <button
-          onClick={handleClaim}
-          disabled={claimedToday}
-          className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all ${
-            claimedToday
-              ? 'bg-toxic-900/40 text-toxic-500/60 cursor-not-allowed opacity-70 border border-toxic-800/50'
-              : 'bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]'
-          }`}
-        >
-          {claimedToday ? (
-            <>
-              <Lock size={16} />
-              <span>Claimable Once Daily</span>
-            </>
-          ) : (
-            <>
-              <Gift size={16} />
-              <span>Thanks for reading</span>
-            </>
-          )}
-        </button>
+        
+        {!isClaimed ? (
+          <button
+            onClick={handleClaim}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]"
+          >
+            <Gift size={16} />
+            <span>Thanks for reading</span>
+          </button>
+        ) : (
+          <button
+            disabled
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm bg-toxic-900/40 text-toxic-500/60 cursor-not-allowed opacity-70 border border-toxic-800/50"
+          >
+            <Lock size={16} />
+            <span>Claimable Once Daily</span>
+          </button>
+        )}
       </div>
     </div>
   );
