@@ -347,23 +347,23 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
       {/* ============================================== */}
-      {/* Puke Town Cash Lab — PERFECT ALIGNED VERSION */}
+      {/* Puke Town Cash Lab — FINAL ALIGNED VERSION    */}
       {/* ============================================== */}
       <div 
         className="relative w-full mx-auto"
         style={{ 
           maxWidth: '480px',
-          aspectRatio: '960 / 1280',
+          aspectRatio: '3 / 4',
         }}
       >
-        {/* REELS — EXACTLY aligned to your reel-box.png windows */}
+        {/* REELS — exactly inside the 5 transparent windows */}
         <div 
           className="absolute z-10"
           style={{
-            top: '18.5%',
-            bottom: '14.5%',
-            left: '6.2%',
-            right: '6.2%',
+            top: '19.7%',
+            bottom: '13.0%',
+            left: '7.8%',
+            right: '7.8%',
           }}
         >
           <div ref={reelsRef} className="grid grid-cols-5 gap-1.5 h-full">
