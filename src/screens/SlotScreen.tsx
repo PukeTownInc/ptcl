@@ -246,17 +246,17 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
     if (result.outcome === 'double') {
       actions.addPP(result.amount);
-      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} PP (x2 stake)`);
+      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} Puke Points (x2 stake)`);
       setSpinHistory((prev) => [{ kind: 'double', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'safe') {
       actions.addPP(result.amount);
-      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} PP (x1 stake)`);
+      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} Puke Points (x1 stake)`);
       setSpinHistory((prev) => [{ kind: 'safe', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'half') {
       actions.addPP(result.amount);
-      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} PP (0.5× stake)`);
+      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} Puke Points (0.5× stake)`);
       setSpinHistory((prev) => [{ kind: 'half', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     } 
     else if (result.outcome === 'lose') {
@@ -381,21 +381,23 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       )}
 
       {/* ============================================== */}
-      {/* FRAME + REELS — uses your reel-box.png */}
+      {/* Puke Town Cash Lab — Frame + Reels Alignment */}
       {/* ============================================== */}
-      <div className="relative w-full max-w-lg mx-auto">
-        {/* The Frame — uses reel-box.png, sits on TOP */}
-        <img
-          src="/reel-box.png"
-          alt="Puke Town Cash Lab"
-          className="absolute inset-0 w-full h-auto z-30 pointer-events-none"
-          style={{ userSelect: 'none' }}
-        />
-
-        {/* Reels — positioned BEHIND the transparent window */}
-        {/* Adjust padding values here if alignment needs tweaking */}
-        <div className="relative pt-[26%] pb-[62%] px-[11%]">
-          <div ref={reelsRef} className="grid grid-cols-5 gap-2 relative z-10">
+      <div 
+        className="relative w-full mx-auto"
+        style={{ maxWidth: '480px' }}
+      >
+        {/* Reels Layer — BEHIND frame, positioned exactly to fit transparent window */}
+        <div 
+          className="absolute inset-0 z-10"
+          style={{
+            top: '25%',
+            bottom: '15%',
+            left: '9%',
+            right: '9%',
+          }}
+        >
+          <div ref={reelsRef} className="grid grid-cols-5 gap-1.5 h-full">
             {grid.map((reel, ri) => {
               const phase = reelPhases[ri];
               const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
@@ -405,30 +407,27 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                   className={`relative overflow-hidden rounded-md ${
                     phase === 'spinning' ? 'reel-spinning' : ''
                   } ${phase === 'stopped' ? 'reel-stopped' : ''}`}
+                  style={{ backgroundColor: '#e8ffe8' }}
                 >
                   {displayReel.map((symId, row) => {
                     const isWin = winPositions.has(`${ri}-${row}`);
                     const sym = SYMBOLS[symId];
                     return (
-                      <div
-                        key={row}
-                        className={`aspect-square flex items-center justify-center ${isWin ? 'win' : ''}`}
-                        style={{ backgroundColor: '#f8fff8' }}
-                      >
+                      <div key={row} className="aspect-square flex items-center justify-center">
                         <span 
                           className={isWin ? 'win-symbol-pop' : ''}
                           style={{ 
-                            filter: isWin ? 'drop-shadow(0 0 6px #39ff14)' : 'none'
+                            filter: isWin ? 'drop-shadow(0 0 8px #39ff14)' : 'none'
                           }}
                         >
                           {sym.image ? (
                             <img 
                               src={sym.image} 
                               alt={sym.label} 
-                              className="w-full h-full object-contain p-1"
+                              className="w-full h-full object-contain p-0.5"
                             />
                           ) : (
-                            <span className="text-2xl">{sym.emoji}</span>
+                            <span className="text-xl">{sym.emoji}</span>
                           )}
                         </span>
                       </div>
@@ -439,9 +438,17 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             })}
           </div>
         </div>
+
+        {/* Frame Layer — ON TOP, uses reel-box.png */}
+        <img
+          src="/reel-box.png"
+          alt="Puke Town Cash Lab"
+          className="relative z-20 w-full h-auto block"
+          style={{ pointerEvents: 'none' }}
+        />
       </div>
 
-      {/* Info Text & Controls — below the frame */}
+      {/* Info Text & Controls — below frame, unchanged */}
       <div className="max-w-lg mx-auto space-y-3 px-2">
         <div className="min-h-[50px] flex items-center justify-center text-center">
           {spinning ? (
@@ -497,7 +504,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </button>
       </div>
 
-      {/* Rest of UI — Paytable, History, Modals */}
+      {/* Rest of UI — Paytable, History, Modals — unchanged */}
       <div className="max-w-lg mx-auto">
         <SpinHistory entries={spinHistory} />
 
