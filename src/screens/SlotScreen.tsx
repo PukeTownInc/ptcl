@@ -347,7 +347,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
       {/* ============================================== */}
-      {/* Puke Town Cash Lab — REELS LOWERED VERSION     */}
+      {/* Puke Town Cash Lab — REELS LOWERED MORE       */}
       {/* ============================================== */}
       <div 
         className="relative w-full mx-auto"
@@ -356,12 +356,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           aspectRatio: '3 / 4',
         }}
       >
-        {/* REELS — moved down, perfect alignment */}
+        {/* REELS — moved down further */}
         <div 
           className="absolute z-10"
           style={{
-            top: '21.5%',
-            bottom: '11.2%',
+            top: '23.5%',
+            bottom: '9.2%',
             left: '7.8%',
             right: '7.8%',
           }}
