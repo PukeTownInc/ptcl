@@ -381,20 +381,23 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       )}
 
       {/* ============================================== */}
-      {/* Puke Town Cash Lab — Frame + Reels Alignment */}
+      {/* Puke Town Cash Lab — Exact Measured Alignment */}
       {/* ============================================== */}
       <div 
         className="relative w-full mx-auto"
-        style={{ maxWidth: '480px' }}
+        style={{ 
+          maxWidth: '480px',
+          aspectRatio: '960 / 1448', // Exact PNG dimensions
+        }}
       >
-        {/* Reels Layer — BEHIND frame, positioned exactly to fit transparent window */}
+        {/* REELS — positioned EXACTLY inside the 5 transparent windows */}
         <div 
-          className="absolute inset-0 z-10"
+          className="absolute z-10"
           style={{
-            top: '25%',
-            bottom: '15%',
-            left: '9%',
-            right: '9%',
+            top: '24.2%',    // Top edge of window area
+            bottom: '11.8%', // Bottom edge of window area
+            left: '5.2%',    // Left edge of window area
+            right: '5.2%',   // Right edge of window area
           }}
         >
           <div ref={reelsRef} className="grid grid-cols-5 gap-1.5 h-full">
@@ -404,10 +407,10 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               return (
                 <div 
                   key={ri} 
-                  className={`relative overflow-hidden rounded-md ${
+                  className={`relative overflow-hidden rounded-sm ${
                     phase === 'spinning' ? 'reel-spinning' : ''
                   } ${phase === 'stopped' ? 'reel-stopped' : ''}`}
-                  style={{ backgroundColor: '#e8ffe8' }}
+                  style={{ backgroundColor: '#f0fff0' }}
                 >
                   {displayReel.map((symId, row) => {
                     const isWin = winPositions.has(`${ri}-${row}`);
@@ -439,11 +442,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         </div>
 
-        {/* Frame Layer — ON TOP, uses reel-box.png */}
+        {/* FRAME — on TOP, full size */}
         <img
           src="/reel-box.png"
           alt="Puke Town Cash Lab"
-          className="relative z-20 w-full h-auto block"
+          className="absolute inset-0 w-full h-full z-20"
           style={{ pointerEvents: 'none' }}
         />
       </div>
