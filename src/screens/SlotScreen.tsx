@@ -341,7 +341,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           disabled={state.dailyPotAccel >= 2 || spinning}
         />
       </div>
-
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
         <div className="flex flex-wrap gap-2">
           {freeSpinsLeft > 0 && (
@@ -361,93 +360,108 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      <div className="relative grunge-panel p-3 overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
-        <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
-        <div ref={reelsRef} className="relative grid grid-cols-5 gap-1.5 bg-ink-900 rounded-lg p-2 border border-toxic-900/40">
-          {grid.map((reel, ri) => {
-            const phase = reelPhases[ri];
-            const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
-            return (
-              <div key={ri} className={`relative overflow-hidden rounded-md border-0 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`} style={{ background: 'transparent !important', backgroundColor: 'transparent !important' }}>
-                {displayReel.map((symId, row) => {
-                  const isWin = winPositions.has(`${ri}-${row}`);
-                  const sym = SYMBOLS[symId];
-                  return (
-                    <div
-                      key={row}
-                      className={`aspect-square flex items-center justify-center reel-symbol border-0 p-0 m-0 ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
-                      style={{ backgroundColor: '#ffffff' }}
-                    >
-                      <span className={isWin ? 'win-symbol-pop' : ''} style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important', ...(isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : {}) }}>
-                        {sym.image ? (
-                          <img 
-                            src={sym.image} 
-                            alt={sym.label} 
-                            className="w-10 h-10 object-contain"
-                            style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important', border: 'none !important' }}
-                          />
-                        ) : (
-                          sym.emoji
-                        )}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-3 min-h-[60px] flex items-center justify-center">
-          {spinning ? (
-            <div className="text-center">
-              <RefreshCw size={22} className="text-toxic-400/70 animate-spin mx-auto" />
-              <div className="font-display text-xs text-toxic-300/50 mt-1.5 tracking-[0.3em] animate-pulse">CONTAMINATING</div>
-            </div>
-          ) : winPP > 0 ? (
-            <div className="text-center animate-pop">
-              <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{formatPP(winPP)} Puke Points</div>
-              {lastResult && lastResult.wins.length > 0 && (
-                <div className="text-[10px] text-toxic-100/50 font-mono mt-1">
-                  {lastResult.wins.length} way{lastResult.wins.length > 1 ? 's' : ''} • {lastResult.wins.map((w) => SYMBOLS[w.symbols[0]].label).join(', ')}
+      {/* === REEL CONTAINER — UPDATED WITH TRANSPARENT GAME BOX FRAME === */}
+      <div className="relative overflow-hidden rounded-lg bg-transparent">
+        {/* Transparent PNG Frame — sits on top */}
+        <img
+          src="/game-box.png"
+          alt="Game Box"
+          className="absolute inset-0 w-full h-full pointer-events-none z-20"
+          style={{
+            userSelect: 'none',
+            background: 'transparent',
+            backgroundColor: 'transparent'
+          }}
+        />
+        {/* Inner padding — adjust pb-48 if logo/reel overlap occurs */}
+        <div className="pt-4 pb-48 px-4">
+          <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30 z-10" />
+          <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30 z-10" />
+          <div ref={reelsRef} className="relative grid grid-cols-5 gap-1.5 bg-ink-900/80 rounded-lg p-2 border border-toxic-900/40 z-10">
+            {grid.map((reel, ri) => {
+              const phase = reelPhases[ri];
+              const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
+              return (
+                <div key={ri} className={`relative overflow-hidden rounded-md border-0 ${phase === 'spinning' ? 'reel-spinning' : ''} ${phase === 'stopped' ? 'reel-stopped' : ''}`} style={{ background: 'transparent !important', backgroundColor: 'transparent !important' }}>
+                  {displayReel.map((symId, row) => {
+                    const isWin = winPositions.has(`${ri}-${row}`);
+                    const sym = SYMBOLS[symId];
+                    return (
+                      <div
+                        key={row}
+                        className={`aspect-square flex items-center justify-center reel-symbol border-0 p-0 m-0 ${isWin ? 'win' : ''} ${phase === 'spinning' ? 'reel-blur' : ''} ${phase === 'stopped' ? 'reel-land' : ''}`}
+                        style={{ backgroundColor: '#ffffff' }}
+                      >
+                        <span className={isWin ? 'win-symbol-pop' : ''} style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important', ...(isWin ? { filter: 'drop-shadow(0 0 8px #39ff14)' } : {}) }}>
+                          {sym.image ? (
+                            <img 
+                              src={sym.image} 
+                              alt={sym.label} 
+                              className="w-10 h-10 object-contain"
+                              style={{ background: 'transparent !important', backgroundColor: 'transparent !important', boxShadow: 'none !important', border: 'none !important' }}
+                            />
+                          ) : (
+                            sym.emoji
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center text-toxic-100/30">
-              <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
-              <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center justify-center mb-2 mt-2">
-          <span className="font-display font-bold text-sm text-toxic-300">
-            Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
-          </span>
-        </div>
-        <button
-          onClick={doSpin}
-          disabled={!canSpin || spinning}
-          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2 mt-1"
-        >
-          {spinning ? (
-            <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
-          ) : (
-            <><Play size={22} /> CONTAMINATE</>
-          )}
-        </button>
-        <div className="mt-2 flex items-center gap-2">
+              );
+            })}
+          </div>
+          <div className="mt-3 min-h-[60px] flex items-center justify-center">
+            {spinning ? (
+              <div className="text-center">
+                <RefreshCw size={22} className="text-toxic-400/70 animate-spin mx-auto" />
+                <div className="font-display text-xs text-toxic-300/50 mt-1.5 tracking-[0.3em] animate-pulse">CONTAMINATING</div>
+              </div>
+            ) : winPP > 0 ? (
+              <div className="text-center animate-pop">
+                <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{formatPP(winPP)} Puke Points</div>
+                {lastResult && lastResult.wins.length > 0 && (
+                  <div className="text-[10px] text-toxic-100/50 font-mono mt-1">
+                    {lastResult.wins.length} way{lastResult.wins.length > 1 ? 's' : ''} • {lastResult.wins.map((w) => SYMBOLS[w.symbols[0]].label).join(', ')}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center text-toxic-100/30">
+                <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
+                <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-center mb-2 mt-2">
+            <span className="font-display font-bold text-sm text-toxic-300">
+              Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
+            </span>
+          </div>
           <button
-            onClick={toggleAutoSpin}
-            className={`flex-1 py-2.5 rounded-lg font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
-              autoSpin
-                ? 'bg-toxic-500/20 border border-toxic-400 text-toxic-400'
-                : 'bg-ink-700/50 border border-toxic-900/40 text-toxic-100/40 hover:text-toxic-100/70'
-            }`}
-            style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
+            onClick={doSpin}
+            disabled={!canSpin || spinning}
+            className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2 mt-1"
           >
-            {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
+            {spinning ? (
+              <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
+            ) : (
+              <><Play size={22} /> CONTAMINATE</>
+            )}
           </button>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={toggleAutoSpin}
+              className={`flex-1 py-2.5 rounded-lg font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                autoSpin
+                  ? 'bg-toxic-500/20 border border-toxic-400 text-toxic-400'
+                  : 'bg-ink-700/50 border border-toxic-900/40 text-toxic-100/40 hover:text-toxic-100/70'
+              }`}
+              style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
+            >
+              {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
+            </button>
+          </div>
         </div>
       </div>
       <SpinHistory entries={spinHistory} />
