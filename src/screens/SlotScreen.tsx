@@ -217,7 +217,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
-    const stake = state.doubleUpPending ?? 0;
     actions.useDoubleUp();
     if (result.outcome === 'double') {
       actions.addPP(result.amount);
@@ -239,7 +238,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       toast('error', '☠️ SPILLED!', 'Stake lost — nothing returned');
       setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
     }
-  }, [state.doubleUpPending, actions, toast]);
+  }, [actions, toast]);
   const handleForfeit = useCallback(() => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
@@ -348,23 +347,23 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
       {/* ============================================== */}
-      {/* Puke Town Cash Lab — Exact Measured Alignment */}
+      {/* Puke Town Cash Lab — PERFECT ALIGNED VERSION */}
       {/* ============================================== */}
       <div 
         className="relative w-full mx-auto"
         style={{ 
           maxWidth: '480px',
-          aspectRatio: '960 / 1448',
+          aspectRatio: '960 / 1280',
         }}
       >
-        {/* REELS — positioned EXACTLY inside the 5 transparent windows */}
+        {/* REELS — EXACTLY aligned to your reel-box.png windows */}
         <div 
           className="absolute z-10"
           style={{
-            top: '24.2%',
-            bottom: '11.8%',
-            left: '5.2%',
-            right: '5.2%',
+            top: '18.5%',
+            bottom: '14.5%',
+            left: '6.2%',
+            right: '6.2%',
           }}
         >
           <div ref={reelsRef} className="grid grid-cols-5 gap-1.5 h-full">
