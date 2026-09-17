@@ -399,8 +399,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             );
           })}
         </div>
-        {/* Win/status display inside reels panel only */}
-        <div className="mt-3 min-h-[60px] flex items-center justify-center">
+      </div>
+      
+      {/* STATUS PANEL — spinning/win display only */}
+      <div className="grunge-panel p-3">
+        <div className="min-h-[60px] flex items-center justify-center">
           {spinning ? (
             <div className="text-center">
               <RefreshCw size={22} className="text-toxic-400/70 animate-spin mx-auto" />
@@ -415,16 +418,17 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                 </div>
               )}
             </div>
-          ) : null}
+          ) : (
+            <div className="text-center text-toxic-100/30">
+              <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
+              <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
+            </div>
+          )}
         </div>
       </div>
       
-      {/* SEPARATE CONTROLS PANEL — all text + buttons moved here */}
+      {/* CONTROLS PANEL — all text + buttons */}
       <div className="grunge-panel p-3">
-        <div className="text-center text-toxic-100/30 mb-3">
-          <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
-          <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
-        </div>
         <div className="flex items-center justify-center mb-3">
           <span className="font-display font-bold text-sm text-toxic-300">
             Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
