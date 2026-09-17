@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Check, Gift } from 'lucide-react';
+import { ChevronDown, ChevronUp, Check, Gift, Lock } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
@@ -145,9 +145,8 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     6: false,
   });
   const [claimedToday, setClaimedToday] = useState(false);
-  const isProcessing = useRef(false); // ✅ Block double-clicks instantly
+  const isProcessing = useRef(false);
 
-  // Load claimed status on mount
   useEffect(() => {
     const today = getTodayUTC();
     const lastClaimed = localStorage.getItem(STORAGE_KEY);
@@ -159,10 +158,9 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
   };
 
   const handleClaim = () => {
-    // ✅ Block: already claimed OR in progress
     if (claimedToday || isProcessing.current) return;
 
-    isProcessing.current = true; // Lock immediately
+    isProcessing.current = true;
 
     actions.addXP(10);
     actions.addFreeSpins(3);
@@ -220,14 +218,14 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
           disabled={claimedToday}
           className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all ${
             claimedToday
-              ? 'bg-toxic-900/30 text-toxic-500/50 cursor-not-allowed opacity-60'
+              ? 'bg-toxic-900/40 text-toxic-500/60 cursor-not-allowed opacity-70 border border-toxic-800/50'
               : 'bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]'
           }`}
         >
           {claimedToday ? (
             <>
-              <Check size={16} />
-              <span>Claimed today • +10 Exposure • +3 Twists</span>
+              <Lock size={16} />
+              <span>Claimable Once Daily</span>
             </>
           ) : (
             <>
