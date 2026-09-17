@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, Check, Gift } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
@@ -145,7 +145,9 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     6: false,
   });
   const [claimedToday, setClaimedToday] = useState(false);
+  const isProcessing = useRef(false); // ✅ Block double-clicks instantly
 
+  // Load claimed status on mount
   useEffect(() => {
     const today = getTodayUTC();
     const lastClaimed = localStorage.getItem(STORAGE_KEY);
@@ -157,12 +159,16 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
   };
 
   const handleClaim = () => {
-    if (claimedToday) return;
+    // ✅ Block: already claimed OR in progress
+    if (claimedToday || isProcessing.current) return;
+
+    isProcessing.current = true; // Lock immediately
 
     actions.addXP(10);
     actions.addFreeSpins(3);
     localStorage.setItem(STORAGE_KEY, getTodayUTC());
     setClaimedToday(true);
+
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
 
@@ -214,7 +220,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
           disabled={claimedToday}
           className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all ${
             claimedToday
-              ? 'bg-toxic-900/30 text-toxic-500/50 cursor-not-allowed'
+              ? 'bg-toxic-900/30 text-toxic-500/50 cursor-not-allowed opacity-60'
               : 'bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]'
           }`}
         >
