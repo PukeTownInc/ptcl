@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Check, Gift } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
@@ -144,20 +144,25 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     5: false,
     6: false,
   });
+  const [claimedToday, setClaimedToday] = useState(false);
 
-  const today = getTodayUTC();
-  const lastClaimed = localStorage.getItem(STORAGE_KEY);
-  const canClaim = lastClaimed !== today;
+  useEffect(() => {
+    const today = getTodayUTC();
+    const lastClaimed = localStorage.getItem(STORAGE_KEY);
+    setClaimedToday(lastClaimed === today);
+  }, []);
 
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
 
   const handleClaim = () => {
-    if (!canClaim) return;
+    if (claimedToday) return;
+
     actions.addXP(10);
     actions.addFreeSpins(3);
-    localStorage.setItem(STORAGE_KEY, today);
+    localStorage.setItem(STORAGE_KEY, getTodayUTC());
+    setClaimedToday(true);
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
 
@@ -206,22 +211,22 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         <p className="text-toxic-300 text-sm font-semibold">Claim Daily • +10 Exposure • +3 Twists</p>
         <button
           onClick={handleClaim}
-          disabled={!canClaim}
+          disabled={claimedToday}
           className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all ${
-            canClaim
-              ? 'bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]'
-              : 'bg-toxic-900/30 text-toxic-500/50 cursor-not-allowed'
+            claimedToday
+              ? 'bg-toxic-900/30 text-toxic-500/50 cursor-not-allowed'
+              : 'bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]'
           }`}
         >
-          {canClaim ? (
-            <>
-              <Gift size={16} />
-              <span>Thanks for reading</span>
-            </>
-          ) : (
+          {claimedToday ? (
             <>
               <Check size={16} />
               <span>Claimed today • +10 Exposure • +3 Twists</span>
+            </>
+          ) : (
+            <>
+              <Gift size={16} />
+              <span>Thanks for reading</span>
             </>
           )}
         </button>
