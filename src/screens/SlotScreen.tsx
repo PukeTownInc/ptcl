@@ -8,6 +8,7 @@ import { isHotStreakActive, isPotAccelActive } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
 import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
+
 const REEL_DISPLAY = 3;
 type ReelPhase = 'idle' | 'spinning' | 'stopped';
 type SpinHistoryEntry =
@@ -17,18 +18,20 @@ type SpinHistoryEntry =
   | { kind: 'safe'; pp: number }
   | { kind: 'lose'; pp: number }
   | { kind: 'forfeit'; pp: number };
+
 const MAX_HISTORY = 20;
 const PAYTABLE = Object.values(SYMBOLS)
   .filter(s => !s.special)
   .sort((a, b) => b.pays[2] - a.pays[2]);
+
 function SpecialIcon({ symId, label }: { symId: SymbolId; label: string }) {
   const sym = SYMBOLS[symId];
   return (
     <span className="inline-flex items-center gap-1.5">
       {sym.image ? (
-        <img 
-          src={sym.image} 
-          alt={label} 
+        <img
+          src={sym.image}
+          alt={label}
           className="w-5 h-5 object-contain inline-block"
           style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
         />
@@ -39,14 +42,15 @@ function SpecialIcon({ symId, label }: { symId: SymbolId; label: string }) {
     </span>
   );
 }
+
 function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
   const sym = SYMBOLS[symId];
   return (
     <span className="inline-flex items-center justify-center">
       {sym.image ? (
-        <img 
-          src={sym.image} 
-          alt={symId} 
+        <img
+          src={sym.image}
+          alt={symId}
           className="w-5 h-5 object-contain"
           style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
         />
@@ -56,6 +60,7 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
     </span>
   );
 }
+
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
@@ -91,12 +96,14 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [spinHistory, setSpinHistory] = useState<SpinHistoryEntry[]>([]);
   const [potAccelCountdown, setPotAccelCountdown] = useState('');
   const [showPaytable, setShowPaytable] = useState(false);
+
   useEffect(() => {
     return () => {
       if (cycleInterval.current) clearInterval(cycleInterval.current);
       stopTimers.current.forEach(clearTimeout);
     };
   }, []);
+
   useEffect(() => {
     if (!state.potAccelUntil) return;
     const update = () => {
@@ -113,6 +120,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [state.potAccelUntil]);
+
   useEffect(() => {
     if (!spinning || !lastResult || lastResult.wins.length === 0) return;
     setActiveWinIndex(0);
@@ -122,6 +130,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 900);
     return () => clearInterval(interval);
   }, [spinning, lastResult]);
+
   const doSpin = useCallback(() => {
     if (spinning) return;
     if (state.spinsRemaining <= 0 && freeSpinsLeft <= 0) {
@@ -163,6 +172,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, baseDelay + r * stagger);
       stopTimers.current.push(t);
     }
+
     function finishSpin(res: SpinResult) {
       setSpinning(false);
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
@@ -213,6 +223,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
+
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
@@ -222,23 +233,24 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       actions.addPP(result.amount);
       toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} Puke Points (x2 stake)`);
       setSpinHistory((prev) => [{ kind: 'double', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
-    } 
+    }
     else if (result.outcome === 'safe') {
       actions.addPP(result.amount);
       toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} Puke Points (x1 stake)`);
       setSpinHistory((prev) => [{ kind: 'safe', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
-    } 
+    }
     else if (result.outcome === 'half') {
       actions.addPP(result.amount);
       toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} Puke Points (0.5× stake)`);
       setSpinHistory((prev) => [{ kind: 'half', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
-    } 
+    }
     else if (result.outcome === 'lose') {
       setWinPP(0);
       toast('error', '☠️ SPILLED!', 'Stake lost — nothing returned');
       setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [actions, toast]);
+
   const handleForfeit = useCallback(() => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
@@ -247,6 +259,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     toast('info', '☣️ FORFEITED', 'Stake lost — nothing returned');
     setSpinHistory((prev) => [{ kind: 'forfeit', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
   }, [actions, toast]);
+
   const handleMysteryPack = () => {
     if (state.spinsRemaining > 0) {
       toast('info', 'TWISTS STILL AVAILABLE', 'Mystery Goop Vat only empty when contaminated');
@@ -263,6 +276,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       },
     });
   };
+
   const handlePotAccel = () => {
     if (state.dailyPotAccel >= 2) {
       toast('info', 'ACCELERATOR OVERHEATED', 'Return after radiation cools');
@@ -283,8 +297,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       },
     });
   };
+
   const canSpin = state.spinsRemaining > 0 || freeSpinsLeft > 0;
-  
+
   const toggleAutoSpin = useCallback(() => {
     setAutoSpin((prev) => {
       const next = !prev;
@@ -292,6 +307,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       return next;
     });
   }, []);
+
   useEffect(() => {
     if (!autoSpin) return;
     if (spinning || showDoubleUp || showJackpot || adModal) return;
@@ -306,6 +322,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }, 600);
     return () => clearTimeout(t);
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
+
   return (
     <div className="space-y-4">
       {/* Bonus Buttons */}
@@ -327,6 +344,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           disabled={state.dailyPotAccel >= 2 || spinning}
         />
       </div>
+
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
         <div className="flex flex-wrap gap-2">
           {freeSpinsLeft > 0 && (
@@ -346,21 +364,22 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
+
       {/* ============================================== */}
       {/* Puke Town Cash Lab — REELS MUCH LOWER          */}
       {/* ============================================== */}
-      <div 
+      <div
         className="relative w-full mx-auto"
-        style={{ 
+        style={{
           maxWidth: '480px',
           aspectRatio: '3 / 4',
         }}
       >
         {/* REELS — moved much lower */}
-        <div 
+        <div
           className="absolute z-10"
           style={{
-            top: '35.5%',
+            top: '42%',
             bottom: '2.0%',
             left: '7.8%',
             right: '7.8%',
@@ -371,8 +390,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               const phase = reelPhases[ri];
               const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
               return (
-                <div 
-                  key={ri} 
+                <div
+                  key={ri}
                   className={`relative overflow-hidden rounded-sm ${
                     phase === 'spinning' ? 'reel-spinning' : ''
                   } ${phase === 'stopped' ? 'reel-stopped' : ''}`}
@@ -383,16 +402,16 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                     const sym = SYMBOLS[symId];
                     return (
                       <div key={row} className="aspect-square flex items-center justify-center">
-                        <span 
+                        <span
                           className={isWin ? 'win-symbol-pop' : ''}
-                          style={{ 
+                          style={{
                             filter: isWin ? 'drop-shadow(0 0 8px #39ff14)' : 'none'
                           }}
                         >
                           {sym.image ? (
-                            <img 
-                              src={sym.image} 
-                              alt={sym.label} 
+                            <img
+                              src={sym.image}
+                              alt={sym.label}
                               className="w-full h-full object-contain p-0.5"
                               style={{ background: 'transparent' }}
                             />
@@ -408,6 +427,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             })}
           </div>
         </div>
+
         {/* FRAME — on TOP, full size */}
         <img
           src="/reel-box.png"
@@ -416,6 +436,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           style={{ pointerEvents: 'none' }}
         />
       </div>
+
       {/* Info Text & Controls — below frame, unchanged */}
       <div className="max-w-lg mx-auto space-y-3 px-2">
         <div className="min-h-[50px] flex items-center justify-center text-center">
@@ -440,12 +461,213 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             </div>
           )}
         </div>
+
         <div className="flex items-center justify-center">
           <span className="font-display font-bold text-sm text-toxic-300">
             Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
           </span>
         </div>
+
         <button
           onClick={doSpin}
           disabled={!canSpin || spinning}
-          className="toxic-btn w-full py-4 text-lg
+          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2"
+        >
+          {spinning ? (
+            <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
+          ) : (
+            <><Play size={22} /> CONTAMINATE</>
+          )}
+        </button>
+
+        <button
+          onClick={toggleAutoSpin}
+          className={`w-full py-2.5 rounded-lg font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 transition-all ${
+            autoSpin
+              ? 'bg-toxic-500/20 border border-toxic-400 text-toxic-400'
+              : 'bg-ink-700/50 border border-toxic-900/40 text-toxic-100/40'
+          }`}
+          style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
+        >
+          {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
+        </button>
+      </div>
+
+      {/* Rest of UI — Paytable, History, Modals — unchanged */}
+      <div className="max-w-lg mx-auto">
+        <SpinHistory entries={spinHistory} />
+
+        <div className="grunge-panel overflow-hidden mt-4">
+          <button
+            onClick={() => setShowPaytable((o) => !o)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5"
+          >
+            <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2">
+              <Layers size={16} /> ☢️ GOOP PAYTABLE
+            </span>
+            <span className="text-toxic-100/40 text-xs">{showPaytable ? 'Collapse' : 'Reveal'}</span>
+          </button>
+          {showPaytable && (
+            <div className="px-3 pb-3 space-y-2 animate-slide-up">
+              <div className="grid grid-cols-12 gap-2 text-[10px] font-mono text-toxic-100/50 border-b border-toxic-900/40 pb-2">
+                <span className="col-span-5">SYMBOL</span>
+                <span className="col-span-2 text-center">MATCH 3</span>
+                <span className="col-span-2 text-center">MATCH 4</span>
+                <span className="col-span-3 text-center">MATCH 5 ☢️</span>
+              </div>
+              {PAYTABLE.map((sym, i) => (
+                <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
+                  <span className="col-span-5 font-mono text-sm flex items-center gap-2">
+                    {sym.image ? (
+                      <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain" style={{ background: 'transparent' }} />
+                    ) : sym.emoji}
+                    {sym.label}
+                  </span>
+                  <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
+                  <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
+                  <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
+                </div>
+              ))}
+              <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
+                <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
+                <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
+                <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
+                <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showDoubleUp && state.doubleUpPending && (
+        <SpinWheelModal
+          stake={state.doubleUpPending}
+          onWatchAd={() => {
+            setAdModal({
+              title: 'Absorb Radiation',
+              subtitle: 'Watch ad to claim your Risk Wheel reward',
+              reward: 'Claim Puke Points',
+              onComplete: () => setAdModal(null),
+            });
+          }}
+          onClaim={handleWheelResult}
+          onLose={() => { setShowDoubleUp(false); handleWheelResult({ outcome: 'lose', amount: 0 }); }}
+          onForfeit={handleForfeit}
+        />
+      )}
+
+      <AdModal
+        open={!!adModal}
+        onClose={() => setAdModal(null)}
+        onComplete={() => {
+          adModal?.onComplete();
+          setAdModal(null);
+        }}
+        title={adModal?.title ?? ''}
+        subtitle={adModal?.subtitle}
+        reward={adModal?.reward ?? ''}
+      />
+    </div>
+  );
+}
+
+function BonusBtn({ icon, label, sub, ad, onClick, disabled }: {
+  icon: React.ReactNode;
+  label: string;
+  sub: string;
+  ad?: boolean;
+  onClick: () => void;
+  disabled?: boolean
+}) {
+  return (
+    <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <span className="text-toxic-400">{icon}</span>
+        <span className="font-display font-bold text-xs text-toxic-200">{label}</span>
+      </div>
+      <div className="text-[10px] text-toxic-100/40 font-mono">{sub}</div>
+      {ad && <div className="ad-badge mt-1.5"><Tv size={8} /> Absorb Radiation</div>}
+    </button>
+  );
+}
+
+function SpinHistory({ entries }: { entries: any[] }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="grunge-panel overflow-hidden">
+      <button onClick={() => setOpen((o) => !o)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5">
+        <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2"><History size={16} /> Contamination Log</span>
+        <span className="text-toxic-100/40 text-xs">{open ? 'Hide' : 'Reveal'}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-1 max-h-64 overflow-y-auto">
+          {entries.length === 0 ? (
+            <p className="text-[11px] text-toxic-100/30 font-mono text-center py-4">No contamination yet — start the infection!</p>
+          ) : (
+            entries.map((entry, i) => {
+              if (entry.kind === 'spin') {
+                return (
+                  <div key={i} className={`flex items-center justify-between px-2 py-1.5 rounded ${entry.multiplied ? 'bg-radioactive-500/10 border border-radioactive-600/30' : 'bg-ink-700/40'}`}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[10px] font-mono text-toxic-100/30 shrink-0">#{entries.length - i}</span>
+                      {entry.pp > 0 && entry.symbols.length > 0 ? (
+                        <span className="flex items-center gap-1">
+                          {entry.symbols.map((symId: string, idx: number) => (
+                            <HistorySymbolIcon key={idx} symId={symId as SymbolId} />
+                          ))}
+                          {entry.multiplied && entry.multiplier && (
+                            <span className="text-radioactive-400 text-[10px] font-bold font-mono px-1 py-0.5 rounded bg-radioactive-500/15 border border-radioactive-600/30">
+                              ☢️ {entry.multiplier}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-mono text-toxic-100/30">No contamination</span>
+                      )}
+                    </div>
+                    <span className={`font-mono text-sm tabular-nums ${entry.multiplied ? 'text-radioactive-400 font-bold' : 'text-toxic-300'}`}>+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'double') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-toxic-500/10 border border-toxic-500/30">
+                    <span className="text-sm font-mono text-toxic-400">☢️ DOUBLED!</span>
+                    <span className="font-mono text-sm text-toxic-400 font-bold tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'half') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-hazard-amber/10 border border-hazard-amber/30">
+                    <span className="text-sm font-mono text-hazard-amber">⚠️ HALVED</span>
+                    <span className="font-mono text-sm text-hazard-amber tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'safe') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-radioactive-500/10 border border-radioactive-600/30">
+                    <span className="text-sm font-mono text-radioactive-400">☣️ SECURED</span>
+                    <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{formatPP(entry.pp)}</span>
+                  </div>
+                );
+              } else if (entry.kind === 'forfeit') {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
+                    <span className="text-sm font-mono text-red-400">☣️ FORFEITED</span>
+                    <span className="font-mono text-sm text-red-400">— 0 —</span>
+                  </div>
+                );
+              } else {
+                return (
+                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
+                    <span className="text-sm font-mono text-red-400">☠️ SPILLED</span>
+                    <span className="font-mono text-sm text-red-400">— 0 —</span>
+                  </div>
+                );
+              }
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
