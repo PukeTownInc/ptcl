@@ -341,7 +341,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           disabled={state.dailyPotAccel >= 2 || spinning}
         />
       </div>
-
       {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
         <div className="flex flex-wrap gap-2">
           {freeSpinsLeft > 0 && (
@@ -361,6 +360,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
+      
+      {/* REELS PANEL — contains only the 5-reel grid */}
       <div className="relative grunge-panel p-3 overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
         <div className="absolute bottom-0 left-0 right-0 h-1 hazard-stripes opacity-30" />
@@ -398,6 +399,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             );
           })}
         </div>
+        {/* Win/status display inside reels panel only */}
         <div className="mt-3 min-h-[60px] flex items-center justify-center">
           {spinning ? (
             <div className="text-center">
@@ -413,14 +415,17 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                 </div>
               )}
             </div>
-          ) : (
-            <div className="text-center text-toxic-100/30">
-              <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
-              <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
-            </div>
-          )}
+          ) : null}
         </div>
-        <div className="flex items-center justify-center mb-2 mt-2">
+      </div>
+      
+      {/* SEPARATE CONTROLS PANEL — all text + buttons moved here */}
+      <div className="grunge-panel p-3">
+        <div className="text-center text-toxic-100/30 mb-3">
+          <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
+          <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
+        </div>
+        <div className="flex items-center justify-center mb-3">
           <span className="font-display font-bold text-sm text-toxic-300">
             Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
           </span>
@@ -428,7 +433,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <button
           onClick={doSpin}
           disabled={!canSpin || spinning}
-          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2 mt-1"
+          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2 mb-2"
         >
           {spinning ? (
             <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
@@ -436,20 +441,19 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             <><Play size={22} /> CONTAMINATE</>
           )}
         </button>
-        <div className="mt-2 flex items-center gap-2">
-          <button
-            onClick={toggleAutoSpin}
-            className={`flex-1 py-2.5 rounded-lg font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
-              autoSpin
-                ? 'bg-toxic-500/20 border border-toxic-400 text-toxic-400'
-                : 'bg-ink-700/50 border border-toxic-900/40 text-toxic-100/40 hover:text-toxic-100/70'
-            }`}
-            style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
-          >
-            {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
-          </button>
-        </div>
+        <button
+          onClick={toggleAutoSpin}
+          className={`w-full py-2.5 rounded-lg font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
+            autoSpin
+              ? 'bg-toxic-500/20 border border-toxic-400 text-toxic-400'
+              : 'bg-ink-700/50 border border-toxic-900/40 text-toxic-100/40 hover:text-toxic-100/70'
+          }`}
+          style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
+        >
+          {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
+        </button>
       </div>
+      
       <SpinHistory entries={spinHistory} />
       <div className="grunge-panel overflow-hidden">
         <button
