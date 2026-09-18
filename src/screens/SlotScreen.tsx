@@ -365,16 +365,21 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
 
-      {/* REEL BOX — smaller frame + perfectly fitted PNG */}
-      <div className="relative w-full mx-auto" style={{ maxWidth: '400px' }}>
-        {/* Reels positioned to fill exactly inside PNG */}
+      {/* REEL BOX — adjusted to remove black space */}
+      <div
+        className="relative w-full mx-auto"
+        style={{
+          maxWidth: '480px',
+          aspectRatio: '3 / 4',
+        }}
+      >
         <div
           className="absolute z-10"
           style={{
-            top: '24%',
-            bottom: '22%',
-            left: '13%',
-            right: '13%',
+            top: '38%',
+            bottom: '12%',
+            left: '7.8%',
+            right: '7.8%',
           }}
         >
           <div ref={reelsRef} className="grid grid-cols-5 gap-1.5 h-full">
@@ -420,16 +425,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         </div>
 
-        {/* Much smaller reel-box PNG centered — no black space */}
         <img
           src="/reel-box.png"
           alt="Puke Town Cash Lab"
-          className="relative z-20 mx-auto block"
-          style={{ 
-            width: '72%',
-            height: 'auto',
-            pointerEvents: 'none'
-          }}
+          className="absolute inset-0 w-full h-full z-20"
+          style={{ pointerEvents: 'none' }}
         />
       </div>
 
