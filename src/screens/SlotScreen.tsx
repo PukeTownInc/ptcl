@@ -345,7 +345,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      {/* REEL BOX — moved up, bigger boxes, zero black lines */}
+      {/* REEL BOX — bigger symbol boxes, lowered slightly */}
       <div
         className="relative w-full mx-auto"
         style={{
@@ -356,8 +356,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <div
           className="absolute z-10"
           style={{
-            top: '38%',
-            bottom: '5%',
+            top: '41%',
+            bottom: '4%',
             left: '10.5%',
             right: '10.5%',
           }}
@@ -497,7 +497,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                   <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
                   <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
                 </div>
-              ))}
+              )}
               <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
                 <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
                 <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
