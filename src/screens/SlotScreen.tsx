@@ -257,6 +257,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     actions.useDoubleUp();
     toast('info', '☣️ FORFEITED', 'Stake lost — nothing returned');
     setSpinHistory((prev) => [{ kind: 'forfeit', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
+    });
   }, [actions, toast]);
 
   const handleMysteryPack = () => {
@@ -375,10 +376,10 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <div
           className="absolute z-10"
           style={{
-            top: '34.5%',
-            bottom: '12.5%',
-            left: '10.5%',
-            right: '10.5%',
+            top: '42%',
+            bottom: '10%',
+            left: '10.8%',
+            right: '10.8%',
           }}
         >
           <div ref={reelsRef} className="grid grid-cols-5 gap-0 h-full">
@@ -450,7 +451,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           ) : (
             <div className="text-toxic-100/30">
               <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
-              <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
+              <div class="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
             </div>
           )}
         </div>
@@ -483,7 +484,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
         >
           {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
-        </button>
+        </div>
       </div>
 
       <div className="max-w-lg mx-auto">
