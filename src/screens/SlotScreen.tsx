@@ -375,13 +375,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <div
           className="absolute z-10"
           style={{
-            top: '26.5%',
-            bottom: '18.5%',
-            left: '11.8%',
-            right: '11.8%',
+            top: '34.5%',
+            bottom: '12.5%',
+            left: '10.5%',
+            right: '10.5%',
           }}
         >
-          <div ref={reelsRef} className="grid grid-cols-5 gap-1.5 h-full">
+          <div ref={reelsRef} className="grid grid-cols-5 gap-0 h-full">
             {grid.map((reel, ri) => {
               const phase = reelPhases[ri];
               const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
