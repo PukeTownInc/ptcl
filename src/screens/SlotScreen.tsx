@@ -365,9 +365,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
 
-      {/* ============================================== */}
-      {/* Puke Town Cash Lab — SHORTENED REEL BOX        */}
-      {/* ============================================== */}
+      {/* REEL BOX — adjusted to remove black space */}
       <div
         className="relative w-full mx-auto"
         style={{
@@ -375,12 +373,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           aspectRatio: '3 / 4',
         }}
       >
-        {/* REELS — shortened box, removed black space */}
         <div
           className="absolute z-10"
           style={{
-            top: '52%',
-            bottom: '33%',
+            top: '38%',
+            bottom: '12%',
             left: '7.8%',
             right: '7.8%',
           }}
@@ -428,7 +425,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         </div>
 
-        {/* FRAME — on TOP, full size */}
         <img
           src="/reel-box.png"
           alt="Puke Town Cash Lab"
@@ -437,7 +433,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         />
       </div>
 
-      {/* Info Text & Controls — below frame, unchanged */}
       <div className="max-w-lg mx-auto space-y-3 px-2">
         <div className="min-h-[50px] flex items-center justify-center text-center">
           {spinning ? (
@@ -493,7 +488,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </button>
       </div>
 
-      {/* Rest of UI — Paytable, History, Modals — unchanged */}
       <div className="max-w-lg mx-auto">
         <SpinHistory entries={spinHistory} />
 
@@ -531,7 +525,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
                 <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
                 <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
-                <div><bbox proxied="true" content="SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
+                <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
                 <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
               </div>
             </div>
@@ -544,9 +538,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           stake={state.doubleUpPending}
           onWatchAd={() => {
             setAdModal({
-              title: Absorb Radiation",
-              subtitle: "Watch ad to claim your Risk Wheel reward",
-              reward: "Claim Puke Points",
+              title: 'Absorb Radiation',
+              subtitle: 'Watch ad to claim your Risk Wheel reward',
+              reward: 'Claim Puke Points',
               onComplete: () => setAdModal(null),
             });
           }}
@@ -582,7 +576,7 @@ function BonusBtn({ icon, label, sub, ad, onClick, disabled }: {
   return (
     <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
       <div className="flex items-center gap-1.5 mb-0.5">
-        <span className="text-toxic-400">{icon}</td>
+        <span className="text-toxic-400">{icon}</span>
         <span className="font-display font-bold text-xs text-toxic-200">{label}</span>
       </div>
       <div className="text-[10px] text-toxic-100/40 font-mono">{sub}</div>
