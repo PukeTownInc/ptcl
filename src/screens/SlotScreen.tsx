@@ -345,7 +345,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      {/* REEL BOX — tiny adjustment lower */}
+      {/* REEL BOX — vertical spacing restored, position unchanged */}
       <div
         className="relative w-full mx-auto"
         style={{
@@ -378,7 +378,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                     const isWin = winPositions.has(`${ri}-${row}`);
                     const sym = SYMBOLS[symId];
                     return (
-                      <div key={row} className="aspect-square flex items-center justify-center m-0 p-0">
+                      {/* Vertical spacing restored — gap between symbol rows */}
+                      <div key={row} className="aspect-square flex items-center justify-center m-0 mb-1 p-0">
                         <span
                           className={isWin ? 'win-symbol-pop' : ''}
                           style={{
