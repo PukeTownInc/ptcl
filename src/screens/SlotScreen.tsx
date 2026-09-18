@@ -172,7 +172,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       }, baseDelay + r * stagger);
       stopTimers.current.push(t);
     }
-
     function finishSpin(res: SpinResult) {
       setSpinning(false);
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
@@ -365,21 +364,21 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
 
-      {/* REEL BOX — adjusted to remove black space */}
+      {/* REEL BOX — adjusted to fit new PNG exactly */}
       <div
         className="relative w-full mx-auto"
         style={{
           maxWidth: '480px',
-          aspectRatio: '3 / 4',
+          aspectRatio: '433 / 577',
         }}
       >
         <div
           className="absolute z-10"
           style={{
-            top: '38%',
-            bottom: '12%',
-            left: '7.8%',
-            right: '7.8%',
+            top: '26.5%',
+            bottom: '18.5%',
+            left: '11.8%',
+            right: '11.8%',
           }}
         >
           <div ref={reelsRef} className="grid grid-cols-5 gap-1.5 h-full">
@@ -424,7 +423,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             })}
           </div>
         </div>
-
         <img
           src="/reel-box.png"
           alt="Puke Town Cash Lab"
