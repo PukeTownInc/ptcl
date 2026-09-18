@@ -366,7 +366,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       )}
 
       {/* ============================================== */}
-      {/* Puke Town Cash Lab — REELS MUCH LOWER          */}
+      {/* Puke Town Cash Lab — SHORTENED REEL BOX        */}
       {/* ============================================== */}
       <div
         className="relative w-full mx-auto"
@@ -375,12 +375,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           aspectRatio: '3 / 4',
         }}
       >
-        {/* REELS — moved much lower */}
+        {/* REELS — shortened box, removed black space */}
         <div
           className="absolute z-10"
           style={{
-            top: '42%',
-            bottom: '2.0%',
+            top: '52%',
+            bottom: '33%',
             left: '7.8%',
             right: '7.8%',
           }}
@@ -531,7 +531,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
               <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
                 <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
                 <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
-                <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
+                <div><bbox proxied="true" content="SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
                 <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
               </div>
             </div>
@@ -544,9 +544,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           stake={state.doubleUpPending}
           onWatchAd={() => {
             setAdModal({
-              title: 'Absorb Radiation',
-              subtitle: 'Watch ad to claim your Risk Wheel reward',
-              reward: 'Claim Puke Points',
+              title: Absorb Radiation",
+              subtitle: "Watch ad to claim your Risk Wheel reward",
+              reward: "Claim Puke Points",
               onComplete: () => setAdModal(null),
             });
           }}
@@ -582,7 +582,7 @@ function BonusBtn({ icon, label, sub, ad, onClick, disabled }: {
   return (
     <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
       <div className="flex items-center gap-1.5 mb-0.5">
-        <span className="text-toxic-400">{icon}</span>
+        <span className="text-toxic-400">{icon}</td>
         <span className="font-display font-bold text-xs text-toxic-200">{label}</span>
       </div>
       <div className="text-[10px] text-toxic-100/40 font-mono">{sub}</div>
