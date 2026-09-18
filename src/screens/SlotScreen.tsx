@@ -345,7 +345,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      {/* REEL BOX — slightly lower */}
+      {/* REEL BOX — lowered further */}
       <div
         className="relative w-full mx-auto"
         style={{
@@ -356,8 +356,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <div
           className="absolute z-10"
           style={{
-            top: '34%',
-            bottom: '12%',
+            top: '30%',
+            bottom: '16%',
             left: '10.5%',
             right: '10.5%',
           }}
