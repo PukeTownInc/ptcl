@@ -345,7 +345,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      {/* REEL BOX — lowered significantly, bigger boxes, zero gap */}
+      {/* REEL BOX — moved up, bigger boxes, zero black lines */}
       <div
         className="relative w-full mx-auto"
         style={{
@@ -356,8 +356,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <div
           className="absolute z-10"
           style={{
-            top: '44%',
-            bottom: '8%',
+            top: '38%',
+            bottom: '5%',
             left: '10.5%',
             right: '10.5%',
           }}
@@ -378,19 +378,22 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                     const isWin = winPositions.has(`${ri}-${row}`);
                     const sym = SYMBOLS[symId];
                     return (
-                      <div key={row} className="aspect-square flex items-center justify-center">
+                      <div key={row} className="aspect-square flex items-center justify-center m-0 p-0">
                         <span
                           className={isWin ? 'win-symbol-pop' : ''}
                           style={{
-                            filter: isWin ? 'drop-shadow(0 0 8px #39ff14)' : 'none'
+                            filter: isWin ? 'drop-shadow(0 0 8px #39ff14)' : 'none',
+                            display: 'block',
+                            width: '100%',
+                            height: '100%'
                           }}
                         >
                           {sym.image ? (
                             <img
                               src={sym.image}
                               alt={sym.label}
-                              className="w-full h-full object-contain p-0.5"
-                              style={{ background: 'transparent' }}
+                              className="w-full h-full object-contain m-0 p-0"
+                              style={{ background: 'transparent', display: 'block' }}
                             />
                           ) : (
                             <span className="text-xl">{sym.emoji}</span>
