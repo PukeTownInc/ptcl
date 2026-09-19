@@ -345,7 +345,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           )}
         </div>
       )}
-      {/* REEL BOX */}
+      {/* REEL BOX — tiny adjustment lower */}
       <div
         className="relative w-full mx-auto"
         style={{
@@ -378,12 +378,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                     const isWin = winPositions.has(`${ri}-${row}`);
                     const sym = SYMBOLS[symId];
                     return (
-                      {/* ONLY CHANGE: added marginBottom for vertical spacing — no classes that break build */}
-                      <div 
-                        key={row} 
-                        className="aspect-square flex items-center justify-center m-0 p-0"
-                        style={{ marginBottom: '12px' }}
-                      >
+                      <div key={row} className="aspect-square flex items-center justify-center m-0 p-0">
                         <span
                           className={isWin ? 'win-symbol-pop' : ''}
                           style={{
