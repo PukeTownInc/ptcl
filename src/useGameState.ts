@@ -380,30 +380,13 @@ export function useGameState(userId: string | null) {
         return { ...prev, dailyMissionClaims: [...prev.dailyMissionClaims, missionId] };
       }
       const xpValue = viaAd ? mission.adXp : mission.baseXp;
-      const xpToAdd = xpValue;
-      const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
-      const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
-      let newXp = prev.xp;
-      let newDailyFree = prev.dailyXpFree;
-      let newDailyBonus = prev.dailyXpBonus;
-      if (viaAd) {
-        const freePart = Math.min(xpToAdd, freeRemaining);
-        const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
-        newXp = prev.xp + freePart + bonusPart;
-        newDailyFree = prev.dailyXpFree + freePart;
-        newDailyBonus = prev.dailyXpBonus + bonusPart;
-      } else {
-        const actual = Math.min(xpToAdd, freeRemaining);
-        newXp = prev.xp + actual;
-        newDailyFree = prev.dailyXpFree + actual;
-      }
       const spinsToAdd = viaAd ? mission.adSpins : 0;
+      // ✅ FULL REWARD — NO CAP. All missions give full stated amount
       return {
         ...prev,
         dailyMissionClaims: [...prev.dailyMissionClaims, missionId],
-        xp: newXp,
-        dailyXpFree: newDailyFree,
-        dailyXpBonus: newDailyBonus,
+        xp: prev.xp + xpValue,
+        dailyXpFree: prev.dailyXpFree + xpValue,
         spinsRemaining: prev.spinsRemaining + spinsToAdd,
       };
     });
@@ -415,14 +398,12 @@ export function useGameState(userId: string | null) {
       if (prev.allMissionsBonusClaimed) return prev;
       accepted = true;
       const { baseXp, baseSpins } = ALL_MISSIONS_BONUS;
-      const xpToAdd = baseXp;
-      const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
-      const actual = Math.min(xpToAdd, freeRemaining);
+      // ✅ FULL BONUS — NO CAP
       return {
         ...prev,
         allMissionsBonusClaimed: true,
-        xp: prev.xp + actual,
-        dailyXpFree: prev.dailyXpFree + actual,
+        xp: prev.xp + baseXp,
+        dailyXpFree: prev.dailyXpFree + baseXp,
         spinsRemaining: prev.spinsRemaining + baseSpins,
       };
     });
@@ -434,17 +415,12 @@ export function useGameState(userId: string | null) {
       if (prev.allMissionsAdBonusClaimed) return prev;
       accepted = true;
       const { adXp, adSpins } = ALL_MISSIONS_BONUS;
-      const xpToAdd = adXp;
-      const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
-      const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
-      const freePart = Math.min(xpToAdd, freeRemaining);
-      const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
+      // ✅ FULL BONUS — NO CAP
       return {
         ...prev,
         allMissionsAdBonusClaimed: true,
-        xp: prev.xp + freePart + bonusPart,
-        dailyXpFree: prev.dailyXpFree + freePart,
-        dailyXpBonus: prev.dailyXpBonus + bonusPart,
+        xp: prev.xp + adXp,
+        dailyXpBonus: prev.dailyXpBonus + adXp,
         spinsRemaining: prev.spinsRemaining + adSpins,
       };
     });
@@ -459,11 +435,7 @@ export function useGameState(userId: string | null) {
       } else {
         newStreakDay = prev.streakDay + 1;
       }
-      const xpToAdd = reward.xp;
-      const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
-      const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
-      const freePart = Math.min(xpToAdd, freeRemaining);
-      const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
+      // ✅ FULL REWARD — NO CAP
       const bestStreak = Math.max(prev.bestStreak, newStreakDay);
       return {
         ...prev,
@@ -473,9 +445,8 @@ export function useGameState(userId: string | null) {
         lastStreakClaimDate: todayUTC(),
         bestStreak,
         spinsRemaining: prev.spinsRemaining + reward.spins,
-        xp: prev.xp + freePart + bonusPart,
-        dailyXpFree: prev.dailyXpFree + freePart,
-        dailyXpBonus: prev.dailyXpBonus + bonusPart,
+        xp: prev.xp + reward.xp,
+        dailyXpBonus: prev.dailyXpBonus + reward.xp,
         dailyAdVideosWatched: prev.dailyAdVideosWatched + 1,
         missions: { ...prev.missions, adsWatched: prev.missions.adsWatched + 1 },
         streakPPBoostUntil: reward.ppBoost ? Date.now() + 24 * 60 * 60 * 1000 : prev.streakPPBoostUntil,
@@ -492,15 +463,11 @@ export function useGameState(userId: string | null) {
     setState((prev) => {
       if (prev.leaderboardClaims[key]) return prev;
       if (rewardType === 'xp') {
-        const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
-        const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
-        const freePart = Math.min(xp, freeRemaining);
-        const bonusPart = Math.min(Math.max(xp - freePart, 0), bonusRemaining);
+        // ✅ FULL REWARD — NO CAP
         return {
           ...prev,
-          xp: prev.xp + freePart + bonusPart,
-          dailyXpFree: prev.dailyXpFree + freePart,
-          dailyXpBonus: prev.dailyXpBonus + bonusPart,
+          xp: prev.xp + xp,
+          dailyXpBonus: prev.dailyXpBonus + xp,
           leaderboardClaims: { ...prev.leaderboardClaims, [key]: true },
         };
       }
