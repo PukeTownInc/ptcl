@@ -124,6 +124,11 @@ const roadmapData = [
     ],
   },
 ];
+function getTodayUTC(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+const STORAGE_KEY = 'puketown_roadmap_daily_v1';
+
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
@@ -135,22 +140,32 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     5: false,
     6: false,
   });
+  const [isClaimed, setIsClaimed] = useState(false);
+
+  // Load claimed status
+  useState(() => {
+    const today = getTodayUTC();
+    const last = localStorage.getItem(STORAGE_KEY);
+    setIsClaimed(last === today);
+  });
+
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
-  const handleClaim = () => {
-    // Mark claimed — prevents duplicate claims, resets daily
-    const marked = actions.claimRoadmapDailyGift();
-    if (!marked) return;
 
-    // EXACTLY what the button says: +10 XP, +3 spins — NO mission base reward
+  const handleClaim = () => {
+    if (isClaimed) return;
+
+    // EXACTLY: +10 XP + 3 spins — guaranteed
     actions.addXP(10, false, true);
     actions.addSpins(3);
 
+    // Mark claimed
+    localStorage.setItem(STORAGE_KEY, getTodayUTC());
+    setIsClaimed(true);
+
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
-
-  const isAlreadyClaimed = actions.state.missions.roadmapDailyGiftClaimed;
 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
@@ -194,7 +209,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
         <p className="text-toxic-300 text-sm font-semibold">Claim Daily • +10 Exposure • +3 Twists</p>
         
-        {!isAlreadyClaimed ? (
+        {!isClaimed ? (
           <button
             onClick={handleClaim}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]"
