@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Check, Gift, Lock } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, Gift, Lock } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
@@ -139,16 +139,14 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
   const handleClaim = () => {
-    // Mark mission complete first
+    // Mark claimed — prevents duplicate claims, resets daily
     const marked = actions.claimRoadmapDailyGift();
     if (!marked) return;
 
-    // Claim rewards via mission system — base only
-    const claimed = actions.claimMissionReward('roadmapDailyGift', false);
-    if (!claimed) return;
-
-    // Give the exact stated rewards: +10 XP + 3 spins
+    // EXACTLY what the button says: +10 XP, +3 spins — NO mission base reward
+    actions.addXP(10, false, true);
     actions.addSpins(3);
+
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
 
