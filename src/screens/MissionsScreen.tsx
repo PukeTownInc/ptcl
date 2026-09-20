@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Tv, CheckCircle2, Gift, Trophy, Calendar, Target, Lock, Flame, Zap } from 'lucide-react';
 import type { GameState } from '../types';
 import { MISSIONS, ALL_MISSIONS_BONUS, STREAK_REWARDS, MAX_STREAK_DAY } from '../constants';
@@ -12,7 +12,7 @@ interface Props {
   actions: GameActions;
 }
 
-// ✅ CORRECT IDs — matches constants.ts exactly
+// ✅ Check completion — roadmap gift = claimed from Roadmap page
 function isMissionComplete(state: GameState, id: string): boolean {
   switch (id) {
     case 'spins': return state.missions.spins >= 50;
@@ -39,7 +39,7 @@ function missionProgress(state: GameState, id: string): number {
 
 function useResetCountdown() {
   const [remaining, setRemaining] = useState('');
-  useEffect(() => {
+  useState(() => {
     const update = () => {
       const now = new Date();
       const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
@@ -65,11 +65,10 @@ export function MissionsScreen({ state, actions }: Props) {
     onComplete: () => void 
   }>(null);
   const countdown = useResetCountdown();
-  const claimsUsed = state.dailyMissionClaims.length;
   const completedCount = MISSIONS.filter((m) => isMissionComplete(state, m.id)).length;
   const allComplete = completedCount === MISSIONS.length;
   const allMissionsClaimed = MISSIONS.every((m) => 
-    m.id === 'roadmapDailyGift' || state.dailyMissionClaims.includes(m.id)
+    state.dailyMissionClaims.includes(m.id) || state.dailyMissionClaims.includes(`${m.id}:ad`)
   );
   const claimedDays = state.streakDay;
   const nextDay = claimedDays >= 7 ? 1 : claimedDays + 1;
@@ -98,12 +97,17 @@ export function MissionsScreen({ state, actions }: Props) {
       toast('info', 'Already Collected', 'Base supply gathered today');
       return;
     }
+    // Roadmap gift must be marked complete from Roadmap page first
+    if (id === 'roadmapDailyGift' && !state.missions.roadmapDailyGiftClaimed) {
+      toast('info', 'Visit Roadmap', 'Claim the daily gift there first →');
+      return;
+    }
     const mission = MISSIONS.find(m => m.id === id);
     if (!mission) return;
     const accepted = actions.claimMissionReward(id, false);
     if (!accepted) return;
-    if (mission.baseSpins) actions.addSpins(mission.baseSpins);
-    toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure${mission.baseSpins ? ` + ${mission.baseSpins} Twists` : ''}`);
+    if (mission.adSpins) actions.addSpins(0);
+    toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure`);
   };
 
   const handleClaimAdBonus = (id: string) => {
@@ -127,14 +131,14 @@ export function MissionsScreen({ state, actions }: Props) {
         if (!accepted) return;
         if (mission.adSpins) actions.addSpins(mission.adSpins);
         actions.watchAd();
-        toast('success', 'Radiation Absorbed!', `+${mission.adXp} Exposure${mission.adSpins ? ` + ${mission.adSpins} Twists` : ''}`);
+        toast('success', 'Radiation Absorbed!', `+${mission.adXp} Exposure + ${mission.adSpins} Twists`);
       },
     });
   };
 
   const handleAllBase = () => {
     if (state.allMissionsBonusClaimed) return;
-    if (!allMissionsClaimed) {
+    if (!allComplete) {
       toast('error', 'Incomplete Exposure', 'Contaminate every target first');
       return;
     }
@@ -284,10 +288,8 @@ export function MissionsScreen({ state, actions }: Props) {
                   {complete && <CheckCircle2 size={14} className="text-toxic-400 shrink-0" />}
                 </div>
                 <div className="text-[10px] text-toxic-100/40 font-mono mt-0.5">
-                  {isRoadmap 
-                    ? 'Claim from Roadmap page → +10 Exposure + 3 Twists'
-                    : `Base: +${m.baseXp} Exposure • Radiation: +${m.adXp} Exposure + ${m.adSpins} Twists`
-                  }
+                  Base: +{m.baseXp} Exposure • Radiation: +{m.adXp} Exposure + {m.adSpins} Twists
+                  {isRoadmap && <span className="text-toxic-300/60"> • Roadmap button: +10 Exposure + 3 Twists (separate)</span>}
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <div className="h-1.5 flex-1 rounded-full bg-ink-700 overflow-hidden">
@@ -295,33 +297,32 @@ export function MissionsScreen({ state, actions }: Props) {
                   </div>
                   <span className="font-mono text-[10px] text-toxic-100/50">{progress}/{m.target}</span>
                 </div>
-                {!isRoadmap && (
-                  <div className="flex gap-2 mt-2.5">
-                    <button
-                      onClick={() => handleClaimBase(m.id)}
-                      disabled={!complete || hasClaimed}
-                      className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
-                        hasClaimed ? 'toxic-btn opacity-60' : !complete ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
-                      }`}
-                    >
-                      {hasClaimed ? <><CheckCircle2 size={12} /> Contaminated</> : <><Gift size={12} /> +{m.baseXp} Exposure</>}
-                    </button>
-                    <button
-                      onClick={() => handleClaimAdBonus(m.id)}
-                      disabled={!hasClaimed || hasAdClaimed}
-                      className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
-                        hasAdClaimed ? 'yellow-btn opacity-60' : !hasClaimed ? 'ghost-btn opacity-40 cursor-not-allowed' : 'yellow-btn'
-                      }`}
-                    >
-                      {hasAdClaimed ? <><CheckCircle2 size={12} /> Absorbed</> : <><Tv size={12} /> +{m.adXp} Exposure + {m.adSpins} Twists</>}
-                    </button>
-                  </div>
-                )}
-                {isRoadmap && (
-                  <div className="mt-2 text-[11px] text-toxic-300/70 font-mono">
-                    {complete ? '✅ Claimed from Roadmap' : '→ Visit Roadmap page to claim'}
-                  </div>
-                )}
+                <div className="flex gap-2 mt-2.5">
+                  <button
+                    onClick={() => handleClaimBase(m.id)}
+                    disabled={hasClaimed || (!complete && isRoadmap)}
+                    className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
+                      hasClaimed ? 'toxic-btn opacity-60' : !complete ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
+                    }`}
+                  >
+                    {hasClaimed ? (
+                      <><CheckCircle2 size={12} /> Contaminated</>
+                    ) : !complete && isRoadmap ? (
+                      <><Lock size={12} /> Visit Roadmap First</>
+                    ) : (
+                      <><Gift size={12} /> +{m.baseXp} Exposure</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleClaimAdBonus(m.id)}
+                    disabled={!hasClaimed || hasAdClaimed}
+                    className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
+                      hasAdClaimed ? 'yellow-btn opacity-60' : !hasClaimed ? 'ghost-btn opacity-40 cursor-not-allowed' : 'yellow-btn'
+                    }`}
+                  >
+                    {hasAdClaimed ? <><CheckCircle2 size={12} /> Absorbed</> : <><Tv size={12} /> +{m.adXp} + {m.adSpins}☢</>}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -329,7 +330,7 @@ export function MissionsScreen({ state, actions }: Props) {
       })}
 
       {/* Full Contamination Bonus */}
-      <div className={`grunge-panel p-4 ${allMissionsClaimed ? 'neon-border-yellow' : 'opacity-60'}`}>
+      <div className={`grunge-panel p-4 ${allComplete ? 'neon-border-yellow' : 'opacity-60'}`}>
         <div className="flex items-center gap-3 mb-3">
           <Trophy size={24} className="text-radioactive-400" />
           <div className="flex-1">
@@ -346,12 +347,12 @@ export function MissionsScreen({ state, actions }: Props) {
         <div className="flex gap-2">
           <button
             onClick={handleAllBase}
-            disabled={!allMissionsClaimed || state.allMissionsBonusClaimed}
+            disabled={!allComplete || state.allMissionsBonusClaimed}
             className={`flex-1 py-2.5 text-xs flex items-center justify-center gap-1 transition-all ${
-              state.allMissionsBonusClaimed ? 'toxic-btn opacity-60' : !allMissionsClaimed ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
+              state.allMissionsBonusClaimed ? 'toxic-btn opacity-60' : !allComplete ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
             }`}
           >
-            {state.allMissionsBonusClaimed ? <><CheckCircle2 size={14} /> Secured</> : !allMissionsClaimed ? <><Lock size={14} /> Quarantined</> : <><Gift size={14} /> +{ALL_MISSIONS_BONUS.baseXp} Exposure</>}
+            {state.allMissionsBonusClaimed ? <><CheckCircle2 size={14} /> Secured</> : !allComplete ? <><Lock size={14} /> Quarantined</> : <><Gift size={14} /> +{ALL_MISSIONS_BONUS.baseXp} Exposure</>}
           </button>
           <button
             onClick={handleAllAdBonus}
