@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronUp, Gift, Lock } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
+
 interface Props {
   onNavigate: (s: Screen) => void;
   actions: GameActions;
 }
+
 const roadmapData = [
   {
     title: '✅ CONTAMINATED — PHASE 0',
@@ -142,18 +144,21 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
   };
 
   const handleClaim = () => {
-    // Mark mission as completed so daily missions page tracks it
-    const marked = actions.claimRoadmapDailyGift();
-    if (!marked) return;
+    // 1. Mark mission complete — updates daily missions page
+    const alreadyClaimed = actions.state.missions.roadmapDailyGiftClaimed;
+    if (alreadyClaimed) return;
 
-    // Give EXACTLY what the button says — no extra XP from mission system
+    // Mark it complete in game state
+    actions.claimRoadmapDailyGift();
+
+    // 2. Give EXACTLY what the button says — no extra XP
     actions.addXP(10, false, true);
     actions.addSpins(3);
 
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
 
-  // Read claimed status directly from game state
+  // Read live from game state so it stays in sync with daily missions page
   const isClaimed = actions.state.missions.roadmapDailyGiftClaimed;
 
   return (
@@ -166,6 +171,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         <p className="text-toxic-300/90 text-sm">☣️ Created for YOUR benefit ☣️</p>
         <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere!</p>
       </div>
+
       {roadmapData.map((section, idx) => (
         <div
           key={idx}
@@ -193,6 +199,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
           )}
         </div>
       ))}
+
       <div className="grunge-panel p-4 text-center space-y-3 mt-4">
         <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
         <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
