@@ -12,7 +12,7 @@ interface Props {
   actions: GameActions;
 }
 
-// ✅ MATCHES YOUR UPDATED TARGETS from constants
+// ✅ MATCHES YOUR UPDATED TARGETS from constants + Roadmap Daily Gift
 function isMissionComplete(state: GameState, id: string): boolean {
   switch (id) {
     case 'spins': return state.missions.spins >= 50;
@@ -20,6 +20,7 @@ function isMissionComplete(state: GameState, id: string): boolean {
     case 'wheel': return state.missions.wheelSpins >= 5;
     case 'claistreak': return state.streakClaimedToday;
     case 'earnpp': return state.ppEarnedToday >= 250;
+    case 'roadmap': return state.missions.roadmapDailyGiftClaimed;
     default: return false;
   }
 }
@@ -31,6 +32,7 @@ function missionProgress(state: GameState, id: string): number {
     case 'wheel': return Math.min(state.missions.wheelSpins, 5);
     case 'claistreak': return state.streakClaimedToday ? 1 : 0;
     case 'earnpp': return Math.min(state.ppEarnedToday, 250);
+    case 'roadmap': return state.missions.roadmapDailyGiftClaimed ? 1 : 0;
     default: return 0;
   }
 }
@@ -97,10 +99,8 @@ export function MissionsScreen({ state, actions }: Props) {
     }
     const mission = MISSIONS.find(m => m.id === id);
     if (!mission) return;
-
     const accepted = actions.claimMissionReward(id, false);
     if (!accepted) return;
-
     if (mission.baseSpins) actions.addSpins(mission.baseSpins);
     toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure${mission.baseSpins ? ` + ${mission.baseSpins} Twists` : ''}`);
   };
@@ -118,7 +118,6 @@ export function MissionsScreen({ state, actions }: Props) {
     }
     const mission = MISSIONS.find(m => m.id === id);
     if (!mission) return;
-
     setAdModal({
       title: '☢️ Radiation Bonus',
       subtitle: 'Absorb broadcast for extra contamination',
@@ -197,7 +196,6 @@ export function MissionsScreen({ state, actions }: Props) {
             </span>
           )}
         </div>
-
         {/* 7-day dose indicators */}
         <div className="flex justify-between gap-1 mb-3">
           {STREAK_REWARDS.map((r) => {
@@ -234,7 +232,6 @@ export function MissionsScreen({ state, actions }: Props) {
             );
           })}
         </div>
-
         {/* Reward + claim button */}
         {state.streakClaimedToday ? (
           <div className="flex items-center justify-center gap-2 py-2">
@@ -254,7 +251,6 @@ export function MissionsScreen({ state, actions }: Props) {
             </button>
           </div>
         )}
-
         {/* Warnings */}
         {claimedDays > 0 && claimedDays < MAX_STREAK_DAY && !state.streakClaimedToday && (
           <div className="mt-2 text-[10px] text-hazard-amber/70 font-mono text-center">
