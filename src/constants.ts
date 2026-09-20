@@ -105,11 +105,11 @@ export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 10;
 
 // ==============================================
-// ✅ MISSIONS — Roadmap ID matches exactly + no duplicate XP
+// ✅ MISSIONS — Roadmap gift has FULL standard rewards
 // ==============================================
 export const MISSIONS = [
   { id: 'claistreak',        label: 'Claim Daily Streak',              target: 1,   baseXp: 50, adXp: 75, icon: '📅', adSpins: 5 },
-  { id: 'roadmapDailyGift',  label: 'Thanks for Reading',              target: 1,   baseXp: 0,  adXp: 0,  icon: '🎁', adSpins: 0 }, // ✅ Own rewards — no mission XP
+  { id: 'roadmapDailyGift',  label: 'Claim Roadmap Daily Gift',        target: 1,   baseXp: 50, adXp: 75, icon: '🎁', adSpins: 5 }, // ✅ Standard rewards
   { id: 'spins',             label: 'Spin 50 Times',                  target: 50,  baseXp: 50, adXp: 75, icon: '🎰', adSpins: 5 },
   { id: 'earnpp',            label: 'Earn 250 Puke Points',           target: 250, baseXp: 50, adXp: 75, icon: '🎯', adSpins: 5 },
   { id: 'wheel',             label: 'Claim Radioactive Risk 5 Times',  target: 5,   baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
