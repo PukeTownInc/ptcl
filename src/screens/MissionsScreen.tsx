@@ -12,7 +12,6 @@ interface Props {
   actions: GameActions;
 }
 
-// ✅ Check completion — roadmap gift = claimed from Roadmap page
 function isMissionComplete(state: GameState, id: string): boolean {
   switch (id) {
     case 'spins': return state.missions.spins >= 50;
@@ -97,7 +96,6 @@ export function MissionsScreen({ state, actions }: Props) {
       toast('info', 'Already Collected', 'Base supply gathered today');
       return;
     }
-    // Roadmap gift must be marked complete from Roadmap page first
     if (id === 'roadmapDailyGift' && !state.missions.roadmapDailyGiftClaimed) {
       toast('info', 'Visit Roadmap', 'Claim the daily gift there first →');
       return;
@@ -106,7 +104,6 @@ export function MissionsScreen({ state, actions }: Props) {
     if (!mission) return;
     const accepted = actions.claimMissionReward(id, false);
     if (!accepted) return;
-    if (mission.adSpins) actions.addSpins(0);
     toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure`);
   };
 
@@ -129,7 +126,9 @@ export function MissionsScreen({ state, actions }: Props) {
       onComplete: () => {
         const accepted = actions.claimMissionReward(adClaimId, true);
         if (!accepted) return;
-        if (mission.adSpins) actions.addSpins(mission.adSpins);
+        // ✅ FIXED: Give BOTH XP AND spins
+        actions.addXP(mission.adXp, true);
+        actions.addSpins(mission.adSpins);
         actions.watchAd();
         toast('success', 'Radiation Absorbed!', `+${mission.adXp} Exposure + ${mission.adSpins} Twists`);
       },
@@ -172,7 +171,6 @@ export function MissionsScreen({ state, actions }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Contamination Targets Header */}
       <div className="grunge-panel p-4 text-center">
         <Target size={28} className="text-toxic-400 mx-auto mb-2" />
         <h2 className="font-display font-black text-lg text-toxic-400 neon-text">☢️ DAILY CONTAMINATION ☢️</h2>
@@ -183,7 +181,6 @@ export function MissionsScreen({ state, actions }: Props) {
         </div>
       </div>
 
-      {/* 7-Day Contamination Streak */}
       <div className={`grunge-panel p-4 ${isDay7 ? 'neon-border-yellow' : ''}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -269,7 +266,6 @@ export function MissionsScreen({ state, actions }: Props) {
         )}
       </div>
 
-      {/* Contamination Target Cards */}
       {MISSIONS.map((m) => {
         const complete = isMissionComplete(state, m.id);
         const progress = missionProgress(state, m.id);
@@ -329,7 +325,6 @@ export function MissionsScreen({ state, actions }: Props) {
         );
       })}
 
-      {/* Full Contamination Bonus */}
       <div className={`grunge-panel p-4 ${allComplete ? 'neon-border-yellow' : 'opacity-60'}`}>
         <div className="flex items-center gap-3 mb-3">
           <Trophy size={24} className="text-radioactive-400" />
