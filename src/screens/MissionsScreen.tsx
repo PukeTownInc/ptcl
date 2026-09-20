@@ -104,6 +104,8 @@ export function MissionsScreen({ state, actions }: Props) {
     if (!mission) return;
     const accepted = actions.claimMissionReward(id, false);
     if (!accepted) return;
+    // ✅ Direct full reward — no cap interference
+    actions.addXP(mission.baseXp, false, true); // skip daily cap
     toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure`);
   };
 
@@ -126,8 +128,8 @@ export function MissionsScreen({ state, actions }: Props) {
       onComplete: () => {
         const accepted = actions.claimMissionReward(adClaimId, true);
         if (!accepted) return;
-        // ✅ FIXED: Give BOTH XP AND spins
-        actions.addXP(mission.adXp, true);
+        // ✅ Both rewards — no cap interference
+        actions.addXP(mission.adXp, true, true); // skip daily cap
         actions.addSpins(mission.adSpins);
         actions.watchAd();
         toast('success', 'Radiation Absorbed!', `+${mission.adXp} Exposure + ${mission.adSpins} Twists`);
@@ -143,7 +145,7 @@ export function MissionsScreen({ state, actions }: Props) {
     }
     const accepted = actions.claimAllMissionsBonus();
     if (!accepted) return;
-    actions.addXP(ALL_MISSIONS_BONUS.baseXp, false);
+    actions.addXP(ALL_MISSIONS_BONUS.baseXp, false, true); // skip daily cap
     if (ALL_MISSIONS_BONUS.baseSpins) actions.addSpins(ALL_MISSIONS_BONUS.baseSpins);
     toast('success', '☢️ FULL CONTAMINATION!', `+${ALL_MISSIONS_BONUS.baseXp} Exposure Bonus`);
   };
@@ -161,7 +163,7 @@ export function MissionsScreen({ state, actions }: Props) {
       onComplete: () => {
         const accepted = actions.claimAllMissionsAdBonus();
         if (!accepted) return;
-        actions.addXP(ALL_MISSIONS_BONUS.adXp, true);
+        actions.addXP(ALL_MISSIONS_BONUS.adXp, true, true); // skip daily cap
         if (ALL_MISSIONS_BONUS.adSpins) actions.addSpins(ALL_MISSIONS_BONUS.adSpins);
         actions.watchAd();
         toast('success', '☢️ CRITICAL EXPOSURE!', `+${ALL_MISSIONS_BONUS.adXp} Exposure + ${ALL_MISSIONS_BONUS.adSpins} Twists`);
