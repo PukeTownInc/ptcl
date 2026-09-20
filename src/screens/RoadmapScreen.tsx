@@ -145,14 +145,14 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
 
   const handleClaim = () => {
     if (actions.state.missions.roadmapDailyGiftClaimed) return;
-
-    // Mark in game state → Daily Missions page sees it instantly
-    actions.claimRoadmapDailyGift();
-
-    // EXACTLY: +10 XP + 3 spins — no extra
+    
+    const success = actions.claimRoadmapDailyGift();
+    if (!success) return;
+    
+    // ✅ SEPARATE REWARD — Roadmap button only: +10 XP + 3 Twists
     actions.addXP(10, false, true);
     actions.addSpins(3);
-
+    
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
 
