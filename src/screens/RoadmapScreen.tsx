@@ -3,14 +3,10 @@ import { ChevronDown, ChevronUp, Check, Gift, Lock } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
-
 interface Props {
   onNavigate: (s: Screen) => void;
   actions: GameActions;
 }
-
-const STORAGE_KEY = 'puketown_roadmap_thanks_v1';
-
 const roadmapData = [
   {
     title: '✅ CONTAMINATED — PHASE 0',
@@ -128,11 +124,6 @@ const roadmapData = [
     ],
   },
 ];
-
-function getTodayUTC(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
@@ -144,39 +135,24 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     5: false,
     6: false,
   });
-  const [isClaimed, setIsClaimed] = useState(false);
-  const hasClaimedRef = useRef(false); // Immediate click block
-
-  // Load claimed status from storage on mount
-  useEffect(() => {
-    const today = getTodayUTC();
-    const last = localStorage.getItem(STORAGE_KEY);
-    const claimed = last === today;
-    setIsClaimed(claimed);
-    hasClaimedRef.current = claimed;
-  }, []);
-
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
-
   const handleClaim = () => {
-    // Double protection: state + ref
-    if (isClaimed || hasClaimedRef.current) return;
+    // Mark mission complete first
+    const marked = actions.claimRoadmapDailyGift();
+    if (!marked) return;
 
-    // Lock IMMEDIATELY — before ANYTHING else
-    hasClaimedRef.current = true;
-    setIsClaimed(true);
+    // Claim rewards via mission system — base only
+    const claimed = actions.claimMissionReward('roadmapDailyGift', false);
+    if (!claimed) return;
 
-    // Save to storage
-    localStorage.setItem(STORAGE_KEY, getTodayUTC());
-
-    // Give rewards
-    actions.addXP(10);
-    actions.addFreeSpins(3);
-
+    // Give the exact stated rewards: +10 XP + 3 spins
+    actions.addSpins(3);
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
+
+  const isAlreadyClaimed = actions.state.missions.roadmapDailyGiftClaimed;
 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
@@ -188,7 +164,6 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         <p className="text-toxic-300/90 text-sm">☣️ Created for YOUR benefit ☣️</p>
         <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere!</p>
       </div>
-
       {roadmapData.map((section, idx) => (
         <div
           key={idx}
@@ -216,13 +191,12 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
           )}
         </div>
       ))}
-
       <div className="grunge-panel p-4 text-center space-y-3 mt-4">
         <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
         <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
         <p className="text-toxic-300 text-sm font-semibold">Claim Daily • +10 Exposure • +3 Twists</p>
         
-        {!isClaimed ? (
+        {!isAlreadyClaimed ? (
           <button
             onClick={handleClaim}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]"
