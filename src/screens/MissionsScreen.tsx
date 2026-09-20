@@ -12,7 +12,7 @@ interface Props {
   actions: GameActions;
 }
 
-// ✅ MATCHES YOUR UPDATED TARGETS from constants + Roadmap Daily Gift
+// ✅ CORRECT IDs — matches constants.ts exactly
 function isMissionComplete(state: GameState, id: string): boolean {
   switch (id) {
     case 'spins': return state.missions.spins >= 50;
@@ -20,7 +20,7 @@ function isMissionComplete(state: GameState, id: string): boolean {
     case 'wheel': return state.missions.wheelSpins >= 5;
     case 'claistreak': return state.streakClaimedToday;
     case 'earnpp': return state.ppEarnedToday >= 250;
-    case 'roadmap': return state.missions.roadmapDailyGiftClaimed;
+    case 'roadmapDailyGift': return state.missions.roadmapDailyGiftClaimed;
     default: return false;
   }
 }
@@ -32,7 +32,7 @@ function missionProgress(state: GameState, id: string): number {
     case 'wheel': return Math.min(state.missions.wheelSpins, 5);
     case 'claistreak': return state.streakClaimedToday ? 1 : 0;
     case 'earnpp': return Math.min(state.ppEarnedToday, 250);
-    case 'roadmap': return state.missions.roadmapDailyGiftClaimed ? 1 : 0;
+    case 'roadmapDailyGift': return state.missions.roadmapDailyGiftClaimed ? 1 : 0;
     default: return 0;
   }
 }
@@ -68,7 +68,9 @@ export function MissionsScreen({ state, actions }: Props) {
   const claimsUsed = state.dailyMissionClaims.length;
   const completedCount = MISSIONS.filter((m) => isMissionComplete(state, m.id)).length;
   const allComplete = completedCount === MISSIONS.length;
-  const allMissionsClaimed = MISSIONS.every((m) => state.dailyMissionClaims.includes(m.id));
+  const allMissionsClaimed = MISSIONS.every((m) => 
+    m.id === 'roadmapDailyGift' || state.dailyMissionClaims.includes(m.id)
+  );
   const claimedDays = state.streakDay;
   const nextDay = claimedDays >= 7 ? 1 : claimedDays + 1;
   const streakReward = STREAK_REWARDS[nextDay - 1];
@@ -91,7 +93,6 @@ export function MissionsScreen({ state, actions }: Props) {
     });
   };
 
-  // ✅ FIXED: Uses claimMissionReward — XP calculated inside useGameState
   const handleClaimBase = (id: string) => {
     if (state.dailyMissionClaims.includes(id)) {
       toast('info', 'Already Collected', 'Base supply gathered today');
@@ -105,7 +106,6 @@ export function MissionsScreen({ state, actions }: Props) {
     toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure${mission.baseSpins ? ` + ${mission.baseSpins} Twists` : ''}`);
   };
 
-  // ✅ FIXED: Uses claimMissionReward with viaAd=true — XP calculated inside
   const handleClaimAdBonus = (id: string) => {
     const adClaimId = `${id}:ad`;
     if (state.dailyMissionClaims.includes(adClaimId)) {
@@ -140,7 +140,6 @@ export function MissionsScreen({ state, actions }: Props) {
     }
     const accepted = actions.claimAllMissionsBonus();
     if (!accepted) return;
-    // Give all-missions bonus XP directly
     actions.addXP(ALL_MISSIONS_BONUS.baseXp, false);
     if (ALL_MISSIONS_BONUS.baseSpins) actions.addSpins(ALL_MISSIONS_BONUS.baseSpins);
     toast('success', '☢️ FULL CONTAMINATION!', `+${ALL_MISSIONS_BONUS.baseXp} Exposure Bonus`);
@@ -196,7 +195,6 @@ export function MissionsScreen({ state, actions }: Props) {
             </span>
           )}
         </div>
-        {/* 7-day dose indicators */}
         <div className="flex justify-between gap-1 mb-3">
           {STREAK_REWARDS.map((r) => {
             const filled = r.day <= claimedDays;
@@ -232,7 +230,6 @@ export function MissionsScreen({ state, actions }: Props) {
             );
           })}
         </div>
-        {/* Reward + claim button */}
         {state.streakClaimedToday ? (
           <div className="flex items-center justify-center gap-2 py-2">
             <CheckCircle2 size={16} className="text-toxic-400" />
@@ -251,7 +248,6 @@ export function MissionsScreen({ state, actions }: Props) {
             </button>
           </div>
         )}
-        {/* Warnings */}
         {claimedDays > 0 && claimedDays < MAX_STREAK_DAY && !state.streakClaimedToday && (
           <div className="mt-2 text-[10px] text-hazard-amber/70 font-mono text-center">
             Skip a dose = infection reset! Keep your {claimedDays}-day streak alive!
@@ -276,6 +272,8 @@ export function MissionsScreen({ state, actions }: Props) {
         const pct = (progress / m.target) * 100;
         const hasClaimed = state.dailyMissionClaims.includes(m.id);
         const hasAdClaimed = state.dailyMissionClaims.includes(`${m.id}:ad`);
+        const isRoadmap = m.id === 'roadmapDailyGift';
+        
         return (
           <div key={m.id} className="grunge-panel p-3.5">
             <div className="flex items-start gap-3">
@@ -286,7 +284,10 @@ export function MissionsScreen({ state, actions }: Props) {
                   {complete && <CheckCircle2 size={14} className="text-toxic-400 shrink-0" />}
                 </div>
                 <div className="text-[10px] text-toxic-100/40 font-mono mt-0.5">
-                  Base: +{m.baseXp} Exposure • Radiation: +{m.adXp} Exposure + {m.adSpins} Twists
+                  {isRoadmap 
+                    ? 'Claim from Roadmap page → +10 Exposure + 3 Twists'
+                    : `Base: +${m.baseXp} Exposure • Radiation: +${m.adXp} Exposure + ${m.adSpins} Twists`
+                  }
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <div className="h-1.5 flex-1 rounded-full bg-ink-700 overflow-hidden">
@@ -294,26 +295,33 @@ export function MissionsScreen({ state, actions }: Props) {
                   </div>
                   <span className="font-mono text-[10px] text-toxic-100/50">{progress}/{m.target}</span>
                 </div>
-                <div className="flex gap-2 mt-2.5">
-                  <button
-                    onClick={() => handleClaimBase(m.id)}
-                    disabled={!complete || hasClaimed}
-                    className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
-                      hasClaimed ? 'toxic-btn opacity-60' : !complete ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
-                    }`}
-                  >
-                    {hasClaimed ? <><CheckCircle2 size={12} /> Contaminated</> : <><Gift size={12} /> +{m.baseXp} Exposure</>}
-                  </button>
-                  <button
-                    onClick={() => handleClaimAdBonus(m.id)}
-                    disabled={!hasClaimed || hasAdClaimed}
-                    className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
-                      hasAdClaimed ? 'yellow-btn opacity-60' : !hasClaimed ? 'ghost-btn opacity-40 cursor-not-allowed' : 'yellow-btn'
-                    }`}
-                  >
-                    {hasAdClaimed ? <><CheckCircle2 size={12} /> Absorbed</> : <><Tv size={12} /> +{m.adXp} Exposure + {m.adSpins} Twists</>}
-                  </button>
-                </div>
+                {!isRoadmap && (
+                  <div className="flex gap-2 mt-2.5">
+                    <button
+                      onClick={() => handleClaimBase(m.id)}
+                      disabled={!complete || hasClaimed}
+                      className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
+                        hasClaimed ? 'toxic-btn opacity-60' : !complete ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
+                      }`}
+                    >
+                      {hasClaimed ? <><CheckCircle2 size={12} /> Contaminated</> : <><Gift size={12} /> +{m.baseXp} Exposure</>}
+                    </button>
+                    <button
+                      onClick={() => handleClaimAdBonus(m.id)}
+                      disabled={!hasClaimed || hasAdClaimed}
+                      className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
+                        hasAdClaimed ? 'yellow-btn opacity-60' : !hasClaimed ? 'ghost-btn opacity-40 cursor-not-allowed' : 'yellow-btn'
+                      }`}
+                    >
+                      {hasAdClaimed ? <><CheckCircle2 size={12} /> Absorbed</> : <><Tv size={12} /> +{m.adXp} Exposure + {m.adSpins} Twists</>}
+                    </button>
+                  </div>
+                )}
+                {isRoadmap && (
+                  <div className="mt-2 text-[11px] text-toxic-300/70 font-mono">
+                    {complete ? '✅ Claimed from Roadmap' : '→ Visit Roadmap page to claim'}
+                  </div>
+                )}
               </div>
             </div>
           </div>
