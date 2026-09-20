@@ -6,21 +6,23 @@ import {
   DAILY_XP_FREE_CAP,
   FREE_SPINS_BASE,
   FREE_SPINS_DAILY_BONUS,
-  getTier,
   MIN_UNLOCK_PP,
   MISSIONS,
 } from './constants';
 import { supabase } from './lib/supabase';
+
 const STORAGE_KEY = 'puketown_cashlab_v1';
 
 function todayUTC(): string {
   return new Date().toISOString().slice(0, 10);
 }
+
 function daysBetween(a: string, b: string): number {
   const da = new Date(a + 'T00:00:00Z').getTime();
   const db = new Date(b + 'T00:00:00Z').getTime();
   return Math.round((db - da) / 86400000);
 }
+
 function computeStreakReset(state: GameState, today: string): string | null {
   const lastClaim = state.lastStreakClaimDate;
   if (!lastClaim) return state.lastStreakClaimDate;
@@ -28,6 +30,7 @@ function computeStreakReset(state: GameState, today: string): string | null {
   if (gap >= 2) return null;
   return lastClaim;
 }
+
 function defaultState(): GameState {
   return {
     xp: 0,
@@ -78,9 +81,11 @@ function defaultState(): GameState {
     monthlyResetDate: todayUTC(),
   };
 }
+
 function emptyMissions(): MissionState {
   return { spins: 0, adsWatched: 0, wheelSpins: 0, allClaimed: false };
 }
+
 function loadState(): GameState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -91,15 +96,18 @@ function loadState(): GameState {
     return defaultState();
   }
 }
+
 function dailyResetIfNeeded(state: GameState): GameState {
   const today = todayUTC();
   if (state.lastReset === today) return state;
+
   let loginStreak = state.loginStreak;
   let lastLogin = state.lastLogin;
   if (state.lastLogin) {
     const gap = daysBetween(state.lastLogin, today);
     if (gap > 1) loginStreak = 0;
   }
+
   return {
     ...state,
     spinsRemaining: FREE_SPINS_BASE,
@@ -140,6 +148,7 @@ export function useGameState(userId: string | null) {
     const loaded = loadState();
     return dailyResetIfNeeded(loaded);
   });
+
   const [cloudLoading, setCloudLoading] = useState(false);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -156,12 +165,14 @@ export function useGameState(userId: string | null) {
           .select('data')
           .eq('id', userId)
           .maybeSingle();
+
         if (cancelled) return;
         if (error) {
           console.error('Cloud load error:', error);
           setCloudLoading(false);
           return;
         }
+
         if (data?.data) {
           const cloudState = { ...defaultState(), ...(data.data as Partial<GameState>) };
           const reset = dailyResetIfNeeded(cloudState);
@@ -213,14 +224,16 @@ export function useGameState(userId: string | null) {
 
   const addXP = useCallback((baseXp: number, viaAd: boolean, skipDailyCap = false) => {
     setState((prev) => {
-      const tier = getTier(prev.xp);
-      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
-      let xpToAdd = Math.round(baseXp * multiplier);
+      // ✅ No tier multiplier, no XP boost — exact value only
+      const xpToAdd = baseXp;
+
       if (skipDailyCap) {
         return { ...prev, xp: prev.xp + xpToAdd, dailyXpFree: prev.dailyXpFree + xpToAdd };
       }
+
       const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
+
       if (viaAd) {
         const freePart = Math.min(xpToAdd, freeRemaining);
         const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
@@ -239,12 +252,12 @@ export function useGameState(userId: string | null) {
 
   const addPP = useCallback((pp: number) => {
     setState((prev) => {
-      const tier = getTier(prev.xp);
+      // ✅ No tier multiplier — raw value only
       const hotStreak = prev.hotStreakUntil && prev.hotStreakUntil > Date.now() ? 1.5 : 1;
       const streakBoost = prev.streakPPBoostUntil && prev.streakPPBoostUntil > Date.now() ? 1.2 : 1;
       const accelerated = prev.potAccelUntil && prev.potAccelUntil > Date.now() ? pp * 2 : pp;
-      const final = Math.round(accelerated * tier.multiplier * hotStreak * streakBoost);
-      const newPot = Math.min(prev.lockedPotPP + final, tier.potCap);
+      const final = Math.round(accelerated * hotStreak * streakBoost);
+      const newPot = Math.min(prev.lockedPotPP + final, 500000);
       return {
         ...prev,
         lockedPotPP: newPot,
@@ -256,13 +269,12 @@ export function useGameState(userId: string | null) {
 
   const isPotFull = useCallback((s?: GameState) => {
     const cur = s ?? stateRef.current;
-    return cur.lockedPotPP >= getTier(cur.xp).potCap;
+    return cur.lockedPotPP >= 500000;
   }, []);
 
   const unlockPot = useCallback(() => {
     setState((prev) => {
-      const tier = getTier(prev.xp);
-      if (prev.dailyUnlocksUsed >= tier.dailyUnlocks || prev.lockedPotPP < MIN_UNLOCK_PP) return prev;
+      if (prev.lockedPotPP < MIN_UNLOCK_PP) return prev;
       const moved = prev.lockedPotPP;
       return {
         ...prev,
@@ -275,9 +287,8 @@ export function useGameState(userId: string | null) {
 
   const recordSpin = useCallback(() => {
     setState((prev) => {
-      const tier = getTier(prev.xp);
-      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
-      const xpToAdd = Math.round(1 * multiplier);
+      // ✅ No multiplier — exact 1 XP
+      const xpToAdd = 1;
       return {
         ...prev,
         spinsRemaining: Math.max(0, prev.spinsRemaining - 1),
@@ -394,7 +405,6 @@ export function useGameState(userId: string | null) {
     return { missionId, viaAd };
   }, []);
 
-  // ✅ Fixed: Now reads properly typed MissionDef
   const claimMissionReward = useCallback((missionId: string, viaAd: boolean = false): boolean => {
     let accepted = false;
     setState((prev) => {
@@ -404,15 +414,18 @@ export function useGameState(userId: string | null) {
       if (!mission) {
         return { ...prev, dailyMissionClaims: [...prev.dailyMissionClaims, missionId] };
       }
+
+      // ✅ Exact values — NO multipliers
       const xpValue = viaAd ? mission.adXp : mission.baseXp;
-      const tier = getTier(prev.xp);
-      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
-      const xpToAdd = Math.round(xpValue * multiplier);
+      const xpToAdd = xpValue;
+
       const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
+
       let newXp = prev.xp;
       let newDailyFree = prev.dailyXpFree;
       let newDailyBonus = prev.dailyXpBonus;
+
       if (viaAd) {
         const freePart = Math.min(xpToAdd, freeRemaining);
         const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
@@ -424,8 +437,9 @@ export function useGameState(userId: string | null) {
         newXp = prev.xp + actual;
         newDailyFree = prev.dailyXpFree + actual;
       }
-      // ✅ Direct typed read — mission.adSpins is now guaranteed
+
       const spinsToAdd = viaAd ? mission.adSpins : 0;
+
       return {
         ...prev,
         dailyMissionClaims: [...prev.dailyMissionClaims, missionId],
@@ -438,16 +452,14 @@ export function useGameState(userId: string | null) {
     return accepted;
   }, []);
 
-  // ✅ Fixed: Reads baseSpins from ALL_MISSIONS_BONUS
   const claimAllMissionsBonus = useCallback((): boolean => {
     let accepted = false;
     setState((prev) => {
       if (prev.allMissionsBonusClaimed) return prev;
       accepted = true;
+      // ✅ Exact values — NO multipliers
       const { baseXp, baseSpins } = ALL_MISSIONS_BONUS;
-      const tier = getTier(prev.xp);
-      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
-      const xpToAdd = Math.round(baseXp * multiplier);
+      const xpToAdd = baseXp;
       const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       const actual = Math.min(xpToAdd, freeRemaining);
       return {
@@ -461,16 +473,14 @@ export function useGameState(userId: string | null) {
     return accepted;
   }, []);
 
-  // ✅ Fixed: Reads adSpins from ALL_MISSIONS_BONUS
   const claimAllMissionsAdBonus = useCallback((): boolean => {
     let accepted = false;
     setState((prev) => {
       if (prev.allMissionsAdBonusClaimed) return prev;
       accepted = true;
+      // ✅ Exact values — NO multipliers
       const { adXp, adSpins } = ALL_MISSIONS_BONUS;
-      const tier = getTier(prev.xp);
-      const multiplier = tier.multiplier * (isXPBoostActive(prev) ? 1.5 : 1);
-      const xpToAdd = Math.round(adXp * multiplier);
+      const xpToAdd = adXp;
       const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
       const freePart = Math.min(xpToAdd, freeRemaining);
@@ -496,12 +506,15 @@ export function useGameState(userId: string | null) {
       } else {
         newStreakDay = prev.streakDay + 1;
       }
+
+      // ✅ Exact values — NO multipliers
       const xpToAdd = reward.xp;
       const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
       const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
       const freePart = Math.min(xpToAdd, freeRemaining);
       const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
       const bestStreak = Math.max(prev.bestStreak, newStreakDay);
+
       return {
         ...prev,
         streakDay: newStreakDay,
@@ -544,8 +557,7 @@ export function useGameState(userId: string | null) {
           leaderboardClaims: { ...prev.leaderboardClaims, [key]: true },
         };
       }
-      const tier = getTier(prev.xp);
-      const newPot = Math.min(prev.lockedPotPP + pp, tier.potCap);
+      const newPot = Math.min(prev.lockedPotPP + pp, 500000);
       return {
         ...prev,
         lockedPotPP: newPot,
@@ -594,8 +606,8 @@ export function useGameState(userId: string | null) {
   ]);
 }
 
-export function isXPBoostActive(s: GameState): boolean {
-  return !!s.xpBoostUntil && s.xpBoostUntil > Date.now();
+export function isXPBoostActive(_s: GameState): boolean {
+  return false;
 }
 export function isStreakPPBoostActive(s: GameState): boolean {
   return !!s.streakPPBoostUntil && s.streakPPBoostUntil > Date.now();
