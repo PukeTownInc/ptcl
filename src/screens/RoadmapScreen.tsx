@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Gift, Lock } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
@@ -124,10 +124,6 @@ const roadmapData = [
     ],
   },
 ];
-function getTodayUTC(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-const STORAGE_KEY = 'puketown_roadmap_daily_v1';
 
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
@@ -140,32 +136,25 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     5: false,
     6: false,
   });
-  const [isClaimed, setIsClaimed] = useState(false);
-
-  // Load claimed status
-  useState(() => {
-    const today = getTodayUTC();
-    const last = localStorage.getItem(STORAGE_KEY);
-    setIsClaimed(last === today);
-  });
 
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
 
   const handleClaim = () => {
-    if (isClaimed) return;
+    // Mark mission as completed so daily missions page tracks it
+    const marked = actions.claimRoadmapDailyGift();
+    if (!marked) return;
 
-    // EXACTLY: +10 XP + 3 spins — guaranteed
+    // Give EXACTLY what the button says — no extra XP from mission system
     actions.addXP(10, false, true);
     actions.addSpins(3);
 
-    // Mark claimed
-    localStorage.setItem(STORAGE_KEY, getTodayUTC());
-    setIsClaimed(true);
-
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
+
+  // Read claimed status directly from game state
+  const isClaimed = actions.state.missions.roadmapDailyGiftClaimed;
 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
