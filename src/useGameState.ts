@@ -135,6 +135,7 @@ function dailyResetIfNeeded(state: GameState): GameState {
     loginStreak,
     lastLogin,
     lastStreakClaimDate: computeStreakReset(state, today),
+    lastFreeCacheClaimDate: null,
   };
 }
 export function useGameState(userId: string | null) {
@@ -319,15 +320,17 @@ export function useGameState(userId: string | null) {
     const box = CACHE_BOXES.find(b => b.id === tier);
     if (!box) return { ok: false, reward: {} };
     const today = todayUTC();
-    return setState((prev) => {
+    let result: { ok: boolean; reward: ReturnType<typeof rollCacheReward> } = { ok: false, reward: {} };
+    setState((prev) => {
       // Free daily box — one per day
       if (box.freeDaily) {
-        if (prev.lastFreeCacheClaimDate === today) return { prev, ok: false, reward: {} };
+        if (prev.lastFreeCacheClaimDate === today) return prev;
       } else {
         // Paid boxes — check PP cost
-        if (prev.lockedPotPP < box.costPP) return { prev, ok: false, reward: {} };
+        if (prev.lockedPotPP < box.costPP) return prev;
       }
       const reward = rollCacheReward(tier);
+      result = { ok: true, reward };
       let next = { ...prev };
       // Deduct cost if not free
       if (!box.freeDaily) {
@@ -366,8 +369,9 @@ export function useGameState(userId: string | null) {
           next.spinsRemaining += 50; // jackpot reward
         }
       }
-      return { prev: next, ok: true, reward };
+      return next;
     });
+    return result;
   }, []);
   const loginCheck = useCallback(() => {
     setState((prev) => {
@@ -379,7 +383,7 @@ export function useGameState(userId: string | null) {
         if (gap >= 2) streakDay = 0;
       }
       const bestStreak = Math.max(prev.bestStreak, streakDay);
-      return { ...prev, loginStreak: prev.loginStreak, lastLogin: today, streakDay, streakClaimedToday: false, bestStreak };
+      return { ...prev, loginStreak: prev.loginStreak + 1, lastLogin: today, streakDay, streakClaimedToday: false, bestStreak };
     });
   }, []);
   const setFaucetpayEmail = useCallback((email: string) => {
