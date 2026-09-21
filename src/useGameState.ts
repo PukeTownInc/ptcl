@@ -310,7 +310,7 @@ export function useGameState(userId: string | null) {
     });
     return accepted;
   }, []);
-  // ✅ Contagion Cache — Actions
+  // ✅ Contagion Cache — Fixed
   const canClaimFreeCache = useCallback((): boolean => {
     const today = todayUTC();
     return stateRef.current.lastFreeCacheClaimDate !== today;
@@ -319,25 +319,22 @@ export function useGameState(userId: string | null) {
     const box = CACHE_BOXES.find(b => b.id === tier);
     if (!box) return { ok: false, reward: {} };
     const today = todayUTC();
-    let result: { ok: boolean; reward: ReturnType<typeof rollCacheReward> } = { ok: false, reward: {} };
+    let ok = false;
+    let reward: ReturnType<typeof rollCacheReward> = {};
     setState((prev) => {
-      // Free daily box — one per day
       if (box.freeDaily) {
         if (prev.lastFreeCacheClaimDate === today) return prev;
       } else {
-        // Paid boxes — check PP cost
         if (prev.lockedPotPP < box.costPP) return prev;
       }
-      const reward = rollCacheReward(tier);
-      result = { ok: true, reward };
-      let next = { ...prev };
-      // Deduct cost if not free
+      reward = rollCacheReward(tier);
+      ok = true;
+      const next = { ...prev };
       if (!box.freeDaily) {
         next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
       } else {
         next.lastFreeCacheClaimDate = today;
       }
-      // Apply rewards
       if (reward.xp) {
         next.xp += reward.xp;
         next.dailyXpFree += reward.xp;
@@ -369,7 +366,7 @@ export function useGameState(userId: string | null) {
       }
       return next;
     });
-    return result;
+    return { ok, reward };
   }, []);
   const loginCheck = useCallback(() => {
     setState((prev) => {
