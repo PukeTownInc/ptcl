@@ -77,7 +77,6 @@ function defaultState(): GameState {
     leaderboardPeriodStarts: {},
     flagsClaimedOn: todayUTC(),
     monthlyResetDate: todayUTC(),
-    // ✅ Contagion Cache — default values
     lastFreeCacheClaimDate: null,
     jackpotFragments: 0,
   };
@@ -136,7 +135,6 @@ function dailyResetIfNeeded(state: GameState): GameState {
     loginStreak,
     lastLogin,
     lastStreakClaimDate: computeStreakReset(state, today),
-    // ✅ Contagion Cache — preserve across daily resets
     lastFreeCacheClaimDate: state.lastFreeCacheClaimDate,
     jackpotFragments: state.jackpotFragments,
   };
@@ -314,37 +312,30 @@ export function useGameState(userId: string | null) {
     });
     return accepted;
   }, []);
-  // ✅ Contagion Cache — Check if free box available today
   const canClaimFreeCacheBox = useCallback((): boolean => {
     return stateRef.current.lastFreeCacheClaimDate !== todayUTC();
   }, []);
-  // ✅ Contagion Cache — Open a box
   const openCacheBox = useCallback((tier: CacheBoxTier): { success: boolean; reward: ReturnType<typeof rollCacheReward> | null; message: string } => {
     const box = CACHE_BOXES.find(b => b.id === tier);
     if (!box) return { success: false, reward: null, message: 'Invalid box' };
     const today = todayUTC();
-    // Free box logic
     if (box.freeDaily) {
       if (stateRef.current.lastFreeCacheClaimDate === today) {
         return { success: false, reward: null, message: 'Free Slime Crate already claimed today — back tomorrow!' };
       }
     } else {
-      // Paid box — check Puke Points
       if (stateRef.current.lockedPotPP < box.costPP) {
         return { success: false, reward: null, message: `Need ${box.costPP} Puke Points to open this box` };
       }
     }
-    // Roll reward
     const reward = rollCacheReward(tier);
     setState((prev) => {
       let next = { ...prev };
-      // Deduct cost if not free
       if (!box.freeDaily) {
         next.lockedPotPP = Math.max(0, prev.lockedPotPP - box.costPP);
       } else {
         next.lastFreeCacheClaimDate = today;
       }
-      // Apply rewards
       if (reward.spins) next.spinsRemaining += reward.spins;
       if (reward.xp) {
         next.xp += reward.xp;
@@ -374,7 +365,6 @@ export function useGameState(userId: string | null) {
       if (reward.jackpotFragment) {
         next.jackpotFragments = prev.jackpotFragments + 1;
       }
-      // Jackpot unlock check
       if (reward.jackpotFragment && next.jackpotFragments >= JACKPOT_FRAGMENTS_TO_UNLOCK) {
         next.jackpotFragments = 0;
         next.xp += 500;
@@ -580,7 +570,6 @@ export function useGameState(userId: string | null) {
     claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
     resetLeaderboardClaims, resetAll,
-    // ✅ Contagion Cache — exposed actions
     canClaimFreeCacheBox, openCacheBox,
   }), [
     state, cloudLoading, update, addXP, addPP, isPotFull, unlockPot,
