@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { GameState, MissionState, WithdrawalRecord } from './types';
+import type { GameState, MissionState, WithdrawalRecord, CacheBoxTier } from './types';
 import {
   ALL_MISSIONS_BONUS,
+  CACHE_BOXES,
   DAILY_XP_BONUS_CAP,
   DAILY_XP_FREE_CAP,
   FREE_SPINS_BASE,
   FREE_SPINS_DAILY_BONUS,
+  JACKPOT_FRAGMENTS_TO_UNLOCK,
   MIN_UNLOCK_PP,
   MISSIONS,
+  rollCacheReward,
 } from './constants';
 import { supabase } from './lib/supabase';
 const STORAGE_KEY = 'puketown_cashlab_v1';
@@ -74,6 +77,8 @@ function defaultState(): GameState {
     leaderboardPeriodStarts: {},
     flagsClaimedOn: todayUTC(),
     monthlyResetDate: todayUTC(),
+    lastFreeCacheClaimDate: null,
+    jackpotFragments: 0,
   };
 }
 function emptyMissions(): MissionState {
@@ -305,6 +310,65 @@ export function useGameState(userId: string | null) {
     });
     return accepted;
   }, []);
+  // ✅ Contagion Cache — Actions
+  const canClaimFreeCache = useCallback((): boolean => {
+    const today = todayUTC();
+    return stateRef.current.lastFreeCacheClaimDate !== today;
+  }, []);
+  const openCacheBox = useCallback((tier: CacheBoxTier): { ok: boolean; reward: ReturnType<typeof rollCacheReward> } => {
+    const box = CACHE_BOXES.find(b => b.id === tier);
+    if (!box) return { ok: false, reward: {} };
+    const today = todayUTC();
+    return setState((prev) => {
+      // Free daily box — one per day
+      if (box.freeDaily) {
+        if (prev.lastFreeCacheClaimDate === today) return { prev, ok: false, reward: {} };
+      } else {
+        // Paid boxes — check PP cost
+        if (prev.lockedPotPP < box.costPP) return { prev, ok: false, reward: {} };
+      }
+      const reward = rollCacheReward(tier);
+      let next = { ...prev };
+      // Deduct cost if not free
+      if (!box.freeDaily) {
+        next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
+      } else {
+        next.lastFreeCacheClaimDate = today;
+      }
+      // Apply rewards
+      if (reward.xp) {
+        next.xp += reward.xp;
+        next.dailyXpFree += reward.xp;
+      }
+      if (reward.spins) next.spinsRemaining += reward.spins;
+      if (reward.pp) {
+        next.lockedPotPP = Math.min(next.lockedPotPP + reward.pp, 500000);
+        next.totalEarnedPP += reward.pp;
+        next.ppEarnedToday += reward.pp;
+      }
+      if (reward.boost === 'hotStreak') {
+        next.dailyHotStreak += 1;
+        next.hotStreakUntil = Date.now() + 10 * 60000;
+      }
+      if (reward.boost === 'potAccel') {
+        next.dailyPotAccel += 1;
+        next.potAccelUntil = Date.now() + 5 * 60000;
+      }
+      if (reward.boost === 'xpBoost') {
+        next.dailyXpBoosts += 1;
+        next.xpBoostUntil = Date.now() + 3600000;
+      }
+      if (reward.jackpotFragment) {
+        next.jackpotFragments += 1;
+        // Optional: unlock jackpot at threshold
+        if (next.jackpotFragments >= JACKPOT_FRAGMENTS_TO_UNLOCK) {
+          next.jackpotFragments = 0;
+          next.spinsRemaining += 50; // jackpot reward
+        }
+      }
+      return { prev: next, ok: true, reward };
+    });
+  }, []);
   const loginCheck = useCallback(() => {
     setState((prev) => {
       const today = todayUTC();
@@ -381,7 +445,6 @@ export function useGameState(userId: string | null) {
       }
       const xpValue = viaAd ? mission.adXp : mission.baseXp;
       const spinsToAdd = viaAd ? mission.adSpins : 0;
-      // ✅ FULL REWARD — NO CAP. All missions give full stated amount
       return {
         ...prev,
         dailyMissionClaims: [...prev.dailyMissionClaims, missionId],
@@ -398,7 +461,6 @@ export function useGameState(userId: string | null) {
       if (prev.allMissionsBonusClaimed) return prev;
       accepted = true;
       const { baseXp, baseSpins } = ALL_MISSIONS_BONUS;
-      // ✅ FULL BONUS — NO CAP
       return {
         ...prev,
         allMissionsBonusClaimed: true,
@@ -415,7 +477,6 @@ export function useGameState(userId: string | null) {
       if (prev.allMissionsAdBonusClaimed) return prev;
       accepted = true;
       const { adXp, adSpins } = ALL_MISSIONS_BONUS;
-      // ✅ FULL BONUS — NO CAP
       return {
         ...prev,
         allMissionsAdBonusClaimed: true,
@@ -435,7 +496,6 @@ export function useGameState(userId: string | null) {
       } else {
         newStreakDay = prev.streakDay + 1;
       }
-      // ✅ FULL REWARD — NO CAP
       const bestStreak = Math.max(prev.bestStreak, newStreakDay);
       return {
         ...prev,
@@ -463,7 +523,6 @@ export function useGameState(userId: string | null) {
     setState((prev) => {
       if (prev.leaderboardClaims[key]) return prev;
       if (rewardType === 'xp') {
-        // ✅ FULL REWARD — NO CAP
         return {
           ...prev,
           xp: prev.xp + xp,
@@ -504,7 +563,7 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll,
+    resetLeaderboardClaims, resetAll, canClaimFreeCache, openCacheBox,
   }), [
     state, cloudLoading, update, addXP, addPP, isPotFull, unlockPot,
     recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
@@ -513,7 +572,7 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll,
+    resetLeaderboardClaims, resetAll, canClaimFreeCache, openCacheBox,
   ]);
 }
 export function isXPBoostActive(_s: GameState): boolean {
