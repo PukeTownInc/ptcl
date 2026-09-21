@@ -1,4 +1,4 @@
-import type { SlotSymbol, SymbolId, Tier } from './types';
+import type { SlotSymbol, SymbolId, Tier, CacheBoxTier, CacheBoxReward } from './types';
 export const SYMBOL_IMAGE_PATH = '/symbols/';
 export const COLORS = {
   toxic: '#39FF14',
@@ -92,11 +92,55 @@ export const ROW_COUNT = 3;
 export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 5;
 // ==============================================
+// ✅ CONTAGION CACHE — Box Definitions & Rewards
+// ==============================================
+export const JACKPOT_FRAGMENTS_TO_UNLOCK = 5;
+export const CACHE_BOXES: Array<{
+  id: CacheBoxTier;
+  label: string;
+  costPP: number;
+  freeDaily: boolean;
+  gradient: string;
+}> = [
+  { id: 'slime',      label: 'Slime Crate',       costPP: 0,    freeDaily: true,  gradient: 'from-lime-500/20 to-green-600/10' },
+  { id: 'radiation',  label: 'Radiation Case',    costPP: 500,  freeDaily: false, gradient: 'from-yellow-400/20 to-amber-500/10' },
+  { id: 'toxic',      label: 'Toxic Container',   costPP: 2500, freeDaily: false, gradient: 'from-green-400/20 to-emerald-600/10' },
+  { id: 'contagion',  label: 'Contagion Vault',   costPP: 10000,freeDaily: false, gradient: 'from-red-500/20 to-rose-600/10' },
+];
+export function rollCacheReward(tier: CacheBoxTier): CacheBoxReward {
+  const r = Math.random();
+  switch (tier) {
+    case 'slime':
+      if (r < 0.40) return { spins: 2 + Math.floor(Math.random() * 4) };
+      if (r < 0.75) return { xp: 5 + Math.floor(Math.random() * 11) };
+      if (r < 0.95) return { pp: 25 + Math.floor(Math.random() * 51) };
+      return { jackpotFragment: true };
+    case 'radiation':
+      if (r < 0.30) return { spins: 5 + Math.floor(Math.random() * 6) };
+      if (r < 0.60) return { xp: 15 + Math.floor(Math.random() * 21) };
+      if (r < 0.85) return { pp: 100 + Math.floor(Math.random() * 151) };
+      if (r < 0.95) return { boost: ['hotStreak', 'potAccel', 'xpBoost'][Math.floor(Math.random() * 3)] as 'hotStreak' | 'potAccel' | 'xpBoost' };
+      return { jackpotFragment: true };
+    case 'toxic':
+      if (r < 0.25) return { spins: 10 + Math.floor(Math.random() * 11) };
+      if (r < 0.50) return { xp: 30 + Math.floor(Math.random() * 31) };
+      if (r < 0.75) return { pp: 300 + Math.floor(Math.random() * 301) };
+      if (r < 0.92) return { boost: ['hotStreak', 'potAccel', 'xpBoost'][Math.floor(Math.random() * 3)] as 'hotStreak' | 'potAccel' | 'xpBoost' };
+      return { jackpotFragment: true };
+    case 'contagion':
+      if (r < 0.20) return { spins: 20 + Math.floor(Math.random() * 21) };
+      if (r < 0.40) return { xp: 50 + Math.floor(Math.random() * 51) };
+      if (r < 0.65) return { pp: 800 + Math.floor(Math.random() * 701) };
+      if (r < 0.90) return { boost: ['hotStreak', 'potAccel', 'xpBoost'][Math.floor(Math.random() * 3)] as 'hotStreak' | 'potAccel' | 'xpBoost' };
+      return { jackpotFragment: true };
+  }
+}
+// ==============================================
 // ✅ MISSIONS — Roadmap gift has FULL standard rewards
 // ==============================================
 export const MISSIONS = [
   { id: 'claistreak',        label: 'Claim Daily Streak',              target: 1,   baseXp: 50, adXp: 75, icon: '📅', adSpins: 5 },
-  { id: 'roadmapDailyGift',  label: 'Claim Roadmap Daily Gift',        target: 1,   baseXp: 50, adXp: 75, icon: '🎁', adSpins: 5 }, // ✅ Standard rewards
+  { id: 'roadmapDailyGift',  label: 'Claim Roadmap Daily Gift',        target: 1,   baseXp: 50, adXp: 75, icon: '🎁', adSpins: 5 },
   { id: 'spins',             label: 'Spin 50 Times',                  target: 50,  baseXp: 50, adXp: 75, icon: '🎰', adSpins: 5 },
   { id: 'earnpp',            label: 'Earn 250 Puke Points',           target: 250, baseXp: 50, adXp: 75, icon: '🎯', adSpins: 5 },
   { id: 'wheel',             label: 'Claim Radioactive Risk 5 Times',  target: 5,   baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
