@@ -13,7 +13,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { RoadmapScreen } from './screens/RoadmapScreen';
-import { LoginScreen } from './screens/LoginScreen';
+import { LoginScreen } from './components/LoginScreen';
 import { DAILY_XP_FREE_CAP } from './constants';
 
 function AppContent() {
@@ -52,7 +52,6 @@ function AppContent() {
     }
   };
 
-  // ✅ Show login if no user
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
