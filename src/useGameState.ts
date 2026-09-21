@@ -135,7 +135,6 @@ function dailyResetIfNeeded(state: GameState): GameState {
     loginStreak,
     lastLogin,
     lastStreakClaimDate: computeStreakReset(state, today),
-    lastFreeCacheClaimDate: null,
   };
 }
 export function useGameState(userId: string | null) {
@@ -363,10 +362,9 @@ export function useGameState(userId: string | null) {
       }
       if (reward.jackpotFragment) {
         next.jackpotFragments += 1;
-        // Optional: unlock jackpot at threshold
         if (next.jackpotFragments >= JACKPOT_FRAGMENTS_TO_UNLOCK) {
           next.jackpotFragments = 0;
-          next.spinsRemaining += 50; // jackpot reward
+          next.spinsRemaining += 50;
         }
       }
       return next;
