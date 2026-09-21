@@ -1,5 +1,5 @@
 export type Tier = 'bronze' | 'silver' | 'gold' | 'platinum';
-export type Screen = 'home' | 'slots' | 'missions' | 'leaderboards' | 'withdraw' | 'roadmap' | 'settings' | 'profile';
+export type Screen = 'home' | 'slots' | 'missions' | 'leaderboards' | 'withdraw' | 'roadmap' | 'settings' | 'profile' | 'contagioncache';
 export type LeaderboardCategory = 'xp' | 'pp' | 'spins' | 'referrals';
 export type LeaderboardPeriod = 'monthly';
 export interface PrizeTier {
@@ -27,6 +27,23 @@ export type SymbolId =
   | 'puke' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
   | 'beaker' | 'vomit' | 'toxic' | 'barrel' | 'warn' | 'rich'
   | 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
+
+// ✅ Contagion Cache — Box definitions
+export type CacheBoxTier = 'slime' | 'radiation' | 'toxic' | 'contagion';
+export interface CacheBoxReward {
+  spins?: number;
+  xp?: number;
+  pp?: number;
+  boost?: 'hotStreak' | 'potAccel' | 'xpBoost' | null;
+  jackpotFragment?: boolean;
+}
+export interface CacheBox {
+  id: CacheBoxTier;
+  label: string;
+  costPP: number;
+  freeDaily: boolean;
+}
+
 export interface SlotSymbol {
   id: SymbolId;
   emoji: string;
@@ -41,6 +58,7 @@ export interface MissionState {
   spins: number;
   adsWatched: number;
   wheelSpins: number;
+  roadmapDailyGiftClaimed: boolean;
   allClaimed: boolean;
 }
 export interface GameState {
@@ -91,6 +109,9 @@ export interface GameState {
   leaderboardPeriodStarts: Record<string, number>;
   flagsClaimedOn: string;
   monthlyResetDate: string;
+  // ✅ Contagion Cache — State tracking
+  lastFreeCacheClaimDate: string | null;
+  jackpotFragments: number;
 }
 export interface WithdrawalRecord {
   id: string;
