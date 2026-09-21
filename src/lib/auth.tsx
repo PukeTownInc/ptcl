@@ -19,6 +19,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // 🔄 Redirect to login when signed out
+  useEffect(() => {
+    if (!loading && !user) {
+      // Reload/redirect to login — replace path to avoid history issues
+      window.location.replace(window.location.origin);
+    }
+  }, [user, loading]);
+
   useEffect(() => {
     let initialResolved = false;
     const resolveInitial = (sess: Session | null) => {
@@ -94,12 +103,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
     }
   }, []);
-  // ✅ FIXED: Explicitly clear state + ignore errors to ensure logout always proceeds
+  // ✅ Sign out — clears Supabase + local state
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
     } catch {
-      // Ignore "no session" errors — still clear local state
+      // Proceed even if session already expired
     }
     setSession(null);
     setUser(null);
