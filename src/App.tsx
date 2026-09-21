@@ -13,21 +13,23 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { RoadmapScreen } from './screens/RoadmapScreen';
-import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
 import { NavDropdown } from './components/NavDropdown';
-// ✅ FIXED: ./constants NOT ../constants
 import { DAILY_XP_FREE_CAP } from './constants';
+
 function AppContent() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const { state, cloudLoading, ...actions } = useGameState(userId);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
+
   useEffect(() => {
     if (!userId) return;
   }, [userId]);
+
   const handleNavigate = (screen: Screen) => {
     setActiveScreen(screen);
   };
+
   const renderScreen = () => {
     switch (activeScreen) {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
@@ -38,10 +40,19 @@ function AppContent() {
       case 'leaderboards': return <LeaderboardsScreen state={state} actions={actions} />;
       case 'profile': return <ProfileScreen state={state} actions={actions} />;
       case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
-      case 'contagioncache': return <ContagionCacheScreen state={state} actions={actions} />;
+      case 'contagioncache':
+        // TEMP: placeholder to confirm build — screen file next
+        return (
+          <div className="text-center py-10">
+            <h2 className="text-xl font-bold text-green-400">☢️ Contagion Cache</h2>
+            <p className="text-gray-400 mt-2">Screen loading...</p>
+            <p className="text-xs text-gray-500 mt-4">Fragments: {state.jackpotFragments}/5</p>
+          </div>
+        );
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
   };
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Header
@@ -63,6 +74,7 @@ function AppContent() {
     </div>
   );
 }
+
 export default function App() {
   return (
     <AuthProvider>
