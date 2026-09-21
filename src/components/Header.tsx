@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Screen } from '../types';
 import { NavDropdown } from './NavDropdown';
 import { formatPP, ppToUsd } from '../constants';
-
+import { useAuth } from '../lib/auth';
 interface HeaderProps {
   active: Screen;
   onChange: (s: Screen, target?: string) => void;
@@ -11,10 +11,8 @@ interface HeaderProps {
   withdrawablePP: number;
   xp: number;
 }
-
 // ✅ INFINITE LEVELS — 1,000 XP per level, NO CAP
 const XP_PER_LEVEL = 1000;
-
 export function Header({
   active,
   onChange,
@@ -23,8 +21,8 @@ export function Header({
   withdrawablePP,
   xp,
 }: HeaderProps) {
+  const { signOut } = useAuth();
   const [time, setTime] = useState('');
-
   useEffect(() => {
     const tick = () => {
       const now = new Date();
@@ -35,18 +33,15 @@ export function Header({
     const i = setInterval(tick, 30000);
     return () => clearInterval(i);
   }, []);
-
   // Vault unlock at 50,000 — matches your requirement
   const UNLOCK_THRESHOLD = 50000;
   const progressPct = Math.min(100, (lockedPP / UNLOCK_THRESHOLD) * 100);
   const isUnlocked = lockedPP >= UNLOCK_THRESHOLD;
-
   // ✅ PERFECT INFINITE LEVEL CALCS
   const currentLevel = Math.floor(xp / XP_PER_LEVEL) + 1;
   const xpIntoLevel = xp % XP_PER_LEVEL;
   const xpProgressPct = Math.min(100, (xpIntoLevel / XP_PER_LEVEL) * 100);
   const xpNeeded = XP_PER_LEVEL - xpIntoLevel;
-
   return (
     <header className="sticky top-0 z-40 safe-top">
       {/* TOP NAV BAR */}
@@ -61,10 +56,15 @@ export function Header({
               <div className="font-mono text-[10px] text-toxic-100/50">{time}</div>
               <div className="text-[8px] font-mono text-toxic-100/30">Resets 00:00 UTC</div>
             </div>
+            <button
+              onClick={() => signOut()}
+              className="text-xs text-gray-400 hover:text-red-400 transition-colors ml-2"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </div>
-
       {/* BALANCE + XP SUB-HEADER */}
       <div className="bg-ink-800/60 backdrop-blur-sm border-b border-toxic-900/30 relative z-30">
         <div className="mx-auto max-w-md px-3 py-2 space-y-2">
@@ -95,7 +95,6 @@ export function Header({
               </div>
             </div>
           </div>
-
           {/* RADIATION EXPOSURE — LEVEL + PROGRESS */}
           <div className="flex items-center gap-3 pt-1 border-t border-toxic-900/20">
             <div className="text-[9px] font-display uppercase tracking-wider text-toxic-400/70 whitespace-nowrap">
