@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 interface AuthResult {
@@ -19,14 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // 🔄 Redirect to login when signed out
-  useEffect(() => {
-    if (!loading && !user) {
-      // Reload/redirect to login — replace path to avoid history issues
-      window.location.replace(window.location.origin);
-    }
-  }, [user, loading]);
+  const didSignOut = useRef(false);
 
   useEffect(() => {
     let initialResolved = false;
@@ -56,6 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setUser(null);
+        // Only redirect if we explicitly called signOut()
+        if (didSignOut.current) {
+          didSignOut.current = false;
+          window.location.reload();
+        }
       } else if (event === 'TOKEN_REFRESHED') {
         // Do NOT update state here — prevents infinite re-renders
       }
@@ -71,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sub.subscription.unsubscribe();
     };
   }, []);
+
   const signInWithEmailPassword = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -80,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
     }
   }, []);
+
   const signUpWithEmailPassword = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
       const { error } = await supabase.auth.signUp({ email, password });
@@ -89,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
     }
   }, []);
+
   const signInAnonymously = useCallback(async (): Promise<AuthResult> => {
     try {
       const { error } = await supabase.auth.signInAnonymously();
@@ -103,16 +104,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
     }
   }, []);
-  // ✅ Sign out — clears Supabase + local state
+
+  // ✅ Fixed: Only triggers reload on explicit user-initiated signOut
   const signOut = useCallback(async () => {
+    didSignOut.current = true;
     try {
       await supabase.auth.signOut();
     } catch {
-      // Proceed even if session already expired
+      // Still clear state and reload even if session already gone
+      setSession(null);
+      setUser(null);
+      window.location.reload();
     }
-    setSession(null);
-    setUser(null);
   }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -129,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
 export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
