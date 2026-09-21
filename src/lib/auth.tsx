@@ -1,10 +1,12 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+
 interface AuthResult {
   success: boolean;
   error?: string;
 }
+
 interface AuthState {
   user: User | null;
   session: Session | null;
@@ -14,12 +16,13 @@ interface AuthState {
   signInAnonymously: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
+
 const AuthContext = createContext<AuthState | undefined>(undefined);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const didSignOut = useRef(false);
 
   useEffect(() => {
     let initialResolved = false;
@@ -30,13 +33,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(sess?.user ?? null);
       setLoading(false);
     };
+
     const hasOAuthInUrl = typeof window !== 'undefined' &&
       (window.location.hash.includes('access_token') ||
        window.location.search.includes('code='));
+    
     if (hasOAuthInUrl) {
       const cleanUrl = window.location.origin + window.location.pathname;
       window.history.replaceState(null, '', cleanUrl);
     }
+
     const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       if (event === 'INITIAL_SESSION') {
         if (!hasOAuthInUrl) {
@@ -49,21 +55,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setUser(null);
-        // Only redirect if we explicitly called signOut()
-        if (didSignOut.current) {
-          didSignOut.current = false;
-          window.location.reload();
-        }
-      } else if (event === 'TOKEN_REFRESHED') {
-        // Do NOT update state here — prevents infinite re-renders
       }
     });
+
     const fallback = setTimeout(async () => {
       if (!initialResolved) {
         const { data } = await supabase.auth.getSession();
         resolveInitial(data.session);
       }
     }, 3500);
+
     return () => {
       clearTimeout(fallback);
       sub.subscription.unsubscribe();
@@ -105,17 +106,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // ✅ Fixed: Only triggers reload on explicit user-initiated signOut
+  // ✅ Direct logout + redirect — simple, reliable
   const signOut = useCallback(async () => {
-    didSignOut.current = true;
     try {
       await supabase.auth.signOut();
     } catch {
-      // Still clear state and reload even if session already gone
-      setSession(null);
-      setUser(null);
-      window.location.reload();
+      // ignore
     }
+    setSession(null);
+    setUser(null);
+    // Hard redirect to root/login — guaranteed to work
+    window.location.href = '/';
   }, []);
 
   return (
