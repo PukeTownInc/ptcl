@@ -17,16 +17,9 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       toast('info', 'Already Contaminated', 'Return tomorrow for more');
       return;
     }
-    setAdModal({
-      title: 'Daily Contagion Bonus',
-      subtitle: 'Absorb radiation to claim reward',
-      reward: '+10 Toxic Twists',
-      onComplete: () => {
-        actions.claimDailyBonusSpins();
-        actions.watchAd();
-        toast('success', 'Contagion Absorbed!', '+10 Twists added');
-      },
-    });
+    // ✅ No ad gate — direct claim, 5 spins only
+    actions.claimDailyBonusSpins();
+    toast('success', 'Contagion Absorbed!', '+5 Twists added');
   };
   const handleDailyBoost = () => {
     if (state.dailyBoostClaimed) {
@@ -87,8 +80,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         >
           <Gift size={20} className="mb-1" />
           <div className="text-xs">Daily Contagion</div>
-          <div className="text-[10px] opacity-80 font-normal">+10 Toxic Twists</div>
-          <div className="ad-badge mt-1.5"><Tv size={8} /> Toxic Broadcast</div>
+          <div className="text-[10px] opacity-80 font-normal">+5 Toxic Twists</div>
         </button>
         <button
           onClick={handleDailyBoost}
