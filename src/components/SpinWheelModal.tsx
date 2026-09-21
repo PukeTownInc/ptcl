@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Tv, X, Play } from 'lucide-react';
 import { formatPP } from '../constants';
-
 export type WheelOutcome = 'double' | 'lose' | 'half' | 'safe';
 export interface WheelResult {
   outcome: WheelOutcome;
   amount: number;
 }
-
 // ✅ MATCHES YOUR IMAGE — Top=DOUBLE → Clockwise: HALF → LOSE → SAFE
 // WEIGHTS: Double 25% • Half 30% • Lose 40% • Safe 20%
 const SEGMENTS = [
@@ -16,7 +14,6 @@ const SEGMENTS = [
   { id: 'lose'   as const, label: 'LOSE',    multiplier: 0,   weight: 40, startAngle: 180, endAngle: 270 },
   { id: 'safe'   as const, label: 'SAFE',    multiplier: 1,   weight: 20, startAngle: 270, endAngle: 360 },
 ];
-
 function pickSegmentIndex(): number {
   let r = Math.random() * 100;
   for (let i = 0; i < SEGMENTS.length; i++) {
@@ -25,7 +22,6 @@ function pickSegmentIndex(): number {
   }
   return 0;
 }
-
 interface Props {
   stake: number;
   onClaim: (result: WheelResult) => void;
@@ -33,20 +29,16 @@ interface Props {
   onForfeit: () => void;
   onWatchAd: () => void; // ✅ ADDED — triggers ad gate
 }
-
 type Phase = 'idle' | 'spinning' | 'result';
-
 export function SpinWheelModal({ stake, onClaim, onLose, onForfeit, onWatchAd }: Props) {
   const safeStake = Math.max(0, stake);
   const [rotation, setRotation] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
   const [landedIndex, setLandedIndex] = useState<number | null>(null);
   const spinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   useEffect(() => {
     return () => { if (spinTimer.current) clearTimeout(spinTimer.current); };
   }, []);
-
   const handleSpin = useCallback(() => {
     if (phase !== 'idle') return;
     setPhase('spinning');
@@ -65,7 +57,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit, onWatchAd }:
       setPhase('result');
     }, 3800);
   }, [phase, rotation]);
-
   const handleClaim = useCallback(() => {
     if (landedIndex === null || phase !== 'result') return;
     const seg = SEGMENTS[landedIndex];
@@ -73,7 +64,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit, onWatchAd }:
     onWatchAd(); // ✅ Show ad FIRST
     onClaim({ outcome: seg.id, amount }); // ✅ Then pay
   }, [landedIndex, phase, safeStake, onWatchAd, onClaim]);
-
   const handleClose = useCallback(() => {
     if (phase === 'spinning') return;
     if (landedIndex === null) {
@@ -86,10 +76,8 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit, onWatchAd }:
       onForfeit();
     }
   }, [phase, landedIndex, onLose, onForfeit]);
-
   const landed = landedIndex !== null ? SEGMENTS[landedIndex] : null;
   const winAmount = landed ? safeStake * landed.multiplier : 0;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
       <div className="grunge-panel neon-border p-5 max-w-xs w-full text-center relative">
@@ -102,7 +90,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit, onWatchAd }:
         </button>
         <h3 className="font-display font-black text-lg text-radioactive-400 mb-1">☢️ RADIOACTIVE RISK WHEEL</h3>
         <p className="text-[11px] text-toxic-100/50 font-mono mb-3">Staked: {formatPP(safeStake)} PP</p>
-
         {/* WHEEL */}
         <div className="relative mx-auto mb-4" style={{ width: 220, height: 220 }}>
           {/* Fixed top pointer */}
@@ -138,10 +125,9 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit, onWatchAd }:
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-ink-900 border-3 border-toxic-400 flex items-center justify-center"
             style={{ width: 56, height: 56, boxShadow: '0 0 15px #39ff14' }}
           >
-            <img src="/logo-192.png" alt="Puke Town" className="w-12 h-12 object-contain" />
+            <img src="/wheel-logo.png" alt="Puke Town" className="w-12 h-12 object-contain" />
           </div>
         </div>
-
         {/* RESULT — EXACTLY WHAT LANDED */}
         {phase === 'result' && landed && (
           <div className="mb-4 space-y-2">
@@ -169,7 +155,6 @@ export function SpinWheelModal({ stake, onClaim, onLose, onForfeit, onWatchAd }:
             )}
           </div>
         )}
-
         {phase === 'idle' && (
           <button onClick={handleSpin} className="toxic-btn w-full py-3.5 flex items-center justify-center gap-2">
             <Play size={18} /> SPIN
