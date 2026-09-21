@@ -13,23 +13,18 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { RoadmapScreen } from './screens/RoadmapScreen';
-import { NavDropdown } from './components/NavDropdown';
 import { DAILY_XP_FREE_CAP } from './constants';
-
 function AppContent() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const { state, cloudLoading, ...actions } = useGameState(userId);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
-
   useEffect(() => {
     if (!userId) return;
   }, [userId]);
-
   const handleNavigate = (screen: Screen) => {
     setActiveScreen(screen);
   };
-
   const renderScreen = () => {
     switch (activeScreen) {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
@@ -52,7 +47,6 @@ function AppContent() {
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
   };
-
   return (
     <div className="min-h-screen bg-black text-white">
       <Header
@@ -62,7 +56,7 @@ function AppContent() {
         withdrawablePP={state.withdrawablePP}
         xp={state.xp}
       >
-        <NavDropdown active={activeScreen} onChange={handleNavigate} />
+        {/* Duplicate NavDropdown removed — only Header renders it now */}
       </Header>
       <main className="p-4">
         {cloudLoading ? (
@@ -74,7 +68,6 @@ function AppContent() {
     </div>
   );
 }
-
 export default function App() {
   return (
     <AuthProvider>
