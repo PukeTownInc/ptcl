@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Gift, Lock } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
@@ -127,6 +127,7 @@ const roadmapData = [
 
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
+  const [localClaimed, setLocalClaimed] = useState(false);
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
     0: true,
     1: true,
@@ -137,18 +138,34 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     6: false,
   });
 
+  // Sync local claimed state with stored value
+  useEffect(() => {
+    if (actions.state?.missions?.roadmapDailyGiftClaimed) {
+      setLocalClaimed(true);
+    }
+  }, [actions.state?.missions?.roadmapDailyGiftClaimed]);
+
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
 
-  const isClaimed = actions.state?.missions?.roadmapDailyGiftClaimed ?? false;
+  const isClaimed = localClaimed || actions.state?.missions?.roadmapDailyGiftClaimed;
 
   const handleClaim = () => {
     if (isClaimed) return;
 
-    const success = actions.claimRoadmapDailyGift();
-    if (!success) return;
+    // Lock button instantly
+    setLocalClaimed(true);
 
+    // Claim gift and check success
+    const success = actions.claimRoadmapDailyGift();
+    if (!success) {
+      // Unlock if failed
+      setLocalClaimed(false);
+      return;
+    }
+
+    // Give rewards
     actions.addXP(10, false, true);
     actions.addSpins(3);
 
