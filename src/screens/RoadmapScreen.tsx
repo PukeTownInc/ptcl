@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp, Gift, Lock } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
+
 interface Props {
   onNavigate: (s: Screen) => void;
   actions: GameActions;
 }
+
 const roadmapData = [
   {
     title: '✅ CONTAMINATED — PHASE 0',
@@ -125,21 +127,26 @@ const roadmapData = [
   },
 ];
 
-function getTimeUntilReset(): { hours: number; minutes: number; seconds: number } {
+function todayUTC() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getTimeUntilReset() {
   const now = new Date();
-  const nextReset = new Date(now);
-  nextReset.setUTCHours(24, 0, 0, 0);
-  const diff = nextReset.getTime() - now.getTime();
-  return {
-    hours: Math.floor(diff / (1000 * 60 * 60)),
-    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-    seconds: Math.floor((diff % (1000 * 60)) / 1000),
-  };
+  const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+  return Math.max(0, tomorrow.getTime() - now.getTime());
+}
+
+function formatCountdown(milliseconds: number) {
+  const totalSeconds = Math.ceil(milliseconds / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
-  const [countdown, setCountdown] = useState(getTimeUntilReset());
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
     0: true,
     1: true,
@@ -149,34 +156,40 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     5: false,
     6: false,
   });
+  const [millisecondsUntilReset, setMillisecondsUntilReset] = useState(getTimeUntilReset);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(getTimeUntilReset());
-    }, 1000);
-    return () => clearInterval(timer);
+    const interval = window.setInterval(() => setMillisecondsUntilReset(getTimeUntilReset()), 1000);
+    return () => window.clearInterval(interval);
   }, []);
 
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
 
-  const isClaimed = actions.state?.missions?.roadmapDailyGiftClaimed ?? false;
+  const currentDay = todayUTC();
+  const isClaimed = actions.state?.missions?.roadmapDailyGiftClaimed === true
+    && actions.state?.lastReset === currentDay;
 
   const handleClaim = () => {
     if (isClaimed) return;
-    
-    if (typeof actions.claimRoadmapDailyGift === 'function') {
-      actions.claimRoadmapDailyGift();
+
+    // If the page remains open across midnight, advance the daily state before claiming.
+    if (actions.state?.lastReset !== currentDay) {
+      actions.update((prev) => ({
+        ...prev,
+        lastReset: currentDay,
+        missions: { ...prev.missions, roadmapDailyGiftClaimed: false },
+      }));
     }
-    
-    if (typeof actions.addXP === 'function') {
-      actions.addXP(10, false, true);
-    }
-    if (typeof actions.addSpins === 'function') {
-      actions.addSpins(3);
-    }
-    
+
+    const success = typeof actions.claimRoadmapDailyGift === 'function'
+      ? actions.claimRoadmapDailyGift()
+      : false;
+    if (!success) return;
+
+    actions.addXP(10, false, true);
+    actions.addSpins(3);
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
 
@@ -191,28 +204,14 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere!</p>
       </div>
       {roadmapData.map((section, idx) => (
-        <div
-          key={idx}
-          className={`grunge-panel border-l-4 ${section.borderColor} ${section.bgColor} overflow-hidden`}
-        >
-          <button
-            onClick={() => toggle(idx)}
-            className="w-full flex items-center justify-between p-4 text-left"
-          >
+        <div key={idx} className={`grunge-panel border-l-4 ${section.borderColor} ${section.bgColor} overflow-hidden`}>
+          <button onClick={() => toggle(idx)} className="w-full flex items-center justify-between p-4 text-left">
             <h2 className={`font-bold text-base ${section.color}`}>{section.title}</h2>
-            {openSections[idx] ? (
-              <ChevronUp size={18} className="text-toxic-300" />
-            ) : (
-              <ChevronDown size={18} className="text-toxic-300" />
-            )}
+            {openSections[idx] ? <ChevronUp size={18} className="text-toxic-300" /> : <ChevronDown size={18} className="text-toxic-300" />}
           </button>
           {openSections[idx] && (
             <div className="px-4 pb-4 space-y-2 border-t border-toxic-900/30 pt-3">
-              {section.items.map((item, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm text-gray-200">
-                  <span>{item}</span>
-                </div>
-              ))}
+              {section.items.map((item, i) => <div key={i} className="flex items-start gap-2 text-sm text-gray-200"><span>{item}</span></div>)}
             </div>
           )}
         </div>
@@ -221,28 +220,16 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
         <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
         <p className="text-toxic-300 text-sm font-semibold">Claim Daily • +10 Exposure • +3 Twists</p>
-        
         {!isClaimed ? (
-          <button
-            onClick={handleClaim}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]"
-          >
+          <button onClick={handleClaim} className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110">
             <Gift size={16} />
             <span>Thanks for reading</span>
           </button>
         ) : (
-          <button
-            disabled
-            className="w-full flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-lg font-bold text-sm bg-toxic-900/40 text-toxic-500/60 cursor-not-allowed opacity-70 border border-toxic-800/50"
-          >
-            <div className="flex items-center gap-2">
-              <Lock size={16} />
-              <span>Claimable Again In</span>
-            </div>
-            <span className="text-lg font-mono text-toxic-400">
-              {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
-            </span>
-            <span className="text-xs text-toxic-500/50">Resets at 00:00 UTC</span>
+          <button disabled className="w-full flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-lg font-bold text-sm bg-gray-700/50 text-gray-400 cursor-not-allowed border border-gray-600/50">
+            <div className="flex items-center gap-2"><Lock size={16} /><span>Claimable Again In</span></div>
+            <span className="text-lg font-mono text-gray-300">{formatCountdown(millisecondsUntilReset)}</span>
+            <span className="text-xs text-gray-500">Resets at 00:00 UTC</span>
           </button>
         )}
       </div>
