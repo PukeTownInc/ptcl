@@ -27,7 +27,6 @@ function AppContent() {
     if (!userId) return;
   }, [userId]);
 
-  // Capture PWA install prompt
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -106,14 +105,19 @@ function AppContent() {
           <ErrorBoundary>{renderScreen()}</ErrorBoundary>
         )}
       </main>
-      {/* INSTALL BADGE — BOTTOM OF EVERY PAGE */}
-      <div className="px-4 py-4 flex justify-center">
+      {/* INSTALL BADGE — Full visibility, no cut edges */}
+      <div className="py-4 flex justify-center overflow-visible">
         <img
           src="/install-badge.png"
           alt="Install Puke Town Cash Lab"
           onClick={handleInstallClick}
-          className={`max-w-full h-auto ${deferredPrompt ? 'cursor-pointer' : 'cursor-default opacity-90'}`}
-          style={{ maxWidth: '400px' }}
+          className={`h-auto ${deferredPrompt ? 'cursor-pointer' : 'cursor-default opacity-90'}`}
+          style={{ 
+            width: '100%',
+            maxWidth: '100%',
+            paddingLeft: '0',
+            paddingRight: '0'
+          }}
         />
       </div>
     </div>
