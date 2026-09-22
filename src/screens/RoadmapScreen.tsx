@@ -125,29 +125,21 @@ const roadmapData = [
   },
 ];
 
-function getTimeUntilNextUTC(): { hours: number; minutes: number; seconds: number } {
+function getTimeUntilReset(): { hours: number; minutes: number; seconds: number } {
   const now = new Date();
-  const utcNow = Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate(),
-    now.getUTCHours(),
-    now.getUTCMinutes(),
-    now.getUTCSeconds()
-  );
-  const nextMidnight = new Date(now);
-  nextMidnight.setUTCHours(24, 0, 0, 0);
-  const msUntil = nextMidnight.getTime() - now.getTime();
-  const hours = Math.floor(msUntil / (1000 * 60 * 60));
-  const minutes = Math.floor((msUntil % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((msUntil % (1000 * 60)) / 1000);
-  return { hours, minutes, seconds };
+  const nextReset = new Date(now);
+  nextReset.setUTCHours(24, 0, 0, 0);
+  const diff = nextReset.getTime() - now.getTime();
+  return {
+    hours: Math.floor(diff / (1000 * 60 * 60)),
+    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+    seconds: Math.floor((diff % (1000 * 60)) / 1000),
+  };
 }
 
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
-  const [isClaiming, setIsClaiming] = useState(false);
-  const [countdown, setCountdown] = useState(getTimeUntilNextUTC());
+  const [countdown, setCountdown] = useState(getTimeUntilReset());
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
     0: true,
     1: true,
@@ -160,7 +152,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCountdown(getTimeUntilNextUTC());
+      setCountdown(getTimeUntilReset());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -172,16 +164,10 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
   const isClaimed = actions.state?.missions?.roadmapDailyGiftClaimed ?? false;
 
   const handleClaim = () => {
-    if (isClaiming || isClaimed) return;
-    
-    setIsClaiming(true);
+    if (isClaimed) return;
     
     if (typeof actions.claimRoadmapDailyGift === 'function') {
-      const success = actions.claimRoadmapDailyGift();
-      if (!success) {
-        setIsClaiming(false);
-        return;
-      }
+      actions.claimRoadmapDailyGift();
     }
     
     if (typeof actions.addXP === 'function') {
@@ -192,7 +178,6 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     }
     
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
-    setIsClaiming(false);
   };
 
   return (
@@ -240,11 +225,10 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         {!isClaimed ? (
           <button
             onClick={handleClaim}
-            disabled={isClaiming}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]"
           >
             <Gift size={16} />
-            <span>{isClaiming ? 'Claiming...' : 'Thanks for reading'}</span>
+            <span>Thanks for reading</span>
           </button>
         ) : (
           <button
