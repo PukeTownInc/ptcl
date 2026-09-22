@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { Screen } from './types';
 import { useGameState } from './useGameState';
 import { AuthProvider, useAuth } from './lib/auth';
@@ -21,10 +21,32 @@ function AppContent() {
   const userId = user?.id ?? null;
   const { state, cloudLoading, ...actions } = useGameState(userId);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     if (!userId) return;
   }, [userId]);
+
+  // Capture PWA install prompt
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = useCallback(async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  }, [deferredPrompt]);
 
   const handleNavigate = (screen: Screen) => {
     setActiveScreen(screen);
@@ -67,7 +89,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <Header
         active={activeScreen}
         onChange={handleNavigate}
@@ -77,13 +99,23 @@ function AppContent() {
       >
         {/* Duplicate NavDropdown removed — only Header renders it now */}
       </Header>
-      <main className="p-4">
+      <main className="p-4 flex-1">
         {cloudLoading ? (
           <div className="text-center py-10 text-gray-400">Syncing contamination...</div>
         ) : (
           <ErrorBoundary>{renderScreen()}</ErrorBoundary>
         )}
       </main>
+      {/* INSTALL BADGE — BOTTOM OF EVERY PAGE */}
+      <div className="px-4 py-4 flex justify-center">
+        <img
+          src="/install-badge.png"
+          alt="Install Puke Town Cash Lab"
+          onClick={handleInstallClick}
+          className={`max-w-full h-auto ${deferredPrompt ? 'cursor-pointer' : 'cursor-default opacity-90'}`}
+          style={{ maxWidth: '400px' }}
+        />
+      </div>
     </div>
   );
 }
