@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Gift, Lock } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
@@ -124,9 +124,30 @@ const roadmapData = [
     ],
   },
 ];
+
+function getTimeUntilNextUTC(): { hours: number; minutes: number; seconds: number } {
+  const now = new Date();
+  const utcNow = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    now.getUTCHours(),
+    now.getUTCMinutes(),
+    now.getUTCSeconds()
+  );
+  const nextMidnight = new Date(now);
+  nextMidnight.setUTCHours(24, 0, 0, 0);
+  const msUntil = nextMidnight.getTime() - now.getTime();
+  const hours = Math.floor(msUntil / (1000 * 60 * 60));
+  const minutes = Math.floor((msUntil % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((msUntil % (1000 * 60)) / 1000);
+  return { hours, minutes, seconds };
+}
+
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
   const [isClaiming, setIsClaiming] = useState(false);
+  const [countdown, setCountdown] = useState(getTimeUntilNextUTC());
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
     0: true,
     1: true,
@@ -136,10 +157,20 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     5: false,
     6: false,
   });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(getTimeUntilNextUTC());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
+
   const isClaimed = actions.state?.missions?.roadmapDailyGiftClaimed ?? false;
+
   const handleClaim = () => {
     if (isClaiming || isClaimed) return;
     
@@ -161,7 +192,9 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     }
     
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
+    setIsClaiming(false);
   };
+
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
       <div className="grunge-panel p-5 text-center space-y-2">
@@ -216,10 +249,16 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         ) : (
           <button
             disabled
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm bg-toxic-900/40 text-toxic-500/60 cursor-not-allowed opacity-70 border border-toxic-800/50"
+            className="w-full flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-lg font-bold text-sm bg-toxic-900/40 text-toxic-500/60 cursor-not-allowed opacity-70 border border-toxic-800/50"
           >
-            <Lock size={16} />
-            <span>Claimable Once Daily</span>
+            <div className="flex items-center gap-2">
+              <Lock size={16} />
+              <span>Claimable Again In</span>
+            </div>
+            <span className="text-lg font-mono text-toxic-400">
+              {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+            </span>
+            <span className="text-xs text-toxic-500/50">Resets at 00:00 UTC</span>
           </button>
         )}
       </div>
