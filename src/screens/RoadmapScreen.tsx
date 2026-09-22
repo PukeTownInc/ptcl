@@ -127,7 +127,6 @@ const roadmapData = [
 
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
-  const [localIsClaimed, setLocalIsClaimed] = useState(false);
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
     0: true,
     1: true,
@@ -142,22 +141,17 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
 
-  const isClaimed = localIsClaimed || actions.state?.missions?.roadmapDailyGiftClaimed;
+  const isClaimed = actions.state?.missions?.roadmapDailyGiftClaimed ?? false;
 
   const handleClaim = () => {
     if (isClaimed) return;
 
-    if (typeof actions.claimRoadmapDailyGift === 'function') {
-      actions.claimRoadmapDailyGift();
-    }
-    if (typeof actions.addXP === 'function') {
-      actions.addXP(10, false, true);
-    }
-    if (typeof actions.addSpins === 'function') {
-      actions.addSpins(3);
-    }
+    const success = actions.claimRoadmapDailyGift();
+    if (!success) return;
 
-    setLocalIsClaimed(true);
+    actions.addXP(10, false, true);
+    actions.addSpins(3);
+
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
 
