@@ -144,19 +144,29 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
   };
 
   const handleClaim = () => {
+    // Safe access — prevent crash if properties missing
+    if (!actions.state?.missions) return;
     if (actions.state.missions.roadmapDailyGiftClaimed) return;
-    
-    const success = actions.claimRoadmapDailyGift();
-    if (!success) return;
-    
-    // ✅ SEPARATE REWARD — Roadmap button only: +10 XP + 3 Twists
-    actions.addXP(10, false, true);
-    actions.addSpins(3);
-    
+
+    // Only call if function exists
+    if (typeof actions.claimRoadmapDailyGift === 'function') {
+      const success = actions.claimRoadmapDailyGift();
+      if (!success) return;
+    }
+
+    // Only call if functions exist
+    if (typeof actions.addXP === 'function') {
+      actions.addXP(10, false, true);
+    }
+    if (typeof actions.addSpins === 'function') {
+      actions.addSpins(3);
+    }
+
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
 
-  const isClaimed = actions.state.missions.roadmapDailyGiftClaimed;
+  // Safe access — prevent crash
+  const isClaimed = actions.state?.missions?.roadmapDailyGiftClaimed ?? false;
 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
@@ -168,7 +178,6 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         <p className="text-toxic-300/90 text-sm">☣️ Created for YOUR benefit ☣️</p>
         <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere!</p>
       </div>
-
       {roadmapData.map((section, idx) => (
         <div
           key={idx}
@@ -196,7 +205,6 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
           )}
         </div>
       ))}
-
       <div className="grunge-panel p-4 text-center space-y-3 mt-4">
         <p className="text-toxic-300 text-sm">🗳️ Which feature are you most hyped for?</p>
         <p className="text-toxic-200/60 text-xs">Check back often — new contamination drops regularly!</p>
