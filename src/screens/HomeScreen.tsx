@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Zap, Package } from 'lucide-react';
+import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Zap } from 'lucide-react';
 import type { GameState, Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { AdModal } from '../components/AdModal';
@@ -93,20 +93,6 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
           <div className="ad-badge mt-1.5"><Tv size={8} /> Contagion Feed</div>
         </button>
       </div>
-      {/* Contagion Cache — New Section */}
-      <button
-        onClick={() => onNavigate('contagioncache')}
-        className="toxic-btn w-full py-4 flex items-center justify-between px-5 group"
-      >
-        <div className="flex items-center gap-2">
-          <Package size={20} />
-          <span className="text-left">
-            <div className="text-sm">☢️ Contagion Cache</div>
-            <div className="text-[10px] opacity-70 font-normal">Open mystery boxes — Daily Free Available!</div>
-          </span>
-        </div>
-        <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-      </button>
       {/* Quick links */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
         <QuickLink icon={<Target />} label="Daily Contamination" sub="Infect every target → Unlock maximum radiation exposure!" onClick={() => onNavigate('missions')} />
