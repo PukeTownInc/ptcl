@@ -3,12 +3,10 @@ import { ChevronDown, ChevronUp, Gift, Lock } from 'lucide-react';
 import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
-
 interface Props {
   onNavigate: (s: Screen) => void;
   actions: GameActions;
 }
-
 const roadmapData = [
   {
     title: '✅ CONTAMINATED — PHASE 0',
@@ -126,9 +124,9 @@ const roadmapData = [
     ],
   },
 ];
-
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
+  const [isClaiming, setIsClaiming] = useState(false);
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
     0: true,
     1: true,
@@ -138,36 +136,32 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     5: false,
     6: false,
   });
-
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
-
+  const isClaimed = actions.state?.missions?.roadmapDailyGiftClaimed ?? false;
   const handleClaim = () => {
-    // Safe access — prevent crash if properties missing
-    if (!actions.state?.missions) return;
-    if (actions.state.missions.roadmapDailyGiftClaimed) return;
-
-    // Only call if function exists
+    if (isClaiming || isClaimed) return;
+    
+    setIsClaiming(true);
+    
     if (typeof actions.claimRoadmapDailyGift === 'function') {
       const success = actions.claimRoadmapDailyGift();
-      if (!success) return;
+      if (!success) {
+        setIsClaiming(false);
+        return;
+      }
     }
-
-    // Only call if functions exist
+    
     if (typeof actions.addXP === 'function') {
       actions.addXP(10, false, true);
     }
     if (typeof actions.addSpins === 'function') {
       actions.addSpins(3);
     }
-
+    
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
-
-  // Safe access — prevent crash
-  const isClaimed = actions.state?.missions?.roadmapDailyGiftClaimed ?? false;
-
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
       <div className="grunge-panel p-5 text-center space-y-2">
@@ -213,10 +207,11 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
         {!isClaimed ? (
           <button
             onClick={handleClaim}
+            disabled={isClaiming}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-bold text-sm transition-all bg-gradient-to-r from-toxic-500 to-toxic-600 text-black hover:brightness-110 active:scale-[0.98]"
           >
             <Gift size={16} />
-            <span>Thanks for reading</span>
+            <span>{isClaiming ? 'Claiming...' : 'Thanks for reading'}</span>
           </button>
         ) : (
           <button
