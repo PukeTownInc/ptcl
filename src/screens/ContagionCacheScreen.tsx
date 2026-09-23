@@ -80,16 +80,16 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </p>
       </div>
 
-      {/* Single Border Wrapper — All 4 Boxes Inside */}
+      {/* Single Border Wrapper — All 4 Boxes Fit Inside */}
       <div
-        className="p-6"
+        className="px-8 py-10"
         style={{
           background: `url(${CACHE_ASSET_PATH}Contagion-Box.png)`,
           backgroundSize: '100% 100%',
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6">
           {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
             const canOpen = canOpenBox(tier);
             const isOpening = opening === tier;
@@ -100,20 +100,20 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 onClick={() => handleOpen(tier)}
                 disabled={!canOpen || isOpening}
                 className={`
-                  relative p-4 rounded-xl transition-all duration-300 overflow-hidden
+                  relative p-3 rounded-xl transition-all duration-300 overflow-hidden
                   ${canOpen ? 'cursor-pointer hover:scale-105' : 'opacity-60 cursor-not-allowed'}
                 `}
               >
-                {/* Box Image — Closed / Open animation */}
+                {/* Box Image — Sized to stay inside border */}
                 <div className="w-full aspect-square flex items-center justify-center">
                   <img
                     src={isOpening ? box.openImage : box.closeImage}
                     alt={box.label}
-                    className={`w-3/4 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
+                    className={`w-2/3 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
                   />
                 </div>
-                {/* Cost Display — directly under image */}
-                <div className="pb-3 text-center">
+                {/* Cost Display */}
+                <div className="pb-2 text-center">
                   {box.freeDaily ? (
                     <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
                       {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
@@ -127,7 +127,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 {/* Lock Overlay */}
                 {!canOpen && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                    <Lock size={32} className="text-gray-400" />
+                    <Lock size={28} className="text-gray-400" />
                   </div>
                 )}
               </button>
