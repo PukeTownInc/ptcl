@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Gift, Lock, Zap, Coins, Flame, X, Tv } from 'lucide-react';
+import { Lock, Zap, Coins, Flame, X, Tv } from 'lucide-react';
 import type { CacheBoxTier, GameState, GameActions } from '../types';
 import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK } from '../constants';
-import { AdModal } from './AdModal';
-import { useToast } from './Toast';
+import { AdModal } from '../components/AdModal';
+import { useToast } from '../components/Toast';
 
 interface Props {
   state: GameState;
@@ -33,7 +33,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
     
     if (!ok) {
       setOpening(null);
-      toast?.show?.('Claim failed — try again later', 'error');
+      if (toast) toast.show('Claim failed — try again later', 'error');
       return;
     }
     
@@ -79,7 +79,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
 
   return (
     <div className="min-h-screen bg-black text-white p-4">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-lime-400">☢️ CONTAGION CACHE</h1>
         <button
@@ -90,7 +89,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </button>
       </div>
 
-      {/* Jackpot Progress */}
       <div className="mb-6 p-4 rounded-xl bg-gray-900 border border-yellow-500/30">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-gray-400">🧪 Jackpot Fragments</span>
@@ -109,12 +107,10 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </p>
       </div>
 
-      {/* Blue Box Ad Counter */}
       <div className="mb-4 text-center text-sm text-gray-400">
         Ad claims today: <span className="text-lime-400 font-bold">{state.blueCacheAdClaims}</span> / 2
       </div>
 
-      {/* Boxes Grid */}
       <div className="grid grid-cols-2 gap-4">
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
           const canOpen = canOpenBox(tier);
@@ -128,7 +124,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 ${canOpen ? '' : 'opacity-60'}
               `}
             >
-              {/* Box Image */}
               <div className="w-full aspect-square flex items-center justify-center">
                 <img
                   src={isOpening ? box.openImage : box.closeImage}
@@ -137,12 +132,10 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 />
               </div>
               
-              {/* Possible Rewards */}
               <p className="py-1 text-xs text-gray-400 text-center">
                 Potential Intoxications: Puke Points • Twists • XP • Jackpot Fragments
               </p>
               
-              {/* Cost / Status */}
               <div className="pb-2 text-center">
                 {box.freeDaily ? (
                   <div className="space-y-2">
@@ -190,7 +183,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 )}
               </div>
               
-              {/* Lock Overlay — only when fully unavailable */}
               {!canOpen && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
                   <Lock size={32} className="text-gray-400" />
@@ -201,7 +193,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         })}
       </div>
 
-      {/* Ad Modal */}
       {adModal && (
         <AdModal
           title={adModal.title}
@@ -211,7 +202,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         />
       )}
 
-      {/* Reward Result Modal */}
       {result && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm">
           <div className="bg-gray-900 border-2 border-lime-500/50 rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
