@@ -316,25 +316,39 @@ export function useGameState(userId: string | null) {
     return stateRef.current.lastFreeCacheClaimDate !== today;
   }, []);
   const openCacheBox = useCallback((tier: CacheBoxTier): { ok: boolean; reward: ReturnType<typeof rollCacheReward> } => {
-    const box = CACHE_BOXES.find(b => b.id === tier);
+    const box = CACHE_BOXES[tier];
     if (!box) return { ok: false, reward: {} };
     const today = todayUTC();
-    return setState((prev) => {
+    
+    let result: { ok: boolean; reward: ReturnType<typeof rollCacheReward> } = { ok: false, reward: {} };
+    
+    setState((prev) => {
       // Free daily box — one per day
       if (box.freeDaily) {
-        if (prev.lastFreeCacheClaimDate === today) return { prev, ok: false, reward: {} };
+        if (prev.lastFreeCacheClaimDate === today) {
+          result = { ok: false, reward: {} };
+          return prev;
+        }
       } else {
-        // Paid boxes — check PP cost
-        if (prev.lockedPotPP < box.costPP) return { prev, ok: false, reward: {} };
+        // Paid boxes — check cost from lockedPotPP
+        if (prev.lockedPotPP < box.costPP) {
+          result = { ok: false, reward: {} };
+          return prev;
+        }
       }
+      
       const reward = rollCacheReward(tier);
+      result = { ok: true, reward };
+      
       let next = { ...prev };
+      
       // Deduct cost if not free
       if (!box.freeDaily) {
         next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
       } else {
         next.lastFreeCacheClaimDate = today;
       }
+      
       // Apply rewards
       if (reward.xp) {
         next.xp += reward.xp;
@@ -360,14 +374,17 @@ export function useGameState(userId: string | null) {
       }
       if (reward.jackpotFragment) {
         next.jackpotFragments += 1;
-        // Optional: unlock jackpot at threshold
+        // Unlock jackpot at threshold
         if (next.jackpotFragments >= JACKPOT_FRAGMENTS_TO_UNLOCK) {
           next.jackpotFragments = 0;
-          next.spinsRemaining += 50; // jackpot reward
+          next.spinsRemaining += 50;
         }
       }
-      return { prev: next, ok: true, reward };
+      
+      return next;
     });
+    
+    return result;
   }, []);
   const loginCheck = useCallback(() => {
     setState((prev) => {
