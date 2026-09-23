@@ -1,79 +1,202 @@
-import { useEffect, useState } from 'react';
-import type { Screen } from './types';
-import { useGameState } from './useGameState';
-import { AuthProvider, useAuth } from './lib/auth';
-import { ToastProvider } from './components/Toast';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { Header } from './components/Header';
-import { HomeScreen } from './screens/HomeScreen';
-import { SlotScreen } from './screens/SlotScreen';
-import { MissionsScreen } from './screens/MissionsScreen';
-import { WithdrawScreen } from './screens/WithdrawScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
-import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
-import { ProfileScreen } from './screens/ProfileScreen';
-import { RoadmapScreen } from './screens/RoadmapScreen';
-import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
-import { NavDropdown } from './components/NavDropdown';
-import { DAILY_XP_FREE_CAP } from './constants';
+import { useState } from 'react';
+import { Gift, Lock, Zap, Coins, Flame, X } from 'lucide-react';
+import type { CacheBoxTier, GameState, GameActions } from '../types';
+import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK } from '../constants';
 
-function AppContent() {
-  const { user } = useAuth();
-  const userId = user?.id ?? null;
-  const { state, cloudLoading, ...actions } = useGameState(userId);
-  const [activeScreen, setActiveScreen] = useState<Screen>('home');
-
-  useEffect(() => {
-    if (!userId) return;
-  }, [userId]);
-
-  const handleNavigate = (screen: Screen) => {
-    setActiveScreen(screen);
-  };
-
-  const renderScreen = () => {
-    switch (activeScreen) {
-      case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
-      case 'slots': return <SlotScreen state={state} actions={actions} onNavigate={handleNavigate} />;
-      case 'missions': return <MissionsScreen state={state} actions={actions} />;
-      case 'withdraw': return <WithdrawScreen state={state} actions={actions} />;
-      case 'settings': return <SettingsScreen state={state} actions={actions} />;
-      case 'leaderboards': return <LeaderboardsScreen state={state} actions={actions} />;
-      case 'profile': return <ProfileScreen state={state} actions={actions} />;
-      case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
-      case 'contagioncache': return <ContagionCacheScreen state={state} actions={actions} />;
-      default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-black text-white">
-      <Header
-        active={activeScreen}
-        onChange={handleNavigate}
-        lockedPP={state.lockedPotPP}
-        withdrawablePP={state.withdrawablePP}
-        xp={state.xp}
-      >
-        <NavDropdown active={activeScreen} onChange={handleNavigate} />
-      </Header>
-      <main className="p-4">
-        {cloudLoading ? (
-          <div className="text-center py-10 text-gray-400">Syncing contamination...</div>
-        ) : (
-          <ErrorBoundary>{renderScreen()}</ErrorBoundary>
-        )}
-      </main>
-    </div>
-  );
+interface Props {
+  state: GameState;
+  actions: GameActions;
+  onBack: () => void;
 }
 
-export default function App() {
+export function ContagionCacheScreen({ state, actions, onBack }: Props) {
+  const [opening, setOpening] = useState<CacheBoxTier | null>(null);
+  const [result, setResult] = useState<{
+    tier: CacheBoxTier;
+    label: string;
+    reward: ReturnType<typeof actions.openCacheBox>['reward'];
+  } | null>(null);
+
+  const handleOpen = (tier: CacheBoxTier) => {
+    if (opening) return;
+    setOpening(tier);
+    
+    const { ok, reward } = actions.openCacheBox(tier);
+    
+    if (!ok) {
+      setOpening(null);
+      return;
+    }
+    
+    const box = CACHE_BOXES[tier];
+    setResult({ tier, label: box.label, reward });
+    
+    setTimeout(() => {
+      setOpening(null);
+    }, 500);
+  };
+
+  const closeResult = () => {
+    setResult(null);
+  };
+
+  const canOpenBox = (tier: CacheBoxTier): boolean => {
+    const box = CACHE_BOXES[tier];
+    if (box.freeDaily) {
+      return actions.canClaimFreeCache();
+    }
+    return state.lockedPotPP >= box.costPP;
+  };
+
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
-    </AuthProvider>
+    <div className="min-h-screen bg-black text-white p-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-lime-400">☢️ CONTAGION CACHE</h1>
+        <button
+          onClick={onBack}
+          className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* Jackpot Progress */}
+      <div className="mb-6 p-4 rounded-xl bg-gray-900 border border-yellow-500/30">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-gray-400">🧪 Jackpot Fragments</span>
+          <span className="font-bold text-yellow-400">
+            {state.jackpotFragments} / {JACKPOT_FRAGMENTS_TO_UNLOCK}
+          </span>
+        </div>
+        <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-yellow-500 to-amber-400 transition-all duration-300"
+            style={{ width: `${(state.jackpotFragments / JACKPOT_FRAGMENTS_TO_UNLOCK) * 100}%` }}
+          />
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Collect {JACKPOT_FRAGMENTS_TO_UNLOCK} fragments → 50 Free Spins!
+        </p>
+      </div>
+
+      {/* Boxes Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
+          const canOpen = canOpenBox(tier);
+          const isOpening = opening === tier;
+          
+          return (
+            <button
+              key={tier}
+              onClick={() => handleOpen(tier)}
+              disabled={!canOpen || isOpening}
+              className={`
+                relative p-5 rounded-xl border-2 transition-all duration-300 overflow-hidden
+                ${canOpen
+                  ? 'border-lime-500/50 bg-gray-900/80 hover:border-lime-400 hover:scale-105 hover:shadow-lg hover:shadow-lime-500/20 cursor-pointer'
+                  : 'border-gray-700/50 bg-gray-900/40 opacity-60 cursor-not-allowed'
+                }
+                ${isOpening ? 'scale-95' : ''}
+              `}
+            >
+              {/* Box Image */}
+              <div className="w-full h-32 flex items-center justify-center mb-3">
+                <img
+                  src={box.closeImage}
+                  alt={box.label}
+                  className={`h-full object-contain transition-transform duration-300 ${isOpening ? 'scale-110 rotate-3' : ''}`}
+                  onError={(e) => {
+                    // Fallback if image missing
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+
+              {/* Label */}
+              <h3 className="text-lg font-bold text-white mb-2">{box.label}</h3>
+
+              {/* Cost / Status */}
+              <div className="flex items-center gap-2 text-sm">
+                {box.freeDaily ? (
+                  <>
+                    <Gift size={14} className="text-lime-400" />
+                    <span className={canOpen ? 'text-lime-400' : 'text-gray-500'}>
+                      {canOpen ? 'FREE — Claim Daily' : 'Already Claimed Today'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Coins size={14} className={canOpen ? 'text-yellow-400' : 'text-gray-500'} />
+                    <span className={canOpen ? 'text-yellow-400' : 'text-red-400'}>
+                      {box.costPP.toLocaleString()} Puke Points
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Lock Overlay */}
+              {!canOpen && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl">
+                  <Lock size={28} className="text-gray-400" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Reward Result Modal */}
+      {result && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm">
+          <div className="bg-gray-900 border-2 border-lime-500/50 rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
+            <h2 className="text-xl font-bold text-lime-400 mb-4">🎉 {result.label}</h2>
+            
+            <div className="space-y-3 mb-6">
+              {result.reward.spins && (
+                <div className="flex items-center justify-center gap-2 text-lg">
+                  <Zap size={20} className="text-yellow-400" />
+                  <span>+{result.reward.spins} Free Spins</span>
+                </div>
+              )}
+              {result.reward.xp && (
+                <div className="flex items-center justify-center gap-2 text-lg">
+                  <Flame size={20} className="text-orange-400" />
+                  <span>+{result.reward.xp} XP</span>
+                </div>
+              )}
+              {result.reward.pp && (
+                <div className="flex items-center justify-center gap-2 text-lg">
+                  <Coins size={20} className="text-lime-400" />
+                  <span>+{result.reward.pp} Puke Points</span>
+                </div>
+              )}
+              {result.reward.boost && (
+                <div className="flex items-center justify-center gap-2 text-lg text-purple-400">
+                  <Zap size={20} />
+                  <span>
+                    {result.reward.boost === 'hotStreak' && '🔥 Hot Streak Activated!'}
+                    {result.reward.boost === 'potAccel' && '⚡ Pot Acceleration Activated!'}
+                    {result.reward.boost === 'xpBoost' && '✨ XP Boost Activated!'}
+                  </span>
+                </div>
+              )}
+              {result.reward.jackpotFragment && (
+                <div className="flex items-center justify-center gap-2 text-lg text-yellow-400 font-bold">
+                  <span>🧪 Jackpot Fragment Found!</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={closeResult}
+              className="w-full py-3 bg-lime-500 text-black font-bold rounded-lg hover:bg-lime-400 transition-colors"
+            >
+              COLLECT
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
