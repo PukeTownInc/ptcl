@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Gift, Lock, Zap, Coins, Flame, X } from 'lucide-react';
 import type { CacheBoxTier, GameState, GameActions } from '../types';
-import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK } from '../constants';
+import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK, CACHE_ASSET_PATH } from '../constants';
 
 interface Props {
   state: GameState;
@@ -80,8 +80,8 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </p>
       </div>
 
-      {/* Boxes Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Boxes Grid — 2 x 2 Layout */}
+      <div className="grid grid-cols-2 gap-4">
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
           const canOpen = canOpenBox(tier);
           const isOpening = opening === tier;
@@ -92,53 +92,41 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
               onClick={() => handleOpen(tier)}
               disabled={!canOpen || isOpening}
               className={`
-                relative p-5 rounded-xl border-2 transition-all duration-300 overflow-hidden
-                ${canOpen
-                  ? 'border-lime-500/50 bg-gray-900/80 hover:border-lime-400 hover:scale-105 hover:shadow-lg hover:shadow-lime-500/20 cursor-pointer'
-                  : 'border-gray-700/50 bg-gray-900/40 opacity-60 cursor-not-allowed'
-                }
-                ${isOpening ? 'scale-95' : ''}
+                relative p-4 rounded-xl transition-all duration-300 overflow-hidden
+                ${canOpen ? 'cursor-pointer hover:scale-105' : 'opacity-60 cursor-not-allowed'}
               `}
+              style={{
+                background: `url(${CACHE_ASSET_PATH}contagion-box.png)`,
+                backgroundSize: '100% 100%',
+                backgroundRepeat: 'no-repeat',
+              }}
             >
-              {/* Box Image */}
-              <div className="w-full h-32 flex items-center justify-center mb-3">
+              {/* Box Image — Closed / Open animation */}
+              <div className="w-full aspect-square flex items-center justify-center">
                 <img
-                  src={box.closeImage}
+                  src={isOpening ? box.openImage : box.closeImage}
                   alt={box.label}
-                  className={`h-full object-contain transition-transform duration-300 ${isOpening ? 'scale-110 rotate-3' : ''}`}
-                  onError={(e) => {
-                    // Fallback if image missing
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
+                  className={`w-3/4 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
                 />
               </div>
 
-              {/* Label */}
-              <h3 className="text-lg font-bold text-white mb-2">{box.label}</h3>
-
-              {/* Cost / Status */}
-              <div className="flex items-center gap-2 text-sm">
+              {/* Cost Display — directly under image */}
+              <div className="pb-3 text-center">
                 {box.freeDaily ? (
-                  <>
-                    <Gift size={14} className="text-lime-400" />
-                    <span className={canOpen ? 'text-lime-400' : 'text-gray-500'}>
-                      {canOpen ? 'FREE — Claim Daily' : 'Already Claimed Today'}
-                    </span>
-                  </>
+                  <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
+                    {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
+                  </span>
                 ) : (
-                  <>
-                    <Coins size={14} className={canOpen ? 'text-yellow-400' : 'text-gray-500'} />
-                    <span className={canOpen ? 'text-yellow-400' : 'text-red-400'}>
-                      {box.costPP.toLocaleString()} Puke Points
-                    </span>
-                  </>
+                  <span className={`text-sm font-bold ${canOpen ? 'text-yellow-400' : 'text-red-400'}`}>
+                    {box.costPP.toLocaleString()} Puke Points
+                  </span>
                 )}
               </div>
 
               {/* Lock Overlay */}
               {!canOpen && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl">
-                  <Lock size={28} className="text-gray-400" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+                  <Lock size={32} className="text-gray-400" />
                 </div>
               )}
             </button>
