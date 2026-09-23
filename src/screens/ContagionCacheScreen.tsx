@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Gift, Lock, Zap, Coins, Flame, X } from 'lucide-react';
+import { Gift, Lock, Zap, Coins, Flame, X, Tv } from 'lucide-react';
 import type { CacheBoxTier, GameState, GameActions } from '../types';
 import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK } from '../constants';
 interface Props {
@@ -9,19 +9,22 @@ interface Props {
 }
 export function ContagionCacheScreen({ state, actions, onBack }: Props) {
   const [opening, setOpening] = useState<CacheBoxTier | null>(null);
+  const [showAdForBlue, setShowAdForBlue] = useState(false);
   const [result, setResult] = useState<{
     tier: CacheBoxTier;
     label: string;
     reward: ReturnType<typeof actions.openCacheBox>['reward'];
   } | null>(null);
-  const handleOpen = (tier: CacheBoxTier) => {
+
+  const handleOpen = (tier: CacheBoxTier, viaAd: boolean = false) => {
     if (opening) return;
     setOpening(tier);
     
-    const { ok, reward } = actions.openCacheBox(tier);
+    const { ok, reward } = actions.openCacheBox(tier, viaAd);
     
     if (!ok) {
       setOpening(null);
+      setShowAdForBlue(false);
       return;
     }
     
@@ -30,18 +33,25 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
     
     setTimeout(() => {
       setOpening(null);
+      setShowAdForBlue(false);
     }, 500);
   };
+
   const closeResult = () => {
     setResult(null);
   };
+
   const canOpenBox = (tier: CacheBoxTier): boolean => {
     const box = CACHE_BOXES[tier];
     if (box.freeDaily) {
-      return actions.canClaimFreeCache();
+      return actions.canClaimFreeCache() || actions.canClaimBlueCacheViaAd();
     }
     return state.lockedPotPP >= box.costPP;
   };
+
+  const isFreeClaimAvailable = actions.canClaimFreeCache();
+  const isAdClaimAvailable = actions.canClaimBlueCacheViaAd();
+
   return (
     <div className="min-h-screen bg-black text-white p-4">
       {/* Header */}
@@ -54,6 +64,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           <X size={20} />
         </button>
       </div>
+
       {/* Jackpot Progress */}
       <div className="mb-6 p-4 rounded-xl bg-gray-900 border border-yellow-500/30">
         <div className="flex items-center justify-between mb-2">
@@ -72,20 +83,25 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           Collect {JACKPOT_FRAGMENTS_TO_UNLOCK} fragments → 50 Free Spins!
         </p>
       </div>
+
+      {/* Blue Box Ad Counter */}
+      <div className="mb-4 text-center text-sm text-gray-400">
+        Ad claims today: <span className="text-lime-400 font-bold">{state.blueCacheAdClaims}</span> / 2
+      </div>
+
       {/* Boxes Grid */}
       <div className="grid grid-cols-2 gap-4">
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
           const canOpen = canOpenBox(tier);
           const isOpening = opening === tier;
+          const isBlue = tier === 'blue';
           
           return (
-            <button
+            <div
               key={tier}
-              onClick={() => handleOpen(tier)}
-              disabled={!canOpen || isOpening}
               className={`
                 relative p-3 rounded-xl transition-all duration-300 overflow-hidden w-full bg-gray-900 border border-gray-700
-                ${canOpen ? 'cursor-pointer hover:scale-105 hover:border-lime-500/50' : 'opacity-60 cursor-not-allowed'}
+                ${canOpen ? '' : 'opacity-60'}
               `}
             >
               {/* Box Image */}
@@ -97,34 +113,70 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 />
               </div>
               
-              {/* Possible Rewards — Inside border, between image & cost */}
+              {/* Possible Rewards */}
               <p className="py-1 text-xs text-gray-400 text-center">
-                Potential Intoxications: {box.possibleRewards || 'Puke Points • Twists • XP • Jackpot Fragments'}
+                Potential Intoxications: Puke Points • Twists • XP • Jackpot Fragments
               </p>
               
-              {/* Cost Display */}
+              {/* Cost / Status */}
               <div className="pb-2 text-center">
                 {box.freeDaily ? (
-                  <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
-                    {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
-                  </span>
+                  <div className="space-y-2">
+                    {isFreeClaimAvailable ? (
+                      <button
+                        onClick={() => handleOpen(tier, false)}
+                        disabled={!!opening}
+                        className="w-full py-2 bg-lime-500 text-black font-bold rounded-lg hover:bg-lime-400 transition-colors disabled:opacity-50"
+                      >
+                        FREE DAILY
+                      </button>
+                    ) : (
+                      <span className="block text-sm font-bold text-gray-500">
+                        Free Claimed
+                      </span>
+                    )}
+                    
+                    {isAdClaimAvailable ? (
+                      <button
+                        onClick={() => handleOpen(tier, true)}
+                        disabled={!!opening}
+                        className="w-full py-2 bg-sky-600 text-white font-bold rounded-lg hover:bg-sky-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <Tv size={16} />
+                        Watch Ad ({2 - state.blueCacheAdClaims} left)
+                      </button>
+                    ) : (
+                      <span className="block text-xs text-gray-500">
+                        Ad claims used up
+                      </span>
+                    )}
+                  </div>
                 ) : (
-                  <span className={`text-sm font-bold ${canOpen ? 'text-yellow-400' : 'text-red-400'}`}>
+                  <button
+                    onClick={() => handleOpen(tier, false)}
+                    disabled={!canOpen || !!opening}
+                    className={`w-full py-2 font-bold rounded-lg transition-colors ${
+                      canOpen
+                        ? 'bg-yellow-500 text-black hover:bg-yellow-400'
+                        : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
                     {box.costPP.toLocaleString()} Puke Points
-                  </span>
+                  </button>
                 )}
               </div>
               
-              {/* Lock Overlay */}
+              {/* Lock Overlay — only when fully unavailable */}
               {!canOpen && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
                   <Lock size={32} className="text-gray-400" />
                 </div>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
+
       {/* Reward Result Modal */}
       {result && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm">
