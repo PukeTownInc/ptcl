@@ -91,7 +91,7 @@ function AppContent() {
           <ErrorBoundary>{renderScreen()}</ErrorBoundary>
         )}
       </main>
-      {/* INSTALL BADGE — Considerably smaller */}
+      {/* INSTALL BADGE — Medium size: bigger than 180px, smaller than full width */}
       <div className="py-4 flex justify-center">
         <img
           src="/install-badge.png"
@@ -100,7 +100,7 @@ function AppContent() {
           className={`h-auto ${deferredPrompt ? 'cursor-pointer' : 'cursor-default opacity-90'}`}
           style={{ 
             width: '100%',
-            maxWidth: '180px'
+            maxWidth: '320px'
           }}
         />
       </div>
