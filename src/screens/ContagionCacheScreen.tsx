@@ -87,47 +87,49 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           const isOpening = opening === tier;
           
           return (
-            <div key={tier} className="flex flex-col items-center">
-              <button
-                onClick={() => handleOpen(tier)}
-                disabled={!canOpen || isOpening}
-                className={`
-                  relative p-4 rounded-xl transition-all duration-300 overflow-hidden w-full bg-gray-900 border border-gray-700
-                  ${canOpen ? 'cursor-pointer hover:scale-105 hover:border-lime-500/50' : 'opacity-60 cursor-not-allowed'}
-                `}
-              >
-                {/* Box Image */}
-                <div className="w-full aspect-square flex items-center justify-center">
-                  <img
-                    src={isOpening ? box.openImage : box.closeImage}
-                    alt={box.label}
-                    className={`w-3/4 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
-                  />
-                </div>
-                {/* Cost Display */}
-                <div className="pb-3 text-center">
-                  {box.freeDaily ? (
-                    <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
-                      {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
-                    </span>
-                  ) : (
-                    <span className={`text-sm font-bold ${canOpen ? 'text-yellow-400' : 'text-red-400'}`}>
-                      {box.costPP.toLocaleString()} Puke Points
-                    </span>
-                  )}
-                </div>
-                {/* Lock Overlay */}
-                {!canOpen && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                    <Lock size={32} className="text-gray-400" />
-                  </div>
-                )}
-              </button>
-              {/* Possible Rewards — Below Box */}
-              <p className="mt-2 text-xs text-gray-400 text-center px-2">
-                Possible: {box.possibleRewards || 'Puke Points • Spins • XP • Boost'}
+            <button
+              key={tier}
+              onClick={() => handleOpen(tier)}
+              disabled={!canOpen || isOpening}
+              className={`
+                relative p-3 rounded-xl transition-all duration-300 overflow-hidden w-full bg-gray-900 border border-gray-700
+                ${canOpen ? 'cursor-pointer hover:scale-105 hover:border-lime-500/50' : 'opacity-60 cursor-not-allowed'}
+              `}
+            >
+              {/* Box Image */}
+              <div className="w-full aspect-square flex items-center justify-center">
+                <img
+                  src={isOpening ? box.openImage : box.closeImage}
+                  alt={box.label}
+                  className={`w-3/4 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
+                />
+              </div>
+              
+              {/* Possible Rewards — Inside border, between image & cost */}
+              <p className="py-1 text-xs text-gray-400 text-center">
+                Potential Intoxications: {box.possibleRewards || 'Puke Points • Twists • XP • Jackpot Fragments'}
               </p>
-            </div>
+              
+              {/* Cost Display */}
+              <div className="pb-2 text-center">
+                {box.freeDaily ? (
+                  <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
+                    {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
+                  </span>
+                ) : (
+                  <span className={`text-sm font-bold ${canOpen ? 'text-yellow-400' : 'text-red-400'}`}>
+                    {box.costPP.toLocaleString()} Puke Points
+                  </span>
+                )}
+              </div>
+              
+              {/* Lock Overlay */}
+              {!canOpen && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+                  <Lock size={32} className="text-gray-400" />
+                </div>
+              )}
+            </button>
           );
         })}
       </div>
@@ -173,6 +175,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 </div>
               )}
             </div>
+            
             <button
               onClick={closeResult}
               className="w-full py-3 bg-lime-500 text-black font-bold rounded-lg hover:bg-lime-400 transition-colors"
