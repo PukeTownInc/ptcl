@@ -80,16 +80,16 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </p>
       </div>
 
-      {/* Single Border Wrapper — All 4 Boxes Fit Inside */}
+      {/* Single Border Wrapper — Safe padding, no overlap */}
       <div
-        className="px-8 py-10"
+        className="px-10 py-12"
         style={{
           background: `url(${CACHE_ASSET_PATH}Contagion-Box.png)`,
           backgroundSize: '100% 100%',
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-3">
           {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
             const canOpen = canOpenBox(tier);
             const isOpening = opening === tier;
@@ -100,16 +100,16 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 onClick={() => handleOpen(tier)}
                 disabled={!canOpen || isOpening}
                 className={`
-                  relative p-3 rounded-xl transition-all duration-300 overflow-hidden
+                  relative p-2 rounded-xl transition-all duration-300 overflow-hidden
                   ${canOpen ? 'cursor-pointer hover:scale-105' : 'opacity-60 cursor-not-allowed'}
                 `}
               >
-                {/* Box Image — Sized to stay inside border */}
+                {/* Box Image — Smaller, fully inside */}
                 <div className="w-full aspect-square flex items-center justify-center">
                   <img
                     src={isOpening ? box.openImage : box.closeImage}
                     alt={box.label}
-                    className={`w-2/3 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
+                    className={`w-1/2 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
                   />
                 </div>
                 {/* Cost Display */}
@@ -127,7 +127,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 {/* Lock Overlay */}
                 {!canOpen && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                    <Lock size={28} className="text-gray-400" />
+                    <Lock size={24} className="text-gray-400" />
                   </div>
                 )}
               </button>
