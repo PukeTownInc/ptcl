@@ -195,8 +195,10 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
 
       {adModalData && (
         <AdModal
+          open={!!adModalData}
           title={adModalData.title}
           subtitle={adModalData.subtitle}
+          reward="Mystery Cache Box"
           onClose={() => setAdModalData(null)}
           onComplete={adModalData.onComplete}
         />
