@@ -229,6 +229,14 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
               />
             )}
             
+            {result.tier === 'orange' && (
+              <img
+                src={`${CACHE_ASSET_PATH}orange-open.png`}
+                alt="Orange Box Opened"
+                className="w-1/2 h-auto mx-auto mb-4"
+              />
+            )}
+            
             <div className="space-y-3 mb-6">
               {result.reward.spins && (
                 <div className="flex items-center justify-center gap-2 text-lg">
