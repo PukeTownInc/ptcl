@@ -1,10 +1,14 @@
 import type { SlotSymbol, SymbolId, Tier, CacheBoxTier, CacheBoxReward } from './types';
+
 export const SYMBOL_IMAGE_PATH = '/symbols/';
+export const CACHE_ASSET_PATH = '/contagion-cache/';
+
 export const COLORS = {
   toxic: '#39FF14',
   radioactive: '#FFFF00',
   black: '#000000',
 };
+
 export const PP_TO_USD = 0.000025;
 export const PLATFORM_FEE = 0.10;
 export const MIN_UNLOCK_PP = 5000;
@@ -14,6 +18,7 @@ export const WITHDRAW_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 export const DAILY_XP_FREE_CAP = 150;
 export const DAILY_XP_BONUS_CAP = 100;
 export const DAILY_XP_MAX = 250;
+
 // ==============================================
 // ✅ INFINITE LEVEL SYSTEM — 1,000 XP per level, NO CAP
 // ==============================================
@@ -30,6 +35,7 @@ export function getNextLevelXp(_xp: number): number {
 export function getLevelPercent(xp: number): number {
   return Math.min(100, (getLevelProgress(xp) / XP_PER_LEVEL) * 100);
 }
+
 // ==============================================
 // TIERS — separate from levels, for rewards/unlocks
 // ==============================================
@@ -57,6 +63,7 @@ export function getTier(xp: number): TierInfo {
 export function getNextTier(xp: number): TierInfo | null {
   return TIERS.find((t) => t.minXp > xp) ?? null;
 }
+
 // ==============================================
 // SYMBOLS — PNG paths, all preserved
 // ==============================================
@@ -80,6 +87,7 @@ export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
   hazard:   { id: 'hazard',   emoji: '☣️', label: 'Hazard Mystery',   pays: [0, 0, 0], weight: 1.2, special: 'hazard', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-hazard.png?v=11` },
   jackpot:  { id: 'jackpot',  emoji: '🧪', label: 'Toxic Jackpot',    pays: [0, 0, 0], weight: 1, special: 'jackpot', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-jackpot.png?v=11` },
 };
+
 export const JACKPOT_TYPES = [
   { type: 'mini' as const,  amount: 30,  label: 'Mini' },
   { type: 'minor' as const, amount: 60,  label: 'Minor' },
@@ -91,6 +99,7 @@ export const REEL_COUNT = 5;
 export const ROW_COUNT = 3;
 export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 5;
+
 // ==============================================
 // ✅ CONTAGION CACHE — Box Definitions & Rewards
 // Tier order: blue > purple > orange > yellow
@@ -110,8 +119,8 @@ export const CACHE_BOXES: Record<CacheBoxTier, {
     label: 'Slime Crate',
     costPP: 0,
     freeDaily: true,
-    closeImage: '/assets/contagion-cache/blue-close.png',
-    openImage: '/assets/contagion-cache/blue-open.png',
+    closeImage: `${CACHE_ASSET_PATH}blue-close.png`,
+    openImage: `${CACHE_ASSET_PATH}blue-open.png`,
     baseRewards: { spins: [1, 3], xp: [5, 15], pp: [10, 50] },
   },
   purple: {
@@ -119,8 +128,8 @@ export const CACHE_BOXES: Record<CacheBoxTier, {
     label: 'Radiation Vault',
     costPP: 5000,
     freeDaily: false,
-    closeImage: '/assets/contagion-cache/purple-close.png',
-    openImage: '/assets/contagion-cache/purple-open.png',
+    closeImage: `${CACHE_ASSET_PATH}purple-close.png`,
+    openImage: `${CACHE_ASSET_PATH}purple-open.png`,
     baseRewards: { spins: [3, 8], xp: [15, 40], pp: [50, 200] },
   },
   orange: {
@@ -128,8 +137,8 @@ export const CACHE_BOXES: Record<CacheBoxTier, {
     label: 'Toxic Strongbox',
     costPP: 25000,
     freeDaily: false,
-    closeImage: '/assets/contagion-cache/orange-close.png',
-    openImage: '/assets/contagion-cache/orange-open.png',
+    closeImage: `${CACHE_ASSET_PATH}orange-close.png`,
+    openImage: `${CACHE_ASSET_PATH}orange-open.png`,
     baseRewards: { spins: [5, 12], xp: [30, 80], pp: [150, 500] },
   },
   yellow: {
@@ -137,11 +146,12 @@ export const CACHE_BOXES: Record<CacheBoxTier, {
     label: 'Contagion Core',
     costPP: 100000,
     freeDaily: false,
-    closeImage: '/assets/contagion-cache/yellow-close.png',
-    openImage: '/assets/contagion-cache/yellow-open.png',
+    closeImage: `${CACHE_ASSET_PATH}yellow-close.png`,
+    openImage: `${CACHE_ASSET_PATH}yellow-open.png`,
     baseRewards: { spins: [10, 25], xp: [75, 200], pp: [400, 1200] },
   },
 };
+
 export function rollCacheReward(tier: CacheBoxTier): CacheBoxReward {
   const box = CACHE_BOXES[tier];
   const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -158,6 +168,7 @@ export function rollCacheReward(tier: CacheBoxTier): CacheBoxReward {
   }
   return { jackpotFragment: true };
 }
+
 // ==============================================
 // ✅ MISSIONS — Roadmap gift has FULL standard rewards
 // ==============================================
@@ -169,7 +180,9 @@ export const MISSIONS = [
   { id: 'wheel',             label: 'Claim Radioactive Risk 5 Times',  target: 5,   baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
   { id: 'ads',               label: 'Watch 10 Ads',                   target: 10,  baseXp: 50, adXp: 75, icon: '📺', adSpins: 5 },
 ];
+
 export const ALL_MISSIONS_BONUS = { baseXp: 100, adXp: 150, baseSpins: 0, adSpins: 10 };
+
 export interface StreakDayReward {
   day: number;
   spins: number;
@@ -187,10 +200,12 @@ export const STREAK_REWARDS: StreakDayReward[] = [
   { day: 7, spins: 15, xp: 75, ppBoost: true, label: 'Day 7 — MAX!' },
 ];
 export const MAX_STREAK_DAY = 7;
+
 export const ppToUsd = (pp: number) => pp * PP_TO_USD;
 export function formatPP(pp: number): string {
   return pp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
 export const CRYPTO_OPTIONS = [
   { id: 'BTC',  label: 'Bitcoin (BTC)',   network: 'bitcoin' },
   { id: 'LTC',  label: 'Litecoin (LTC)',  network: 'litecoin' },
