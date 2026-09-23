@@ -93,47 +93,70 @@ export const FREE_SPINS_BASE = 5;
 export const FREE_SPINS_DAILY_BONUS = 5;
 // ==============================================
 // ✅ CONTAGION CACHE — Box Definitions & Rewards
+// Tier order: blue > purple > orange > yellow
 // ==============================================
 export const JACKPOT_FRAGMENTS_TO_UNLOCK = 5;
-export const CACHE_BOXES: Array<{
+export const CACHE_BOXES: Record<CacheBoxTier, {
   id: CacheBoxTier;
   label: string;
   costPP: number;
   freeDaily: boolean;
-  gradient: string;
-}> = [
-  { id: 'slime',      label: 'Slime Crate',       costPP: 0,    freeDaily: true,  gradient: 'from-lime-500/20 to-green-600/10' },
-  { id: 'radiation',  label: 'Radiation Case',    costPP: 500,  freeDaily: false, gradient: 'from-yellow-400/20 to-amber-500/10' },
-  { id: 'toxic',      label: 'Toxic Container',   costPP: 2500, freeDaily: false, gradient: 'from-green-400/20 to-emerald-600/10' },
-  { id: 'contagion',  label: 'Contagion Vault',   costPP: 10000,freeDaily: false, gradient: 'from-red-500/20 to-rose-600/10' },
-];
+  closeImage: string;
+  openImage: string;
+  baseRewards: { spins: [number, number]; xp: [number, number]; pp: [number, number] };
+}> = {
+  blue: {
+    id: 'blue',
+    label: 'Slime Crate',
+    costPP: 0,
+    freeDaily: true,
+    closeImage: '/assets/contagion-cache/blue-close.png',
+    openImage: '/assets/contagion-cache/blue-open.png',
+    baseRewards: { spins: [1, 3], xp: [5, 15], pp: [10, 50] },
+  },
+  purple: {
+    id: 'purple',
+    label: 'Radiation Vault',
+    costPP: 5000,
+    freeDaily: false,
+    closeImage: '/assets/contagion-cache/purple-close.png',
+    openImage: '/assets/contagion-cache/purple-open.png',
+    baseRewards: { spins: [3, 8], xp: [15, 40], pp: [50, 200] },
+  },
+  orange: {
+    id: 'orange',
+    label: 'Toxic Strongbox',
+    costPP: 25000,
+    freeDaily: false,
+    closeImage: '/assets/contagion-cache/orange-close.png',
+    openImage: '/assets/contagion-cache/orange-open.png',
+    baseRewards: { spins: [5, 12], xp: [30, 80], pp: [150, 500] },
+  },
+  yellow: {
+    id: 'yellow',
+    label: 'Contagion Core',
+    costPP: 100000,
+    freeDaily: false,
+    closeImage: '/assets/contagion-cache/yellow-close.png',
+    openImage: '/assets/contagion-cache/yellow-open.png',
+    baseRewards: { spins: [10, 25], xp: [75, 200], pp: [400, 1200] },
+  },
+};
 export function rollCacheReward(tier: CacheBoxTier): CacheBoxReward {
-  const r = Math.random();
-  switch (tier) {
-    case 'slime':
-      if (r < 0.40) return { spins: 2 + Math.floor(Math.random() * 4) };
-      if (r < 0.75) return { xp: 5 + Math.floor(Math.random() * 11) };
-      if (r < 0.95) return { pp: 25 + Math.floor(Math.random() * 51) };
-      return { jackpotFragment: true };
-    case 'radiation':
-      if (r < 0.30) return { spins: 5 + Math.floor(Math.random() * 6) };
-      if (r < 0.60) return { xp: 15 + Math.floor(Math.random() * 21) };
-      if (r < 0.85) return { pp: 100 + Math.floor(Math.random() * 151) };
-      if (r < 0.95) return { boost: ['hotStreak', 'potAccel', 'xpBoost'][Math.floor(Math.random() * 3)] as 'hotStreak' | 'potAccel' | 'xpBoost' };
-      return { jackpotFragment: true };
-    case 'toxic':
-      if (r < 0.25) return { spins: 10 + Math.floor(Math.random() * 11) };
-      if (r < 0.50) return { xp: 30 + Math.floor(Math.random() * 31) };
-      if (r < 0.75) return { pp: 300 + Math.floor(Math.random() * 301) };
-      if (r < 0.92) return { boost: ['hotStreak', 'potAccel', 'xpBoost'][Math.floor(Math.random() * 3)] as 'hotStreak' | 'potAccel' | 'xpBoost' };
-      return { jackpotFragment: true };
-    case 'contagion':
-      if (r < 0.20) return { spins: 20 + Math.floor(Math.random() * 21) };
-      if (r < 0.40) return { xp: 50 + Math.floor(Math.random() * 51) };
-      if (r < 0.65) return { pp: 800 + Math.floor(Math.random() * 701) };
-      if (r < 0.90) return { boost: ['hotStreak', 'potAccel', 'xpBoost'][Math.floor(Math.random() * 3)] as 'hotStreak' | 'potAccel' | 'xpBoost' };
-      return { jackpotFragment: true };
+  const box = CACHE_BOXES[tier];
+  const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  
+  const rollType = Math.random();
+  if (rollType < 0.40) {
+    return { spins: rand(box.baseRewards.spins[0], box.baseRewards.spins[1]) };
   }
+  if (rollType < 0.75) {
+    return { xp: rand(box.baseRewards.xp[0], box.baseRewards.xp[1]) };
+  }
+  if (rollType < 0.95) {
+    return { pp: rand(box.baseRewards.pp[0], box.baseRewards.pp[1]) };
+  }
+  return { jackpotFragment: true };
 }
 // ==============================================
 // ✅ MISSIONS — Roadmap gift has FULL standard rewards
