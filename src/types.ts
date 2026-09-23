@@ -112,6 +112,7 @@ export interface GameState {
   monthlyResetDate: string;
   // ✅ Contagion Cache — State tracking
   lastFreeCacheClaimDate: string | null;
+  blueCacheAdClaims: number;
   jackpotFragments: number;
 }
 export interface WithdrawalRecord {
@@ -138,6 +139,7 @@ export interface SpinResult {
 export interface WinLine {
   symbols: SymbolId[];
   pp: number;
+  xp: number;
   count: number;
   positions: [number, number][];
 }
