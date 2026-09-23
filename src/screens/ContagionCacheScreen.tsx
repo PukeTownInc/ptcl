@@ -96,7 +96,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 ${canOpen ? 'cursor-pointer hover:scale-105' : 'opacity-60 cursor-not-allowed'}
               `}
               style={{
-                background: `url(${CACHE_ASSET_PATH}contagion-box.png)`,
+                background: `url(${CACHE_ASSET_PATH}Contagion-Box.png)`,
                 backgroundSize: '100% 100%',
                 backgroundRepeat: 'no-repeat',
               }}
@@ -109,7 +109,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                   className={`w-3/4 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
                 />
               </div>
-
               {/* Cost Display — directly under image */}
               <div className="pb-3 text-center">
                 {box.freeDaily ? (
@@ -122,7 +121,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                   </span>
                 )}
               </div>
-
               {/* Lock Overlay */}
               {!canOpen && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
