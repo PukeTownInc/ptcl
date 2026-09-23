@@ -80,6 +80,7 @@ function defaultState(): GameState {
     monthlyResetDate: todayUTC(),
     lastFreeCacheClaimDate: null,
     blueCacheAdClaims: 0,
+    purpleCacheAdClaimedDate: null,
     jackpotFragments: 0,
   };
 }
@@ -138,6 +139,7 @@ function dailyResetIfNeeded(state: GameState): GameState {
     lastLogin,
     lastStreakClaimDate: computeStreakReset(state, today),
     blueCacheAdClaims: 0,
+    purpleCacheAdClaimedDate: null,
   };
 }
 export function useGameState(userId: string | null) {
@@ -321,6 +323,11 @@ export function useGameState(userId: string | null) {
   const canClaimBlueCacheViaAd = useCallback((): boolean => {
     return stateRef.current.blueCacheAdClaims < 2;
   }, []);
+  // ✅ Purple box — 1 ad claim per day
+  const canClaimPurpleCacheViaAd = useCallback((): boolean => {
+    const today = todayUTC();
+    return stateRef.current.purpleCacheAdClaimedDate !== today;
+  }, []);
   const openCacheBox = useCallback((tier: CacheBoxTier, viaAd: boolean = false): { ok: boolean; reward: ReturnType<typeof rollCacheReward> } => {
     const box = CACHE_BOXES[tier];
     if (!box) return { ok: false, reward: {} };
@@ -342,8 +349,23 @@ export function useGameState(userId: string | null) {
             return prev;
           }
         }
-      } else {
-        // Other boxes — check cost
+      }
+      // Purple box: cost PP OR 1 daily ad
+      else if (tier === 'purple') {
+        if (viaAd) {
+          if (prev.purpleCacheAdClaimedDate === today) {
+            result = { ok: false, reward: {} };
+            return prev;
+          }
+        } else {
+          if (prev.lockedPotPP < box.costPP) {
+            result = { ok: false, reward: {} };
+            return prev;
+          }
+        }
+      }
+      // Other boxes — check cost
+      else {
         if (prev.lockedPotPP < box.costPP) {
           result = { ok: false, reward: {} };
           return prev;
@@ -362,8 +384,13 @@ export function useGameState(userId: string | null) {
         } else {
           next.lastFreeCacheClaimDate = today;
         }
+      } else if (tier === 'purple') {
+        if (viaAd) {
+          next.purpleCacheAdClaimedDate = today;
+        } else {
+          next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
+        }
       } else {
-        // Deduct cost for paid boxes
         next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
       }
       
@@ -585,7 +612,7 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, openCacheBox,
+    resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
   }), [
     state, cloudLoading, update, addXP, addPP, isPotFull, unlockPot,
     recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
@@ -594,7 +621,7 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, openCacheBox,
+    resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
   ]);
 }
 export function isXPBoostActive(_s: GameState): boolean {
