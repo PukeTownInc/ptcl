@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Gift, Lock, Zap, Coins, Flame, X } from 'lucide-react';
 import type { CacheBoxTier, GameState, GameActions } from '../types';
-import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK, CACHE_ASSET_PATH } from '../constants';
+import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK } from '../constants';
 
 interface Props {
   state: GameState;
@@ -80,60 +80,51 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </p>
       </div>
 
-      {/* Single Border Wrapper — Zero vertical gap, balanced padding */}
-      <div
-        className="px-10 py-6"
-        style={{
-          background: `url(${CACHE_ASSET_PATH}Contagion-Box.png)`,
-          backgroundSize: '100% 100%',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        <div className="grid grid-cols-2 gap-0 gap-y-0">
-          {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
-            const canOpen = canOpenBox(tier);
-            const isOpening = opening === tier;
-            
-            return (
-              <button
-                key={tier}
-                onClick={() => handleOpen(tier)}
-                disabled={!canOpen || isOpening}
-                className={`
-                  relative p-2 rounded-xl transition-all duration-300 overflow-hidden
-                  ${canOpen ? 'cursor-pointer hover:scale-105' : 'opacity-60 cursor-not-allowed'}
-                `}
-              >
-                {/* Box Image — Sized to fit cleanly */}
-                <div className="w-full aspect-square flex items-center justify-center">
-                  <img
-                    src={isOpening ? box.openImage : box.closeImage}
-                    alt={box.label}
-                    className={`w-3/5 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
-                  />
-                </div>
-                {/* Cost Display — Tight bottom spacing */}
-                <div className="pb-1 text-center">
-                  {box.freeDaily ? (
-                    <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
-                      {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
-                    </span>
-                  ) : (
-                    <span className={`text-sm font-bold ${canOpen ? 'text-yellow-400' : 'text-red-400'}`}>
-                      {box.costPP.toLocaleString()} Puke Points
-                    </span>
-                  )}
-                </div>
-                {/* Lock Overlay */}
-                {!canOpen && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                    <Lock size={24} className="text-gray-400" />
-                  </div>
+      {/* Boxes Grid — No border */}
+      <div className="grid grid-cols-2 gap-4">
+        {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
+          const canOpen = canOpenBox(tier);
+          const isOpening = opening === tier;
+          
+          return (
+            <button
+              key={tier}
+              onClick={() => handleOpen(tier)}
+              disabled={!canOpen || isOpening}
+              className={`
+                relative p-4 rounded-xl transition-all duration-300 overflow-hidden bg-gray-900 border border-gray-700
+                ${canOpen ? 'cursor-pointer hover:scale-105 hover:border-lime-500/50' : 'opacity-60 cursor-not-allowed'}
+              `}
+            >
+              {/* Box Image — Closed / Open animation */}
+              <div className="w-full aspect-square flex items-center justify-center">
+                <img
+                  src={isOpening ? box.openImage : box.closeImage}
+                  alt={box.label}
+                  className={`w-3/4 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
+                />
+              </div>
+              {/* Cost Display — directly under image */}
+              <div className="pb-3 text-center">
+                {box.freeDaily ? (
+                  <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
+                    {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
+                  </span>
+                ) : (
+                  <span className={`text-sm font-bold ${canOpen ? 'text-yellow-400' : 'text-red-400'}`}>
+                    {box.costPP.toLocaleString()} Puke Points
+                  </span>
                 )}
-              </button>
-            );
-          })}
-        </div>
+              </div>
+              {/* Lock Overlay */}
+              {!canOpen && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+                  <Lock size={32} className="text-gray-400" />
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Reward Result Modal */}
