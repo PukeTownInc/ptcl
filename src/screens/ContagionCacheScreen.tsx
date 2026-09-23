@@ -76,6 +76,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
 
   const isFreeClaimAvailable = actions.canClaimFreeCache();
   const isAdClaimAvailable = actions.canClaimBlueCacheViaAd();
+  const isPurpleAdAvailable = actions.canClaimPurpleCacheViaAd?.() ?? false;
 
   return (
     <div className="min-h-screen bg-black text-white p-4">
@@ -115,13 +116,14 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
           const canOpen = canOpenBox(tier);
           const isOpening = opening === tier;
+          const isPurpleBox = !box.freeDaily;
           
           return (
             <div
               key={tier}
               className={`
                 relative p-3 rounded-xl transition-all duration-300 overflow-hidden w-full bg-gray-900 border border-gray-700
-                ${canOpen ? '' : 'opacity-60'}
+                ${canOpen || (isPurpleBox && isPurpleAdAvailable) ? '' : 'opacity-60'}
               `}
             >
               <div className="w-full aspect-square flex items-center justify-center">
@@ -169,21 +171,38 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                     )}
                   </div>
                 ) : (
-                  <button
-                    onClick={() => doOpenBox(tier, false)}
-                    disabled={!canOpen || !!opening || !!adModalData}
-                    className={`w-full py-2 font-bold rounded-lg transition-colors ${
-                      canOpen
-                        ? 'bg-yellow-500 text-black hover:bg-yellow-400'
-                        : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {box.costPP.toLocaleString()} Puke Points
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => doOpenBox(tier, false)}
+                      disabled={!canOpen || !!opening || !!adModalData}
+                      className={`w-full py-2 font-bold rounded-lg transition-colors ${
+                        canOpen
+                          ? 'bg-yellow-500 text-black hover:bg-yellow-400'
+                          : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      5,000 Puke Points
+                    </button>
+                    
+                    {isPurpleAdAvailable ? (
+                      <button
+                        onClick={() => handleAdClaim(tier)}
+                        disabled={!!opening || !!adModalData}
+                        className="w-full py-2 bg-fuchsia-600 text-white font-bold rounded-lg hover:bg-fuchsia-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <Tv size={16} />
+                        Watch Ad — 1 Daily
+                      </button>
+                    ) : (
+                      <span className="block text-xs text-gray-500">
+                        Daily ad claimed
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
               
-              {!canOpen && (
+              {!canOpen && !(isPurpleBox && isPurpleAdAvailable) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
                   <Lock size={32} className="text-gray-400" />
                 </div>
