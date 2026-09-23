@@ -80,16 +80,16 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </p>
       </div>
 
-      {/* Single Border Wrapper — Balanced padding, no clipping */}
+      {/* Single Border Wrapper — Zero vertical gap, balanced padding */}
       <div
-        className="px-8 py-8"
+        className="px-10 py-6"
         style={{
           background: `url(${CACHE_ASSET_PATH}Contagion-Box.png)`,
           backgroundSize: '100% 100%',
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-0 gap-y-0">
           {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
             const canOpen = canOpenBox(tier);
             const isOpening = opening === tier;
@@ -104,7 +104,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                   ${canOpen ? 'cursor-pointer hover:scale-105' : 'opacity-60 cursor-not-allowed'}
                 `}
               >
-                {/* Box Image — Centered, safe size */}
+                {/* Box Image — Sized to fit cleanly */}
                 <div className="w-full aspect-square flex items-center justify-center">
                   <img
                     src={isOpening ? box.openImage : box.closeImage}
@@ -112,7 +112,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                     className={`w-3/5 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
                   />
                 </div>
-                {/* Cost Display — Tighter bottom spacing */}
+                {/* Cost Display — Tight bottom spacing */}
                 <div className="pb-1 text-center">
                   {box.freeDaily ? (
                     <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
