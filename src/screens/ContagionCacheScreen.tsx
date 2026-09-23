@@ -14,7 +14,7 @@ interface Props {
 export function ContagionCacheScreen({ state, actions, onBack }: Props) {
   const toast = useToast();
   const [opening, setOpening] = useState<CacheBoxTier | null>(null);
-  const [adModal, setAdModal] = useState<{
+  const [adModalData, setAdModalData] = useState<{
     title: string;
     subtitle?: string;
     onComplete: () => void;
@@ -50,13 +50,13 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
   };
 
   const handleAdClaim = (tier: CacheBoxTier) => {
-    if (opening || adModal) return;
+    if (opening || adModalData) return;
     
-    setAdModal({
+    setAdModalData({
       title: 'Watch Ad to Open Box',
       subtitle: 'Watch a short video to unlock your Contagion Cache',
       onComplete: () => {
-        setAdModal(null);
+        setAdModalData(null);
         doOpenBox(tier, true);
       },
     });
@@ -142,7 +142,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                     {isFreeClaimAvailable ? (
                       <button
                         onClick={() => handleFreeClaim(tier)}
-                        disabled={!!opening || !!adModal}
+                        disabled={!!opening || !!adModalData}
                         className="w-full py-2 bg-lime-500 text-black font-bold rounded-lg hover:bg-lime-400 transition-colors disabled:opacity-50"
                       >
                         FREE DAILY
@@ -156,7 +156,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                     {isAdClaimAvailable ? (
                       <button
                         onClick={() => handleAdClaim(tier)}
-                        disabled={!!opening || !!adModal}
+                        disabled={!!opening || !!adModalData}
                         className="w-full py-2 bg-sky-600 text-white font-bold rounded-lg hover:bg-sky-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <Tv size={16} />
@@ -171,7 +171,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 ) : (
                   <button
                     onClick={() => doOpenBox(tier, false)}
-                    disabled={!canOpen || !!opening || !!adModal}
+                    disabled={!canOpen || !!opening || !!adModalData}
                     className={`w-full py-2 font-bold rounded-lg transition-colors ${
                       canOpen
                         ? 'bg-yellow-500 text-black hover:bg-yellow-400'
@@ -193,12 +193,12 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         })}
       </div>
 
-      {adModal && (
+      {adModalData && (
         <AdModal
-          title={adModal.title}
-          subtitle={adModal.subtitle}
-          onClose={() => setAdModal(null)}
-          onComplete={adModal.onComplete}
+          title={adModalData.title}
+          subtitle={adModalData.subtitle}
+          onClose={() => setAdModalData(null)}
+          onComplete={adModalData.onComplete}
         />
       )}
 
