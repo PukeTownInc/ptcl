@@ -34,7 +34,6 @@ export interface CacheBoxReward {
   spins?: number;
   xp?: number;
   pp?: number;
-  boost?: 'hotStreak' | 'potAccel' | 'xpBoost' | null;
   jackpotFragment?: boolean;
 }
 export interface CacheBox {
