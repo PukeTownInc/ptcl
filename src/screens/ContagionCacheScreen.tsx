@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lock, Zap, Coins, Flame, X, Tv } from 'lucide-react';
 import type { CacheBoxTier, GameState, GameActions } from '../types';
-import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK } from '../constants';
+import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK, CACHE_ASSET_PATH } from '../constants';
 import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
 interface Props {
@@ -212,6 +212,14 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm">
           <div className="bg-gray-900 border-2 border-lime-500/50 rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
             <h2 className="text-xl font-bold text-lime-400 mb-4">🎉 {result.label}</h2>
+            
+            {result.tier === 'blue' && (
+              <img
+                src={`${CACHE_ASSET_PATH}blue-open.png`}
+                alt="Blue Box Opened"
+                className="w-1/2 h-auto mx-auto mb-4"
+              />
+            )}
             
             <div className="space-y-3 mb-6">
               {result.reward.spins && (
