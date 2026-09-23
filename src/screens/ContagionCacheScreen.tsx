@@ -101,7 +101,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
           const canOpen = canOpenBox(tier);
           const isOpening = opening === tier;
-          const isPurpleBox = !box.freeDaily;
+          const isPurpleBox = tier === 'purple';
           const isOrangeBox = tier === 'orange';
           const isYellowBox = tier === 'yellow';
           
@@ -171,7 +171,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                       {isOrangeBox ? '10,000 Puke Points' : isYellowBox ? '20,000 Puke Points' : '5,000 Puke Points'}
                     </button>
                     
-                    {isPurpleAdAvailable ? (
+                    {isPurpleBox && isPurpleAdAvailable ? (
                       <button
                         onClick={() => handleAdClaim(tier)}
                         disabled={!!opening || !!adModalData}
@@ -180,11 +180,11 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                         <Tv size={16} />
                         Watch Ad — 1 Daily
                       </button>
-                    ) : (
+                    ) : isPurpleBox ? (
                       <span className="block text-xs text-gray-500">
                         Daily ad claimed
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </div>
