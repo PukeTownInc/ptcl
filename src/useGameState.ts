@@ -42,6 +42,7 @@ function defaultState(): GameState {
     dailyUnlocksUsed: 0,
     dailyXpFree: 0,
     dailyXpBonus: 0,
+    dailyDoubleUps: 0,
     dailyExtraLucky: 0,
     dailyHotStreak: 0,
     dailyMysteryPacks: 0,
@@ -78,6 +79,7 @@ function defaultState(): GameState {
     flagsClaimedOn: todayUTC(),
     monthlyResetDate: todayUTC(),
     lastFreeCacheClaimDate: null,
+    blueCacheAdClaims: 0,
     jackpotFragments: 0,
   };
 }
@@ -135,6 +137,7 @@ function dailyResetIfNeeded(state: GameState): GameState {
     loginStreak,
     lastLogin,
     lastStreakClaimDate: computeStreakReset(state, today),
+    blueCacheAdClaims: 0,
   };
 }
 export function useGameState(userId: string | null) {
@@ -310,12 +313,15 @@ export function useGameState(userId: string | null) {
     });
     return accepted;
   }, []);
-  // ✅ Contagion Cache — Actions (BOOSTS REMOVED)
+  // ✅ Contagion Cache — 1 free + 2 ad-gated claims for blue box
   const canClaimFreeCache = useCallback((): boolean => {
     const today = todayUTC();
     return stateRef.current.lastFreeCacheClaimDate !== today;
   }, []);
-  const openCacheBox = useCallback((tier: CacheBoxTier): { ok: boolean; reward: ReturnType<typeof rollCacheReward> } => {
+  const canClaimBlueCacheViaAd = useCallback((): boolean => {
+    return stateRef.current.blueCacheAdClaims < 2;
+  }, []);
+  const openCacheBox = useCallback((tier: CacheBoxTier, viaAd: boolean = false): { ok: boolean; reward: ReturnType<typeof rollCacheReward> } => {
     const box = CACHE_BOXES[tier];
     if (!box) return { ok: false, reward: {} };
     const today = todayUTC();
@@ -323,14 +329,21 @@ export function useGameState(userId: string | null) {
     let result: { ok: boolean; reward: ReturnType<typeof rollCacheReward> } = { ok: false, reward: {} };
     
     setState((prev) => {
-      // Free daily box — one per day
-      if (box.freeDaily) {
-        if (prev.lastFreeCacheClaimDate === today) {
-          result = { ok: false, reward: {} };
-          return prev;
+      // Blue box: 1 free per day + 2 via ad per day
+      if (tier === 'blue') {
+        if (viaAd) {
+          if (prev.blueCacheAdClaims >= 2) {
+            result = { ok: false, reward: {} };
+            return prev;
+          }
+        } else {
+          if (prev.lastFreeCacheClaimDate === today) {
+            result = { ok: false, reward: {} };
+            return prev;
+          }
         }
       } else {
-        // Paid boxes — check cost from lockedPotPP
+        // Other boxes — check cost
         if (prev.lockedPotPP < box.costPP) {
           result = { ok: false, reward: {} };
           return prev;
@@ -342,14 +355,19 @@ export function useGameState(userId: string | null) {
       
       let next = { ...prev };
       
-      // Deduct cost if not free
-      if (!box.freeDaily) {
-        next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
+      // Track claims
+      if (tier === 'blue') {
+        if (viaAd) {
+          next.blueCacheAdClaims = prev.blueCacheAdClaims + 1;
+        } else {
+          next.lastFreeCacheClaimDate = today;
+        }
       } else {
-        next.lastFreeCacheClaimDate = today;
+        // Deduct cost for paid boxes
+        next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
       }
       
-      // Apply rewards — BOOSTS REMOVED
+      // Apply rewards
       if (reward.xp) {
         next.xp += reward.xp;
         next.dailyXpFree += reward.xp;
@@ -362,7 +380,6 @@ export function useGameState(userId: string | null) {
       }
       if (reward.jackpotFragment) {
         next.jackpotFragments += 1;
-        // Unlock jackpot at threshold
         if (next.jackpotFragments >= JACKPOT_FRAGMENTS_TO_UNLOCK) {
           next.jackpotFragments = 0;
           next.spinsRemaining += 50;
@@ -568,7 +585,7 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll, canClaimFreeCache, openCacheBox,
+    resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, openCacheBox,
   }), [
     state, cloudLoading, update, addXP, addPP, isPotFull, unlockPot,
     recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
@@ -577,7 +594,7 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll, canClaimFreeCache, openCacheBox,
+    resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, openCacheBox,
   ]);
 }
 export function isXPBoostActive(_s: GameState): boolean {
