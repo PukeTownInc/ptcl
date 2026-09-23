@@ -108,10 +108,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </p>
       </div>
 
-      <div className="mb-4 text-center text-sm text-gray-400">
-        Ad claims today: <span className="text-lime-400 font-bold">{state.blueCacheAdClaims}</span> / 2
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
           const canOpen = canOpenBox(tier);
