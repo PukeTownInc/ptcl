@@ -310,7 +310,7 @@ export function useGameState(userId: string | null) {
     });
     return accepted;
   }, []);
-  // ✅ Contagion Cache — Actions
+  // ✅ Contagion Cache — Actions (BOOSTS REMOVED)
   const canClaimFreeCache = useCallback((): boolean => {
     const today = todayUTC();
     return stateRef.current.lastFreeCacheClaimDate !== today;
@@ -349,7 +349,7 @@ export function useGameState(userId: string | null) {
         next.lastFreeCacheClaimDate = today;
       }
       
-      // Apply rewards
+      // Apply rewards — BOOSTS REMOVED
       if (reward.xp) {
         next.xp += reward.xp;
         next.dailyXpFree += reward.xp;
@@ -359,18 +359,6 @@ export function useGameState(userId: string | null) {
         next.lockedPotPP = Math.min(next.lockedPotPP + reward.pp, 500000);
         next.totalEarnedPP += reward.pp;
         next.ppEarnedToday += reward.pp;
-      }
-      if (reward.boost === 'hotStreak') {
-        next.dailyHotStreak += 1;
-        next.hotStreakUntil = Date.now() + 10 * 60000;
-      }
-      if (reward.boost === 'potAccel') {
-        next.dailyPotAccel += 1;
-        next.potAccelUntil = Date.now() + 5 * 60000;
-      }
-      if (reward.boost === 'xpBoost') {
-        next.dailyXpBoosts += 1;
-        next.xpBoostUntil = Date.now() + 3600000;
       }
       if (reward.jackpotFragment) {
         next.jackpotFragments += 1;
