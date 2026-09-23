@@ -27,9 +27,9 @@ export type SymbolId =
   | 'puke' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
   | 'beaker' | 'vomit' | 'toxic' | 'barrel' | 'warn' | 'rich'
   | 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
-
 // ✅ Contagion Cache — Box definitions
-export type CacheBoxTier = 'slime' | 'radiation' | 'toxic' | 'contagion';
+// Tier order: blue > purple > orange > yellow
+export type CacheBoxTier = 'blue' | 'purple' | 'orange' | 'yellow';
 export interface CacheBoxReward {
   spins?: number;
   xp?: number;
@@ -42,8 +42,10 @@ export interface CacheBox {
   label: string;
   costPP: number;
   freeDaily: boolean;
+  closeImage: string;
+  openImage: string;
+  baseRewards: { spins: [number, number]; xp: [number, number]; pp: [number, number] };
 }
-
 export interface SlotSymbol {
   id: SymbolId;
   emoji: string;
@@ -74,7 +76,7 @@ export interface GameState {
   dailyXpFree: number;
   dailyXpBonus: number;
   dailyDoubleUps: number;
-  dailyExtraLucky: number;
+  dailyExtraLucky: boolean;
   dailyHotStreak: number;
   dailyMysteryPacks: number;
   dailyPotAccel: number;
