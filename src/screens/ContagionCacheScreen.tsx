@@ -80,56 +80,60 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </p>
       </div>
 
-      {/* Boxes Grid — 2 x 2 Layout */}
-      <div className="grid grid-cols-2 gap-4">
-        {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
-          const canOpen = canOpenBox(tier);
-          const isOpening = opening === tier;
-          
-          return (
-            <button
-              key={tier}
-              onClick={() => handleOpen(tier)}
-              disabled={!canOpen || isOpening}
-              className={`
-                relative p-4 rounded-xl transition-all duration-300 overflow-hidden
-                ${canOpen ? 'cursor-pointer hover:scale-105' : 'opacity-60 cursor-not-allowed'}
-              `}
-              style={{
-                background: `url(${CACHE_ASSET_PATH}Contagion-Box.png)`,
-                backgroundSize: '100% 100%',
-                backgroundRepeat: 'no-repeat',
-              }}
-            >
-              {/* Box Image — Closed / Open animation */}
-              <div className="w-full aspect-square flex items-center justify-center">
-                <img
-                  src={isOpening ? box.openImage : box.closeImage}
-                  alt={box.label}
-                  className={`w-3/4 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
-                />
-              </div>
-              {/* Cost Display — directly under image */}
-              <div className="pb-3 text-center">
-                {box.freeDaily ? (
-                  <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
-                    {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
-                  </span>
-                ) : (
-                  <span className={`text-sm font-bold ${canOpen ? 'text-yellow-400' : 'text-red-400'}`}>
-                    {box.costPP.toLocaleString()} Puke Points
-                  </span>
-                )}
-              </div>
-              {/* Lock Overlay */}
-              {!canOpen && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                  <Lock size={32} className="text-gray-400" />
+      {/* Single Border Wrapper — All 4 Boxes Inside */}
+      <div
+        className="p-6"
+        style={{
+          background: `url(${CACHE_ASSET_PATH}Contagion-Box.png)`,
+          backgroundSize: '100% 100%',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="grid grid-cols-2 gap-4">
+          {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
+            const canOpen = canOpenBox(tier);
+            const isOpening = opening === tier;
+            
+            return (
+              <button
+                key={tier}
+                onClick={() => handleOpen(tier)}
+                disabled={!canOpen || isOpening}
+                className={`
+                  relative p-4 rounded-xl transition-all duration-300 overflow-hidden
+                  ${canOpen ? 'cursor-pointer hover:scale-105' : 'opacity-60 cursor-not-allowed'}
+                `}
+              >
+                {/* Box Image — Closed / Open animation */}
+                <div className="w-full aspect-square flex items-center justify-center">
+                  <img
+                    src={isOpening ? box.openImage : box.closeImage}
+                    alt={box.label}
+                    className={`w-3/4 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
+                  />
                 </div>
-              )}
-            </button>
-          );
-        })}
+                {/* Cost Display — directly under image */}
+                <div className="pb-3 text-center">
+                  {box.freeDaily ? (
+                    <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
+                      {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
+                    </span>
+                  ) : (
+                    <span className={`text-sm font-bold ${canOpen ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {box.costPP.toLocaleString()} Puke Points
+                    </span>
+                  )}
+                </div>
+                {/* Lock Overlay */}
+                {!canOpen && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+                    <Lock size={32} className="text-gray-400" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Reward Result Modal */}
