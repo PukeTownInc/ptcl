@@ -80,16 +80,16 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
         </p>
       </div>
 
-      {/* Single Border Wrapper — Safe padding, no overlap */}
+      {/* Single Border Wrapper — Balanced padding, no clipping */}
       <div
-        className="px-10 py-12"
+        className="px-8 py-8"
         style={{
           background: `url(${CACHE_ASSET_PATH}Contagion-Box.png)`,
           backgroundSize: '100% 100%',
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
             const canOpen = canOpenBox(tier);
             const isOpening = opening === tier;
@@ -104,16 +104,16 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                   ${canOpen ? 'cursor-pointer hover:scale-105' : 'opacity-60 cursor-not-allowed'}
                 `}
               >
-                {/* Box Image — Smaller, fully inside */}
+                {/* Box Image — Centered, safe size */}
                 <div className="w-full aspect-square flex items-center justify-center">
                   <img
                     src={isOpening ? box.openImage : box.closeImage}
                     alt={box.label}
-                    className={`w-1/2 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
+                    className={`w-3/5 h-auto object-contain transition-all duration-300 ${isOpening ? 'scale-110' : ''}`}
                   />
                 </div>
-                {/* Cost Display */}
-                <div className="pb-2 text-center">
+                {/* Cost Display — Tighter bottom spacing */}
+                <div className="pb-1 text-center">
                   {box.freeDaily ? (
                     <span className={`text-sm font-bold ${canOpen ? 'text-lime-400' : 'text-gray-500'}`}>
                       {canOpen ? 'FREE DAILY' : 'ALREADY CLAIMED'}
