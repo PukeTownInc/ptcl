@@ -4,13 +4,11 @@ import type { CacheBoxTier, GameState, GameActions } from '../types';
 import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK } from '../constants';
 import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
-
 interface Props {
   state: GameState;
   actions: GameActions;
   onBack: () => void;
 }
-
 export function ContagionCacheScreen({ state, actions, onBack }: Props) {
   const toast = useToast();
   const [opening, setOpening] = useState<CacheBoxTier | null>(null);
@@ -24,7 +22,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
     label: string;
     reward: ReturnType<typeof actions.openCacheBox>['reward'];
   } | null>(null);
-
   const doOpenBox = (tier: CacheBoxTier, viaAd: boolean) => {
     if (opening) return;
     setOpening(tier);
@@ -44,11 +41,9 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
       setOpening(null);
     }, 500);
   };
-
   const handleFreeClaim = (tier: CacheBoxTier) => {
     doOpenBox(tier, false);
   };
-
   const handleAdClaim = (tier: CacheBoxTier) => {
     if (opening || adModalData) return;
     
@@ -61,11 +56,9 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
       },
     });
   };
-
   const closeResult = () => {
     setResult(null);
   };
-
   const canOpenBox = (tier: CacheBoxTier): boolean => {
     const box = CACHE_BOXES[tier];
     if (box.freeDaily) {
@@ -73,11 +66,9 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
     }
     return state.lockedPotPP >= box.costPP;
   };
-
   const isFreeClaimAvailable = actions.canClaimFreeCache();
   const isAdClaimAvailable = actions.canClaimBlueCacheViaAd();
   const isPurpleAdAvailable = actions.canClaimPurpleCacheViaAd?.() ?? false;
-
   return (
     <div className="min-h-screen bg-black text-white p-4">
       <div className="flex items-center justify-between mb-6">
@@ -89,7 +80,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           <X size={20} />
         </button>
       </div>
-
       <div className="mb-6 p-4 rounded-xl bg-gray-900 border border-yellow-500/30">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-gray-400">🧪 Jackpot Fragments</span>
@@ -107,13 +97,13 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           Collect {JACKPOT_FRAGMENTS_TO_UNLOCK} fragments → 50 Free Spins!
         </p>
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
           const canOpen = canOpenBox(tier);
           const isOpening = opening === tier;
           const isPurpleBox = !box.freeDaily;
           const isOrangeBox = tier === 'orange';
+          const isYellowBox = tier === 'yellow';
           
           return (
             <div
@@ -178,7 +168,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                           : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                       }`}
                     >
-                      {isOrangeBox ? '10,000 Puke Points' : '5,000 Puke Points'}
+                      {isOrangeBox ? '10,000 Puke Points' : isYellowBox ? '20,000 Puke Points' : '5,000 Puke Points'}
                     </button>
                     
                     {isPurpleAdAvailable ? (
@@ -208,7 +198,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           );
         })}
       </div>
-
       {adModalData && (
         <AdModal
           open={!!adModalData}
@@ -219,7 +208,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           onComplete={adModalData.onComplete}
         />
       )}
-
       {result && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm">
           <div className="bg-gray-900 border-2 border-lime-500/50 rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
