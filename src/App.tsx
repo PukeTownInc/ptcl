@@ -13,20 +13,18 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { RoadmapScreen } from './screens/RoadmapScreen';
+import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { DAILY_XP_FREE_CAP } from './constants';
-
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
   const { state, cloudLoading, ...actions } = useGameState(userId);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
   useEffect(() => {
     if (!userId) return;
   }, [userId]);
-
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -37,7 +35,6 @@ function AppContent() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
-
   const handleInstallClick = useCallback(async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
@@ -46,11 +43,9 @@ function AppContent() {
       setDeferredPrompt(null);
     }
   }, [deferredPrompt]);
-
   const handleNavigate = (screen: Screen) => {
     setActiveScreen(screen);
   };
-
   const renderScreen = () => {
     switch (activeScreen) {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
@@ -62,17 +57,10 @@ function AppContent() {
       case 'profile': return <ProfileScreen state={state} actions={actions} />;
       case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
       case 'contagioncache':
-        return (
-          <div className="text-center py-10">
-            <h2 className="text-xl font-bold text-green-400">☢️ Contagion Cache</h2>
-            <p className="text-gray-400 mt-2">Screen loading...</p>
-            <p className="text-xs text-gray-500 mt-4">Fragments: {state.jackpotFragments}/5</p>
-          </div>
-        );
+        return <ContagionCacheScreen state={state} actions={actions} onBack={() => handleNavigate('home')} />;
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
   };
-
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
@@ -82,11 +70,9 @@ function AppContent() {
       </div>
     );
   }
-
   if (!user) {
     return <LoginScreen />;
   }
-
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header
@@ -123,7 +109,6 @@ function AppContent() {
     </div>
   );
 }
-
 export default function App() {
   return (
     <AuthProvider>
