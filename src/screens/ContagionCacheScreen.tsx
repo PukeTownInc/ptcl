@@ -2,13 +2,11 @@ import { useState } from 'react';
 import { Gift, Lock, Zap, Coins, Flame, X } from 'lucide-react';
 import type { CacheBoxTier, GameState, GameActions } from '../types';
 import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK } from '../constants';
-
 interface Props {
   state: GameState;
   actions: GameActions;
   onBack: () => void;
 }
-
 export function ContagionCacheScreen({ state, actions, onBack }: Props) {
   const [opening, setOpening] = useState<CacheBoxTier | null>(null);
   const [result, setResult] = useState<{
@@ -16,7 +14,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
     label: string;
     reward: ReturnType<typeof actions.openCacheBox>['reward'];
   } | null>(null);
-
   const handleOpen = (tier: CacheBoxTier) => {
     if (opening) return;
     setOpening(tier);
@@ -35,11 +32,9 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
       setOpening(null);
     }, 500);
   };
-
   const closeResult = () => {
     setResult(null);
   };
-
   const canOpenBox = (tier: CacheBoxTier): boolean => {
     const box = CACHE_BOXES[tier];
     if (box.freeDaily) {
@@ -47,7 +42,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
     }
     return state.lockedPotPP >= box.costPP;
   };
-
   return (
     <div className="min-h-screen bg-black text-white p-4">
       {/* Header */}
@@ -60,7 +54,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           <X size={20} />
         </button>
       </div>
-
       {/* Jackpot Progress */}
       <div className="mb-6 p-4 rounded-xl bg-gray-900 border border-yellow-500/30">
         <div className="flex items-center justify-between mb-2">
@@ -79,7 +72,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           Collect {JACKPOT_FRAGMENTS_TO_UNLOCK} fragments → 50 Free Spins!
         </p>
       </div>
-
       {/* Boxes Grid */}
       <div className="grid grid-cols-2 gap-4">
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
@@ -133,7 +125,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           );
         })}
       </div>
-
       {/* Reward Result Modal */}
       {result && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm">
@@ -157,16 +148,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 <div className="flex items-center justify-center gap-2 text-lg">
                   <Coins size={20} className="text-lime-400" />
                   <span>+{result.reward.pp} Puke Points</span>
-                </div>
-              )}
-              {result.reward.boost && (
-                <div className="flex items-center justify-center gap-2 text-lg text-purple-400">
-                  <Zap size={20} />
-                  <span>
-                    {result.reward.boost === 'hotStreak' && '🔥 Hot Streak Activated!'}
-                    {result.reward.boost === 'potAccel' && '⚡ Pot Acceleration Activated!'}
-                    {result.reward.boost === 'xpBoost' && '✨ XP Boost Activated!'}
-                  </span>
                 </div>
               )}
               {result.reward.jackpotFragment && (
