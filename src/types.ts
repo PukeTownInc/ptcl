@@ -113,6 +113,7 @@ export interface GameState {
   // ✅ Contagion Cache — State tracking
   lastFreeCacheClaimDate: string | null;
   blueCacheAdClaims: number;
+  purpleCacheAdClaimedDate: string | null;
   jackpotFragments: number;
 }
 export interface WithdrawalRecord {
