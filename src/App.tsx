@@ -16,18 +16,15 @@ import { RoadmapScreen } from './screens/RoadmapScreen';
 import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { DAILY_XP_FREE_CAP } from './constants';
-
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
   const { state, cloudLoading, ...actions } = useGameState(userId);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
   useEffect(() => {
     if (!userId) return;
   }, [userId]);
-
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -38,7 +35,6 @@ function AppContent() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
-
   const handleInstallClick = useCallback(async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
@@ -47,11 +43,9 @@ function AppContent() {
       setDeferredPrompt(null);
     }
   }, [deferredPrompt]);
-
   const handleNavigate = (screen: Screen) => {
     setActiveScreen(screen);
   };
-
   const renderScreen = () => {
     switch (activeScreen) {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
@@ -67,7 +61,6 @@ function AppContent() {
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
   };
-
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
@@ -77,11 +70,9 @@ function AppContent() {
       </div>
     );
   }
-
   if (!user) {
     return <LoginScreen />;
   }
-
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header
@@ -100,8 +91,8 @@ function AppContent() {
           <ErrorBoundary>{renderScreen()}</ErrorBoundary>
         )}
       </main>
-      {/* INSTALL BADGE — Full visibility, no cut edges */}
-      <div className="py-4 flex justify-center overflow-visible">
+      {/* INSTALL BADGE — Considerably smaller */}
+      <div className="py-4 flex justify-center">
         <img
           src="/install-badge.png"
           alt="Install Puke Town Cash Lab"
@@ -109,16 +100,13 @@ function AppContent() {
           className={`h-auto ${deferredPrompt ? 'cursor-pointer' : 'cursor-default opacity-90'}`}
           style={{ 
             width: '100%',
-            maxWidth: '100%',
-            paddingLeft: '0',
-            paddingRight: '0'
+            maxWidth: '180px'
           }}
         />
       </div>
     </div>
   );
 }
-
 export default function App() {
   return (
     <AuthProvider>
