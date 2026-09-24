@@ -142,16 +142,16 @@ function dailyResetIfNeeded(state: GameState): GameState {
 }
 
 export function useGameState(userId: string | null) {
-  const [state, setState] = useState<GameState | null>(null);
+  const [state, setState] = useState<GameState>(defaultState());
   const [cloudLoading, setCloudLoading] = useState(true);
-  const stateRef = useRef<GameState | null>(null);
+  const stateRef = useRef<GameState>(state);
   const isSavingRef = useRef(false);
   const pendingUpdateRef = useRef<GameState | null>(null);
 
-  // ✅ Load FROM CLOUD ONLY — no localStorage
   useEffect(() => {
     if (!userId) {
-      setState(null);
+      setState(defaultState());
+      stateRef.current = defaultState();
       setCloudLoading(false);
       return;
     }
@@ -168,18 +168,12 @@ export function useGameState(userId: string | null) {
 
         if (cancelled) return;
 
-        if (error) {
-          console.error('Cloud load error:', error);
-          const fresh = dailyResetIfNeeded(defaultState());
-          setState(fresh);
-          stateRef.current = fresh;
-        } else if (data?.data) {
+        if (!error && data?.data) {
           const merged = { ...defaultState(), ...(data.data as Partial<GameState>) };
           const reset = dailyResetIfNeeded(merged);
           setState(reset);
           stateRef.current = reset;
         } else {
-          // New user — create default in cloud
           const fresh = dailyResetIfNeeded(defaultState());
           setState(fresh);
           stateRef.current = fresh;
@@ -201,9 +195,8 @@ export function useGameState(userId: string | null) {
     return () => { cancelled = true; };
   }, [userId]);
 
-  // ✅ Auto-save EVERY change TO CLOUD — no localStorage involved
   useEffect(() => {
-    if (!userId || !state || cloudLoading) return;
+    if (!userId || cloudLoading) return;
 
     const saveToCloud = async () => {
       if (isSavingRef.current) {
@@ -224,8 +217,10 @@ export function useGameState(userId: string | null) {
         if (pendingUpdateRef.current) {
           const next = pendingUpdateRef.current;
           pendingUpdateRef.current = null;
-          setState(next);
-          stateRef.current = next;
+          if (next) {
+            setState(next);
+            stateRef.current = next;
+          }
         }
       }
     };
@@ -234,10 +229,8 @@ export function useGameState(userId: string | null) {
     return () => clearTimeout(timer);
   }, [state, userId, cloudLoading]);
 
-  // Helper: safe update that also updates ref
   const updateState = useCallback((updater: (prev: GameState) => GameState) => {
     setState((prev) => {
-      if (!prev) return prev;
       const next = updater(prev);
       stateRef.current = next;
       return next;
@@ -276,7 +269,7 @@ export function useGameState(userId: string | null) {
   }, [updateState]);
 
   const isPotFull = useCallback((): boolean => {
-    return !!stateRef.current && stateRef.current.lockedPotPP >= 500000;
+    return stateRef.current.lockedPotPP >= 500000;
   }, []);
 
   const unlockPot = useCallback(() => {
@@ -333,21 +326,20 @@ export function useGameState(userId: string | null) {
   }, [updateState]);
 
   const canClaimFreeCache = useCallback((): boolean => {
-    return !!stateRef.current && stateRef.current.lastFreeCacheClaimDate !== todayUTC();
+    return stateRef.current.lastFreeCacheClaimDate !== todayUTC();
   }, []);
 
   const canClaimBlueCacheViaAd = useCallback((): boolean => {
-    return !!stateRef.current && stateRef.current.blueCacheAdClaims < 2;
+    return stateRef.current.blueCacheAdClaims < 2;
   }, []);
 
   const canClaimPurpleCacheViaAd = useCallback((): boolean => {
-    const today = todayUTC();
-    return !!stateRef.current && stateRef.current.purpleCacheAdClaimedDate !== today;
+    return stateRef.current.purpleCacheAdClaimedDate !== todayUTC();
   }, []);
 
   const openCacheBox = useCallback((tier: CacheBoxTier, viaAd = false): { ok: boolean; reward: ReturnType<typeof rollCacheReward> } => {
     const box = CACHE_BOXES[tier];
-    if (!box || !stateRef.current) return { ok: false, reward: {} };
+    if (!box) return { ok: false, reward: {} };
     const today = todayUTC();
     let result: { ok: boolean; reward: ReturnType<typeof rollCacheReward> } = { ok: false, reward: {} };
 
@@ -388,14 +380,11 @@ export function useGameState(userId: string | null) {
     return result;
   }, [updateState]);
 
-  // ✅ PLINKO — Cloud only, no localStorage, no fighting
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    const current = stateRef.current;
-    if (!current || current.lockedPotPP < betPP) {
+    if (stateRef.current.lockedPotPP < betPP) {
       return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
     }
 
-    // Calculate result immediately
     let pos = 3.5;
     for (let row = 0; row < 8; row++) {
       pos += Math.random() < 0.5 ? -0.5 : 0.5;
@@ -404,7 +393,6 @@ export function useGameState(userId: string | null) {
     const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
     const payoutPP = Math.round(betPP * multiplier);
 
-    // Update state — auto-saves to cloud
     updateState((prev) => {
       if (prev.lockedPotPP < betPP) return prev;
       return {
@@ -428,7 +416,7 @@ export function useGameState(userId: string | null) {
         if (gap >= 2) streakDay = 0;
       }
       const bestStreak = Math.max(prev.bestStreak, streakDay);
-      return { ...prev, loginStreak: prev.loginStreak, lastLogin: today, streakDay, streakClaimedToday: false, bestStreak };
+      return { ...prev, lastLogin: today, streakDay, streakClaimedToday: false, bestStreak };
     });
   }, [updateState]);
 
