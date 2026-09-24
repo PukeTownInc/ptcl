@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Info, Trophy, X } from 'lucide-react';
 import type { GameState, GameActions } from '../useGameState';
 import { PLINKO_MULTIPLIERS } from '../constants';
@@ -13,6 +13,7 @@ interface PlinkoScreenProps {
 export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
   const { playPlinko } = actions;
   const [isPlaying, setIsPlaying] = useState(false);
+  const [ballPosition, setBallPosition] = useState<{ x: number; y: number } | null>(null);
   const [lastResult, setLastResult] = useState<{
     visible: boolean;
     pocketIndex: number;
@@ -21,28 +22,70 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
     win: boolean;
   } | null>(null);
 
+  const animationRef = useRef<number | null>(null);
+
   const handlePlay = () => {
     if (isPlaying || state.lockedPotPP < FIXED_BET_PP) return;
-    
+
     setIsPlaying(true);
     setLastResult(null);
-    
-    setTimeout(() => {
-      const result = playPlinko(FIXED_BET_PP);
-      
-      if (result.ok) {
-        setLastResult({
-          visible: true,
-          pocketIndex: result.pocketIndex,
-          multiplier: result.multiplier,
-          payoutPP: result.payoutPP,
-          win: result.payoutPP > FIXED_BET_PP,
-        });
+
+    const pocketIndex = Math.floor(Math.random() * PLINKO_MULTIPLIERS.length);
+    const startX = 50;
+    const startY = 0;
+    const endX = (pocketIndex / (PLINKO_MULTIPLIERS.length - 1)) * 100;
+    const endY = 100;
+
+    setBallPosition({ x: startX, y: startY });
+
+    let startTime: number | null = null;
+    const duration = 1400;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const easeProgress = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      const wobble = Math.sin(progress * Math.PI * 6) * 8 * (1 - progress);
+      const currentX = startX + (endX - startX) * easeProgress + wobble;
+      const currentY = startY + (endY - startY) * easeProgress;
+
+      setBallPosition({ x: currentX, y: currentY });
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        const result = playPlinko(FIXED_BET_PP);
+
+        if (result.ok) {
+          setLastResult({
+            visible: true,
+            pocketIndex: result.pocketIndex,
+            multiplier: result.multiplier,
+            payoutPP: result.payoutPP,
+            win: result.payoutPP > FIXED_BET_PP,
+          });
+        }
+
+        setBallPosition(null);
+        setIsPlaying(false);
       }
-      
-      setIsPlaying(false);
-    }, 1200);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
   };
+
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-950 via-green-900 to-emerald-950 text-white p-4">
@@ -51,25 +94,35 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
           <h1 className="text-2xl font-bold text-lime-400">☢️ Radioactive Plinko</h1>
           <p className="text-sm text-green-300 mt-1">Drop the ball — multiply your Puke Points!</p>
         </div>
-        <div className="bg-black/40 rounded-xl p-4 mb-6">
-          <div className="flex justify-center mb-4">
-            <div className="w-4 h-4 bg-lime-400 rounded-full shadow-lg shadow-lime-400/50" />
-          </div>
-          
-          <div className="space-y-2 mb-4">
-            {[0, 1, 2, 3, 4, 5, 6].map((row) => (
+
+        <div className="bg-black/40 rounded-xl p-4 mb-6 relative overflow-hidden">
+          <div className="relative w-full h-64 mb-4">
+            {ballPosition && (
               <div
-                key={row}
-                className="flex justify-center gap-4"
-                style={{ paddingLeft: `${row * 8}px`, paddingRight: `${row * 8}px` }}
-              >
-                {Array.from({ length: row + 2 }).map((_, i) => (
-                  <div key={i} className="w-2 h-2 bg-lime-600/60 rounded-full" />
-                ))}
-              </div>
-            ))}
+                className="absolute w-4 h-4 bg-lime-400 rounded-full shadow-lg shadow-lime-400/60 z-10"
+                style={{
+                  left: `${ballPosition.x}%`,
+                  top: `${ballPosition.y}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              />
+            )}
+
+            <div className="space-y-2 h-full flex flex-col justify-between">
+              {[0, 1, 2, 3, 4, 5, 6].map((row) => (
+                <div
+                  key={row}
+                  className="flex justify-center gap-4"
+                  style={{ paddingLeft: `${row * 8}px`, paddingRight: `${row * 8}px` }}
+                >
+                  {Array.from({ length: row + 2 }).map((_, i) => (
+                    <div key={i} className="w-2 h-2 bg-lime-600/60 rounded-full" />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
-          
+
           <div className="grid grid-cols-8 gap-1">
             {PLINKO_MULTIPLIERS.map((mult, idx) => {
               const isHighlighted = lastResult?.visible && lastResult.pocketIndex === idx;
@@ -93,12 +146,13 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
             })}
           </div>
         </div>
+
         <div className="bg-black/40 rounded-xl p-4 mb-6">
           <div className="text-center mb-4 py-2">
             <span className="text-sm text-green-300">Fixed Bet: </span>
             <span className="font-bold text-lime-400">100 Puke Points</span>
           </div>
-          
+
           <button
             onClick={handlePlay}
             disabled={isPlaying || state.lockedPotPP < FIXED_BET_PP}
@@ -119,13 +173,14 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
               `DROP BALL — 100 Puke Points`
             )}
           </button>
-          
+
           {state.lockedPotPP < FIXED_BET_PP && (
             <p className="text-center text-red-400 text-sm mt-3">
               Need 100 Puke Points to play
             </p>
           )}
         </div>
+
         {lastResult?.visible && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-gradient-to-b from-green-900 to-green-950 rounded-2xl p-6 max-w-sm w-full text-center border border-lime-500/30 relative">
@@ -154,6 +209,7 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
             </div>
           </div>
         )}
+
         <div className="bg-black/40 rounded-xl p-4 text-sm text-green-300">
           <div className="flex items-center gap-2 mb-2">
             <Info size={16} className="text-lime-400" />
