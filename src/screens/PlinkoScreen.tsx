@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { Info, Trophy, X } from 'lucide-react';
-import { useGameState } from '../useGameState';
+import type { GameState, GameActions } from '../useGameState';
 import { PLINKO_MULTIPLIERS } from '../constants';
 
 const FIXED_BET_PP = 100;
 
-export function PlinkoScreen() {
-  const { state, playPlinko } = useGameState(null);
+interface PlinkoScreenProps {
+  state: GameState;
+  actions: GameActions;
+}
+
+export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
+  const { playPlinko } = actions;
   const [isPlaying, setIsPlaying] = useState(false);
   const [lastResult, setLastResult] = useState<{
     visible: boolean;
@@ -46,7 +51,6 @@ export function PlinkoScreen() {
           <h1 className="text-2xl font-bold text-lime-400">☢️ Radioactive Plinko</h1>
           <p className="text-sm text-green-300 mt-1">Drop the ball — multiply your Puke Points!</p>
         </div>
-
         <div className="bg-black/40 rounded-xl p-4 mb-6">
           <div className="flex justify-center mb-4">
             <div className="w-4 h-4 bg-lime-400 rounded-full shadow-lg shadow-lime-400/50" />
@@ -89,7 +93,6 @@ export function PlinkoScreen() {
             })}
           </div>
         </div>
-
         <div className="bg-black/40 rounded-xl p-4 mb-6">
           <div className="text-center mb-4 py-2">
             <span className="text-sm text-green-300">Fixed Bet: </span>
@@ -123,7 +126,6 @@ export function PlinkoScreen() {
             </p>
           )}
         </div>
-
         {lastResult?.visible && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-gradient-to-b from-green-900 to-green-950 rounded-2xl p-6 max-w-sm w-full text-center border border-lime-500/30 relative">
@@ -152,7 +154,6 @@ export function PlinkoScreen() {
             </div>
           </div>
         )}
-
         <div className="bg-black/40 rounded-xl p-4 text-sm text-green-300">
           <div className="flex items-center gap-2 mb-2">
             <Info size={16} className="text-lime-400" />
