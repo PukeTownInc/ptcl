@@ -142,16 +142,16 @@ function dailyResetIfNeeded(state: GameState): GameState {
 }
 
 export function useGameState(userId: string | null) {
-  const [state, setState] = useState<GameState>(defaultState());
+  const [state, setState] = useState<GameState | null>(null);
   const [cloudLoading, setCloudLoading] = useState(true);
-  const stateRef = useRef<GameState>(state);
+  const stateRef = useRef<GameState | null>(null);
   const isSavingRef = useRef(false);
   const pendingUpdateRef = useRef<GameState | null>(null);
 
   useEffect(() => {
     if (!userId) {
-      setState(defaultState());
-      stateRef.current = defaultState();
+      setState(null);
+      stateRef.current = null;
       setCloudLoading(false);
       return;
     }
@@ -196,7 +196,7 @@ export function useGameState(userId: string | null) {
   }, [userId]);
 
   useEffect(() => {
-    if (!userId || cloudLoading) return;
+    if (!userId || !state || cloudLoading) return;
 
     const saveToCloud = async () => {
       if (isSavingRef.current) {
@@ -231,6 +231,7 @@ export function useGameState(userId: string | null) {
 
   const updateState = useCallback((updater: (prev: GameState) => GameState) => {
     setState((prev) => {
+      if (!prev) return prev;
       const next = updater(prev);
       stateRef.current = next;
       return next;
@@ -269,7 +270,7 @@ export function useGameState(userId: string | null) {
   }, [updateState]);
 
   const isPotFull = useCallback((): boolean => {
-    return stateRef.current.lockedPotPP >= 500000;
+    return !!stateRef.current && stateRef.current.lockedPotPP >= 500000;
   }, []);
 
   const unlockPot = useCallback(() => {
@@ -326,20 +327,21 @@ export function useGameState(userId: string | null) {
   }, [updateState]);
 
   const canClaimFreeCache = useCallback((): boolean => {
-    return stateRef.current.lastFreeCacheClaimDate !== todayUTC();
+    return !!stateRef.current && stateRef.current.lastFreeCacheClaimDate !== todayUTC();
   }, []);
 
   const canClaimBlueCacheViaAd = useCallback((): boolean => {
-    return stateRef.current.blueCacheAdClaims < 2;
+    return !!stateRef.current && stateRef.current.blueCacheAdClaims < 2;
   }, []);
 
   const canClaimPurpleCacheViaAd = useCallback((): boolean => {
-    return stateRef.current.purpleCacheAdClaimedDate !== todayUTC();
+    const today = todayUTC();
+    return !!stateRef.current && stateRef.current.purpleCacheAdClaimedDate !== today;
   }, []);
 
   const openCacheBox = useCallback((tier: CacheBoxTier, viaAd = false): { ok: boolean; reward: ReturnType<typeof rollCacheReward> } => {
     const box = CACHE_BOXES[tier];
-    if (!box) return { ok: false, reward: {} };
+    if (!box || !stateRef.current) return { ok: false, reward: {} };
     const today = todayUTC();
     let result: { ok: boolean; reward: ReturnType<typeof rollCacheReward> } = { ok: false, reward: {} };
 
@@ -381,7 +383,7 @@ export function useGameState(userId: string | null) {
   }, [updateState]);
 
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    if (stateRef.current.lockedPotPP < betPP) {
+    if (!stateRef.current || stateRef.current.lockedPotPP < betPP) {
       return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
     }
 
