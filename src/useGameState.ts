@@ -399,9 +399,9 @@ export function useGameState(userId: string | null) {
     return result;
   }, []);
 
-  // ✅ Fixed playPlinko — clean, no JSX, correct balance update
+  // ✅ FIXED playPlinko — uses functional update so ALWAYS reads latest balance
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    // Check LIVE balance first
+    // First check with ref for immediate guard
     if (stateRef.current.lockedPotPP < betPP) {
       return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
     }
@@ -413,13 +413,17 @@ export function useGameState(userId: string | null) {
     const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
     const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
     const payoutPP = Math.round(betPP * multiplier);
-    // Update balance
-    setState((prev) => ({
-      ...prev,
-      lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
-      totalEarnedPP: prev.totalEarnedPP + Math.max(0, payoutPP - betPP),
-      ppEarnedToday: prev.ppEarnedToday + Math.max(0, payoutPP - betPP),
-    }));
+    // Functional state update — reads PREVIOUS state at time of commit
+    setState((prev) => {
+      // Double-check inside the actual update to prevent race conditions
+      if (prev.lockedPotPP < betPP) return prev;
+      return {
+        ...prev,
+        lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
+        totalEarnedPP: prev.totalEarnedPP + Math.max(0, payoutPP - betPP),
+        ppEarnedToday: prev.ppEarnedToday + Math.max(0, payoutPP - betPP),
+      };
+    });
     return { ok: true, pocketIndex, multiplier, payoutPP };
   }, []);
 
