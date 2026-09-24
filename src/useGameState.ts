@@ -413,26 +413,34 @@ export function useGameState(userId: string | null) {
     
     return result;
   }, []);
-  // ✅ FIXED: Calculate result FIRST, then update state — returns correct values every time
+  // ✅ FINAL FIX: ALL logic inside setState so prev balance is always correct
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    // Calculate result FIRST — synchronous, no async delay
-    let pos = 3.5;
-    for (let row = 0; row < 8; row++) {
-      pos += Math.random() < 0.5 ? -0.5 : 0.5;
-    }
-    const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
-    const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
-    const payoutPP = Math.round(betPP * multiplier);
-    const profit = Math.max(0, payoutPP - betPP);
+    let result: { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } = {
+      ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0,
+    };
 
-    // Check balance from current state
-    if (stateRef.current.lockedPotPP < betPP) {
-      return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
-    }
-
-    // Update state with pre-computed values
     setState((prev) => {
+      // Check balance INSIDE — always fresh
+      if (prev.lockedPotPP < betPP) {
+        return prev;
+      }
+
+      // Calculate result INSIDE
+      let pos = 3.5;
+      for (let row = 0; row < 8; row++) {
+        pos += Math.random() < 0.5 ? -0.5 : 0.5;
+      }
+      const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
+      const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
+      const payoutPP = Math.round(betPP * multiplier);
+      const profit = Math.max(0, payoutPP - betPP);
+
+      // Store result to return
+      result = { ok: true, pocketIndex, multiplier, payoutPP };
+
+      // Update balance
       const newLockedPotPP = Math.min(prev.lockedPotPP - betPP + payoutPP, 500000);
+
       return {
         ...prev,
         lockedPotPP: newLockedPotPP,
@@ -441,8 +449,7 @@ export function useGameState(userId: string | null) {
       };
     });
 
-    // Return correct computed values
-    return { ok: true, pocketIndex, multiplier, payoutPP };
+    return result;
   }, []);
   const loginCheck = useCallback(() => {
     setState((prev) => {
