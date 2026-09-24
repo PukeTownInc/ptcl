@@ -45,8 +45,9 @@ const roadmapData = [
     items: [
       '💰 Waste Withdrawal — Cash out via FaucetPay',
       '🎟️ Contamination Pass — Battle Pass, Free + Premium tiers',
-      '✅ 📦 Contagion Cache — Mystery Boxes: Common → Legendary',
+      '📦 Contagion Cache — Mystery Boxes: Common → Legendary',
       '🎡 Wheel of Misfortune — Daily mini-game, spins & rewards',
+      '☢️ Radioactive Plinko — Drop the pellet, ride the radiation, win big!',
       '🛒 Toxic Shop — Boosts, perks, & exclusive items',
       '🎨 Profile Customisation — Avatars, frames, colours',
       '🏅 Long-Term Achievements — Badges, titles & hidden rewards',
