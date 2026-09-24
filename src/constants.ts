@@ -1,6 +1,7 @@
 import type { SlotSymbol, SymbolId, Tier, CacheBoxTier, CacheBoxReward } from './types';
 export const SYMBOL_IMAGE_PATH = '/symbols/';
 export const CACHE_ASSET_PATH = '/contagion-cache/';
+export const PLINKO_ASSET_PATH = '/plinko/';
 export const COLORS = {
   toxic: '#39FF14',
   radioactive: '#FFFF00',
@@ -160,6 +161,14 @@ export function rollCacheReward(tier: CacheBoxTier): CacheBoxReward {
   }
   return { jackpotFragment: true };
 }
+// ==============================================
+// ✅ RADIOACTIVE PLINKO — Game Config
+// ==============================================
+export const PLINKO_ROWS = 8;
+export const PLINKO_BET_OPTIONS = [10, 50, 100, 500, 1000];
+export const PLINKO_MULTIPLIERS: number[] = [0.2, 0.5, 0.8, 1.2, 2.0, 0.8, 0.5, 0.2];
+export const PLINKO_LABELS: string[] = ['0.2×', '0.5×', '0.8×', '1.2×', '2.0×', '0.8×', '0.5×', '0.2×'];
+export const PLINKO_COLORS: string[] = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#39FF14', '#84cc16', '#eab308', '#f97316'];
 // ==============================================
 // ✅ MISSIONS — Roadmap gift has FULL standard rewards
 // ==============================================
