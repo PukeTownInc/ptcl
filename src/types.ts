@@ -1,4 +1,3 @@
-export type Tier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type Screen = 'home' | 'slots' | 'missions' | 'leaderboards' | 'withdraw' | 'roadmap' | 'settings' | 'profile' | 'contagioncache';
 export type LeaderboardCategory = 'xp' | 'pp' | 'spins' | 'referrals';
 export type LeaderboardPeriod = 'monthly';
