@@ -163,6 +163,7 @@ export function useGameState(userId: string | null) {
   const stateRef = useRef(state);
   stateRef.current = state;
   const skipCloudSaveRef = useRef(false);
+  const hasSyncedRef = useRef(false); // ✅ Prevents cloud from overwriting local after first sync
 
   useEffect(() => {
     if (!userId) return;
@@ -182,15 +183,24 @@ export function useGameState(userId: string | null) {
           return;
         }
         if (data?.data) {
+          // ✅ Use LOCAL as source of truth if already exists — prevents cloud rollback
+          const localRaw = localStorage.getItem(STORAGE_KEY);
+          if (localRaw && hasSyncedRef.current) {
+            hasSyncedRef.current = true;
+            setCloudLoading(false);
+            return;
+          }
           const cloudState = { ...defaultState(), ...(data.data as Partial<GameState>) };
           const reset = dailyResetIfNeeded(cloudState);
           skipCloudSaveRef.current = true;
+          hasSyncedRef.current = true;
           setState(reset);
         } else {
           await supabase.from('user_profiles').upsert({
             id: userId,
             data: stateRef.current,
           });
+          hasSyncedRef.current = true;
         }
       } catch (err) {
         console.error('Cloud load failed:', err);
@@ -209,6 +219,7 @@ export function useGameState(userId: string | null) {
 
   useEffect(() => {
     if (!userId) return;
+    if (!hasSyncedRef.current) return; // Don't save before first cloud load
     if (skipCloudSaveRef.current) {
       skipCloudSaveRef.current = false;
       return;
@@ -399,14 +410,14 @@ export function useGameState(userId: string | null) {
     return result;
   }, []);
 
-  // ✅ FINAL FIX — Calculate result FIRST, update state SECOND
+  // ✅ Plinko — Calculate first, update second, no race conditions
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    // Step 1: Check current balance FIRST using ref (latest known value)
+    // Check current balance
     if (stateRef.current.lockedPotPP < betPP) {
       return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
     }
 
-    // Step 2: Calculate result IMMEDIATELY — before any state change
+    // Calculate result immediately
     let pos = 3.5;
     for (let row = 0; row < 8; row++) {
       pos += Math.random() < 0.5 ? -0.5 : 0.5;
@@ -415,11 +426,9 @@ export function useGameState(userId: string | null) {
     const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
     const payoutPP = Math.round(betPP * multiplier);
 
-    // Step 3: Update state — functional update ensures atomicity
+    // Update state — functional update = always correct
     setState((prev) => {
-      // Double-check inside update — prevents race conditions
       if (prev.lockedPotPP < betPP) return prev;
-      
       return {
         ...prev,
         lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
@@ -428,7 +437,6 @@ export function useGameState(userId: string | null) {
       };
     });
 
-    // Step 4: Return result IMMEDIATELY so popup can show
     return { ok: true, pocketIndex, multiplier, payoutPP };
   }, []);
 
