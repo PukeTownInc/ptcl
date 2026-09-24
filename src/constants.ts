@@ -1,4 +1,4 @@
-import type { SlotSymbol, SymbolId, Tier, CacheBoxTier, CacheBoxReward } from './types';
+import type { SlotSymbol, SymbolId, CacheBoxTier, CacheBoxReward } from './types';
 export const SYMBOL_IMAGE_PATH = '/symbols/';
 export const CACHE_ASSET_PATH = '/contagion-cache/';
 export const COLORS = {
@@ -30,33 +30,6 @@ export function getNextLevelXp(_xp: number): number {
 }
 export function getLevelPercent(xp: number): number {
   return Math.min(100, (getLevelProgress(xp) / XP_PER_LEVEL) * 100);
-}
-// ==============================================
-// TIERS — separate from levels, for rewards/unlocks
-// ==============================================
-export interface TierInfo {
-  id: Tier;
-  label: string;
-  badge: string;
-  minXp: number;
-  maxXp: number;
-  potCap: number;
-  dailyUnlocks: number;
-  multiplier: number;
-  dailySpinsBase: number;
-  dailyMissions: number;
-}
-export const TIERS: TierInfo[] = [
-  { id: 'bronze',   label: 'Bronze',   badge: '🥉', minXp: 0,      maxXp: 500,    potCap: 15000,  dailyUnlocks: 1, multiplier: 1.0,  dailySpinsBase: 25, dailyMissions: 3 },
-  { id: 'silver',   label: 'Silver',   badge: '🥈', minXp: 500,    maxXp: 2500,   potCap: 30000,  dailyUnlocks: 2, multiplier: 1.05, dailySpinsBase: 40, dailyMissions: 5 },
-  { id: 'gold',     label: 'Gold',     badge: '🥇', minXp: 2500,   maxXp: 10000,  potCap: 60000,  dailyUnlocks: 3, multiplier: 1.1,  dailySpinsBase: 55, dailyMissions: 8 },
-  { id: 'platinum', label: 'Platinum', badge: '💎', minXp: 10000,  maxXp: Infinity, potCap: 150000, dailyUnlocks: 5, multiplier: 1.2,  dailySpinsBase: 85, dailyMissions: 12 },
-];
-export function getTier(xp: number): TierInfo {
-  return [...TIERS].reverse().find((t) => xp >= t.minXp) ?? TIERS[0];
-}
-export function getNextTier(xp: number): TierInfo | null {
-  return TIERS.find((t) => t.minXp > xp) ?? null;
 }
 // ==============================================
 // SYMBOLS — PNG paths, all preserved
