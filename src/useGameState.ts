@@ -10,6 +10,7 @@ import {
   JACKPOT_FRAGMENTS_TO_UNLOCK,
   MIN_UNLOCK_PP,
   MISSIONS,
+  PLINKO_MULTIPLIERS,
   rollCacheReward,
 } from './constants';
 import { supabase } from './lib/supabase';
@@ -421,6 +422,35 @@ export function useGameState(userId: string | null) {
     
     return result;
   }, []);
+  // ✅ Radioactive Plinko — Place bet & calculate result
+  const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
+    let result: { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } = {
+      ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0,
+    };
+    setState((prev) => {
+      if (prev.lockedPotPP < betPP) {
+        return prev;
+      }
+      // Simulate ball path — random walk down rows
+      let pos = 3.5; // start center
+      for (let row = 0; row < 8; row++) {
+        pos += Math.random() < 0.5 ? -0.5 : 0.5;
+      }
+      const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
+      const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
+      const payoutPP = Math.round(betPP * multiplier);
+      
+      result = { ok: true, pocketIndex, multiplier, payoutPP };
+      
+      return {
+        ...prev,
+        lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
+        totalEarnedPP += Math.max(0, payoutPP - betPP),
+        ppEarnedToday += Math.max(0, payoutPP - betPP),
+      };
+    });
+    return result;
+  }, []);
   const loginCheck = useCallback(() => {
     setState((prev) => {
       const today = todayUTC();
@@ -616,6 +646,7 @@ export function useGameState(userId: string | null) {
     claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
     resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
+    playPlinko,
   }), [
     state, cloudLoading, update, addXP, addPP, isPotFull, unlockPot,
     recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
@@ -625,6 +656,7 @@ export function useGameState(userId: string | null) {
     claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
     resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
+    playPlinko,
   ]);
 }
 export function isXPBoostActive(_s: GameState): boolean {
