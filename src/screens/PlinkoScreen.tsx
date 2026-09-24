@@ -44,15 +44,6 @@ export function PlinkoScreen() {
           <p className="text-sm text-green-300 mt-1">Drop the ball — multiply your Puke Points!</p>
         </div>
 
-        {/* Balance */}
-        <div className="bg-black/40 rounded-xl p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Coins className="text-yellow-400" size={20} />
-            <span className="font-bold">{state.lockedPotPP.toLocaleString()}</span>
-          </div>
-          <span className="text-sm text-green-300">Puke Points</span>
-        </div>
-
         {/* Plinko Board */}
         <div className="bg-black/40 rounded-xl p-4 mb-6">
           <div className="flex justify-center mb-4">
@@ -101,7 +92,7 @@ export function PlinkoScreen() {
 
         {/* Bet Controls */}
         <div className="bg-black/40 rounded-xl p-4 mb-6">
-          <label className="text-sm text-green-300 mb-2 block">Bet Amount</label>
+          <label className="text-sm text-green-300 mb-2 block">Bet Amount (Puke Points)</label>
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={() => setBetAmount(Math.max(10, betAmount / 2))}
