@@ -333,67 +333,34 @@ export function useGameState(userId: string | null) {
     const box = CACHE_BOXES[tier];
     if (!box) return { ok: false, reward: {} };
     const today = todayUTC();
-    
     let result: { ok: boolean; reward: ReturnType<typeof rollCacheReward> } = { ok: false, reward: {} };
-    
     setState((prev) => {
       if (tier === 'blue') {
         if (viaAd) {
-          if (prev.blueCacheAdClaims >= 2) {
-            result = { ok: false, reward: {} };
-            return prev;
-          }
+          if (prev.blueCacheAdClaims >= 2) return prev;
         } else {
-          if (prev.lastFreeCacheClaimDate === today) {
-            result = { ok: false, reward: {} };
-            return prev;
-          }
+          if (prev.lastFreeCacheClaimDate === today) return prev;
         }
       } else if (tier === 'purple') {
         if (viaAd) {
-          if (prev.purpleCacheAdClaimedDate === today) {
-            result = { ok: false, reward: {} };
-            return prev;
-          }
+          if (prev.purpleCacheAdClaimedDate === today) return prev;
         } else {
-          if (prev.lockedPotPP < box.costPP) {
-            result = { ok: false, reward: {} };
-            return prev;
-          }
+          if (prev.lockedPotPP < box.costPP) return prev;
         }
       } else {
-        if (prev.lockedPotPP < box.costPP) {
-          result = { ok: false, reward: {} };
-          return prev;
-        }
+        if (prev.lockedPotPP < box.costPP) return prev;
       }
-      
       const reward = rollCacheReward(tier);
       result = { ok: true, reward };
-      
       let next = { ...prev };
-      
       if (tier === 'blue') {
-        if (viaAd) {
-          next.blueCacheAdClaims = prev.blueCacheAdClaims + 1;
-        } else {
-          next.lastFreeCacheClaimDate = today;
-          next.blueCacheClaimedToday = true;
-        }
+        if (viaAd) next.blueCacheAdClaims = prev.blueCacheAdClaims + 1;
+        else { next.lastFreeCacheClaimDate = today; next.blueCacheClaimedToday = true; }
       } else if (tier === 'purple') {
-        if (viaAd) {
-          next.purpleCacheAdClaimedDate = today;
-        } else {
-          next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
-        }
-      } else {
-        next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
-      }
-      
-      if (reward.xp) {
-        next.xp += reward.xp;
-        next.dailyXpFree += reward.xp;
-      }
+        if (viaAd) next.purpleCacheAdClaimedDate = today;
+        else next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
+      } else next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
+      if (reward.xp) { next.xp += reward.xp; next.dailyXpFree += reward.xp; }
       if (reward.spins) next.spinsRemaining += reward.spins;
       if (reward.pp) {
         next.lockedPotPP = Math.min(next.lockedPotPP + reward.pp, 500000);
@@ -407,49 +374,36 @@ export function useGameState(userId: string | null) {
           next.spinsRemaining += 50;
         }
       }
-      
       return next;
     });
-    
     return result;
   }, []);
-  // ✅ FINAL FIX: ALL logic inside setState so prev balance is always correct
+  // ✅ FINAL CORRECTED playPlinko — no stale values
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    let result: { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } = {
-      ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0,
-    };
+    // Calculate result FIRST — synchronous, no delays
+    let pos = 3.5;
+    for (let row = 0; row < 8; row++) {
+      pos += Math.random() < 0.5 ? -0.5 : 0.5;
+    }
+    const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
+    const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
+    const payoutPP = Math.round(betPP * multiplier);
+    const profit = Math.max(0, payoutPP - betPP);
 
-    setState((prev) => {
-      // Check balance INSIDE — always fresh
-      if (prev.lockedPotPP < betPP) {
-        return prev;
-      }
+    // Check against LIVE ref value — not stale closure
+    if (stateRef.current.lockedPotPP < betPP) {
+      return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
+    }
 
-      // Calculate result INSIDE
-      let pos = 3.5;
-      for (let row = 0; row < 8; row++) {
-        pos += Math.random() < 0.5 ? -0.5 : 0.5;
-      }
-      const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
-      const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
-      const payoutPP = Math.round(betPP * multiplier);
-      const profit = Math.max(0, payoutPP - betPP);
+    // Update state with known-good values
+    setState((prev) => ({
+      ...prev,
+      lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
+      totalEarnedPP: prev.totalEarnedPP + profit,
+      ppEarnedToday: prev.ppEarnedToday + profit,
+    }));
 
-      // Store result to return
-      result = { ok: true, pocketIndex, multiplier, payoutPP };
-
-      // Update balance
-      const newLockedPotPP = Math.min(prev.lockedPotPP - betPP + payoutPP, 500000);
-
-      return {
-        ...prev,
-        lockedPotPP: newLockedPotPP,
-        totalEarnedPP: prev.totalEarnedPP + profit,
-        ppEarnedToday: prev.ppEarnedToday + profit,
-      };
-    });
-
-    return result;
+    return { ok: true, pocketIndex, multiplier, payoutPP };
   }, []);
   const loginCheck = useCallback(() => {
     setState((prev) => {
@@ -522,9 +476,7 @@ export function useGameState(userId: string | null) {
       if (prev.dailyMissionClaims.includes(missionId)) return prev;
       accepted = true;
       const mission = MISSIONS.find(m => m.id === missionId);
-      if (!mission) {
-        return { ...prev, dailyMissionClaims: [...prev.dailyMissionClaims, missionId] };
-      }
+      if (!mission) return { ...prev, dailyMissionClaims: [...prev.dailyMissionClaims, missionId] };
       const xpValue = viaAd ? mission.adXp : mission.baseXp;
       const spinsToAdd = viaAd ? mission.adSpins : 0;
       return {
@@ -572,12 +524,7 @@ export function useGameState(userId: string | null) {
   const claimStreakRewardViaAd = useCallback((reward: { spins: number; xp: number; ppBoost?: boolean }) => {
     setState((prev) => {
       if (prev.streakClaimedToday) return prev;
-      let newStreakDay: number;
-      if (prev.streakDay >= 7) {
-        newStreakDay = 1;
-      } else {
-        newStreakDay = prev.streakDay + 1;
-      }
+      const newStreakDay = prev.streakDay >= 7 ? 1 : prev.streakDay + 1;
       const bestStreak = Math.max(prev.bestStreak, newStreakDay);
       return {
         ...prev,
@@ -605,21 +552,10 @@ export function useGameState(userId: string | null) {
     setState((prev) => {
       if (prev.leaderboardClaims[key]) return prev;
       if (rewardType === 'xp') {
-        return {
-          ...prev,
-          xp: prev.xp + xp,
-          dailyXpBonus: prev.dailyXpBonus + xp,
-          leaderboardClaims: { ...prev.leaderboardClaims, [key]: true },
-        };
+        return { ...prev, xp: prev.xp + xp, dailyXpBonus: prev.dailyXpBonus + xp, leaderboardClaims: { ...prev.leaderboardClaims, [key]: true } };
       }
       const newPot = Math.min(prev.lockedPotPP + pp, 500000);
-      return {
-        ...prev,
-        lockedPotPP: newPot,
-        totalEarnedPP: prev.totalEarnedPP + (newPot - prev.lockedPotPP),
-        ppEarnedToday: prev.ppEarnedToday + (newPot - prev.lockedPotPP),
-        leaderboardClaims: { ...prev.leaderboardClaims, [key]: true },
-      };
+      return { ...prev, lockedPotPP: newPot, totalEarnedPP: prev.totalEarnedPP + (newPot - prev.lockedPotPP), ppEarnedToday: prev.ppEarnedToday + (newPot - prev.lockedPotPP), leaderboardClaims: { ...prev.leaderboardClaims, [key]: true } };
     });
   }, []);
   const resetLeaderboardClaims = useCallback((keys: string[]) => {
@@ -659,16 +595,8 @@ export function useGameState(userId: string | null) {
     playPlinko,
   ]);
 }
-export function isXPBoostActive(_s: GameState): boolean {
-  return false;
-}
-export function isStreakPPBoostActive(s: GameState): boolean {
-  return !!s.streakPPBoostUntil && s.streakPPBoostUntil > Date.now();
-}
-export function isHotStreakActive(s: GameState): boolean {
-  return !!s.hotStreakUntil && s.hotStreakUntil > Date.now();
-}
-export function isPotAccelActive(s: GameState): boolean {
-  return !!s.potAccelUntil && s.potAccelUntil > Date.now();
-}
+export function isXPBoostActive(_s: GameState): boolean { return false; }
+export function isStreakPPBoostActive(s: GameState): boolean { return !!s.streakPPBoostUntil && s.streakPPBoostUntil > Date.now(); }
+export function isHotStreakActive(s: GameState): boolean { return !!s.hotStreakUntil && s.hotStreakUntil > Date.now(); }
+export function isPotAccelActive(s: GameState): boolean { return !!s.potAccelUntil && s.potAccelUntil > Date.now(); }
 export type GameActions = ReturnType<typeof useGameState>;
