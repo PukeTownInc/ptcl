@@ -413,30 +413,26 @@ export function useGameState(userId: string | null) {
     
     return result;
   }, []);
-  // ✅ FIXED Plinko — balance now updates correctly
+  // ✅ FIXED: Calculate result FIRST, then update state — returns correct values every time
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    let result: { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } = {
-      ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0,
-    };
+    // Calculate result FIRST — synchronous, no async delay
+    let pos = 3.5;
+    for (let row = 0; row < 8; row++) {
+      pos += Math.random() < 0.5 ? -0.5 : 0.5;
+    }
+    const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
+    const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
+    const payoutPP = Math.round(betPP * multiplier);
+    const profit = Math.max(0, payoutPP - betPP);
+
+    // Check balance from current state
+    if (stateRef.current.lockedPotPP < betPP) {
+      return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
+    }
+
+    // Update state with pre-computed values
     setState((prev) => {
-      if (prev.lockedPotPP < betPP) {
-        return prev;
-      }
-      // Simulate ball path
-      let pos = 3.5;
-      for (let row = 0; row < 8; row++) {
-        pos += Math.random() < 0.5 ? -0.5 : 0.5;
-      }
-      const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
-      const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
-      const payoutPP = Math.round(betPP * multiplier);
-      const profit = Math.max(0, payoutPP - betPP);
-      
-      result = { ok: true, pocketIndex, multiplier, payoutPP };
-      
-      // ✅ Correctly update lockedPotPP: subtract bet, add payout
       const newLockedPotPP = Math.min(prev.lockedPotPP - betPP + payoutPP, 500000);
-      
       return {
         ...prev,
         lockedPotPP: newLockedPotPP,
@@ -444,7 +440,9 @@ export function useGameState(userId: string | null) {
         ppEarnedToday: prev.ppEarnedToday + profit,
       };
     });
-    return result;
+
+    // Return correct computed values
+    return { ok: true, pocketIndex, multiplier, payoutPP };
   }, []);
   const loginCheck = useCallback(() => {
     setState((prev) => {
