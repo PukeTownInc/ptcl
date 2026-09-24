@@ -399,24 +399,27 @@ export function useGameState(userId: string | null) {
     return result;
   }, []);
 
-  // ✅ FIXED playPlinko — uses functional update so ALWAYS reads latest balance
+  // ✅ FINAL FIXED playPlinko — single source of truth, no race conditions
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    // First check with ref for immediate guard
-    if (stateRef.current.lockedPotPP < betPP) {
-      return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
-    }
-    // Calculate result
-    let pos = 3.5;
-    for (let row = 0; row < 8; row++) {
-      pos += Math.random() < 0.5 ? -0.5 : 0.5;
-    }
-    const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
-    const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
-    const payoutPP = Math.round(betPP * multiplier);
-    // Functional state update — reads PREVIOUS state at time of commit
+    let finalResult: { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } = 
+      { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
+
     setState((prev) => {
-      // Double-check inside the actual update to prevent race conditions
+      // ✅ ONLY check here — single source of truth
       if (prev.lockedPotPP < betPP) return prev;
+
+      // Calculate result — INSIDE the state guarantee
+      let pos = 3.5;
+      for (let row = 0; row < 8; row++) {
+        pos += Math.random() < 0.5 ? -0.5 : 0.5;
+      }
+      const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
+      const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
+      const payoutPP = Math.round(betPP * multiplier);
+
+      finalResult = { ok: true, pocketIndex, multiplier, payoutPP };
+
+      // ✅ Apply change — ALWAYS based on verified prev state
       return {
         ...prev,
         lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
@@ -424,7 +427,8 @@ export function useGameState(userId: string | null) {
         ppEarnedToday: prev.ppEarnedToday + Math.max(0, payoutPP - betPP),
       };
     });
-    return { ok: true, pocketIndex, multiplier, payoutPP };
+
+    return finalResult;
   }, []);
 
   const loginCheck = useCallback(() => {
