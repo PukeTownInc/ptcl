@@ -66,7 +66,7 @@ function AppContent() {
       case 'contagion-cache':
         return <ContagionCacheScreen state={state} actions={actions} onBack={() => handleNavigate('home')} />;
       case 'plinko':
-        return <PlinkoScreen />;
+        return <PlinkoScreen state={state} actions={actions} />;
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
   };
@@ -85,7 +85,6 @@ function AppContent() {
     return <LoginScreen />;
   }
 
-  // Wait for cloud data before rendering ANYTHING — prevents 0.00 flash
   if (cloudLoading || !state) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
