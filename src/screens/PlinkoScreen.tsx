@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Info, Trophy, X } from 'lucide-react';
 import { useGameState } from '../useGameState';
 import { PLINKO_MULTIPLIERS } from '../constants';
-
 // ✅ Correct named export — matches exactly what app.tsx imports
 export function PlinkoScreen() {
   const { state, playPlinko } = useGameState(null);
@@ -15,13 +14,11 @@ export function PlinkoScreen() {
     payoutPP: number;
     win: boolean;
   } | null>(null);
-
   const handlePlay = () => {
     if (isPlaying || state.lockedPotPP < betAmount) return;
     
     setIsPlaying(true);
     setLastResult(null);
-
     setTimeout(() => {
       const result = playPlinko(betAmount);
       
@@ -38,7 +35,6 @@ export function PlinkoScreen() {
       setIsPlaying(false);
     }, 1200);
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-950 via-green-900 to-emerald-950 text-white p-4">
       <div className="max-w-md mx-auto">
@@ -46,7 +42,6 @@ export function PlinkoScreen() {
           <h1 className="text-2xl font-bold text-lime-400">☢️ Radioactive Plinko</h1>
           <p className="text-sm text-green-300 mt-1">Drop the ball — multiply your Puke Points!</p>
         </div>
-
         <div className="bg-black/40 rounded-xl p-4 mb-6">
           <div className="flex justify-center mb-4">
             <div className="w-4 h-4 bg-lime-400 rounded-full shadow-lg shadow-lime-400/50" />
@@ -89,7 +84,6 @@ export function PlinkoScreen() {
             })}
           </div>
         </div>
-
         <div className="bg-black/40 rounded-xl p-4 mb-6">
           <label className="text-sm text-green-300 mb-2 block">Bet Amount (Puke Points)</label>
           <div className="flex items-center gap-3 mb-4">
@@ -137,7 +131,6 @@ export function PlinkoScreen() {
             )}
           </button>
         </div>
-
         {lastResult?.visible && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-gradient-to-b from-green-900 to-green-950 rounded-2xl p-6 max-w-sm w-full text-center border border-lime-500/30 relative">
@@ -166,7 +159,6 @@ export function PlinkoScreen() {
             </div>
           </div>
         )}
-
         <div className="bg-black/40 rounded-xl p-4 text-sm text-green-300">
           <div className="flex items-center gap-2 mb-2">
             <Info size={16} className="text-lime-400" />
