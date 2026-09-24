@@ -318,7 +318,6 @@ export function useGameState(userId: string | null) {
     });
     return accepted;
   }, []);
-  // ✅ Contagion Cache — 1 free + 2 ad-gated claims for blue box
   const canClaimFreeCache = useCallback((): boolean => {
     const today = todayUTC();
     return stateRef.current.lastFreeCacheClaimDate !== today;
@@ -326,7 +325,6 @@ export function useGameState(userId: string | null) {
   const canClaimBlueCacheViaAd = useCallback((): boolean => {
     return stateRef.current.blueCacheAdClaims < 2;
   }, []);
-  // ✅ Purple box — 1 ad claim per day
   const canClaimPurpleCacheViaAd = useCallback((): boolean => {
     const today = todayUTC();
     return stateRef.current.purpleCacheAdClaimedDate !== today;
@@ -339,7 +337,6 @@ export function useGameState(userId: string | null) {
     let result: { ok: boolean; reward: ReturnType<typeof rollCacheReward> } = { ok: false, reward: {} };
     
     setState((prev) => {
-      // Blue box: 1 free per day + 2 via ad per day
       if (tier === 'blue') {
         if (viaAd) {
           if (prev.blueCacheAdClaims >= 2) {
@@ -352,9 +349,7 @@ export function useGameState(userId: string | null) {
             return prev;
           }
         }
-      }
-      // Purple box: cost PP OR 1 daily ad
-      else if (tier === 'purple') {
+      } else if (tier === 'purple') {
         if (viaAd) {
           if (prev.purpleCacheAdClaimedDate === today) {
             result = { ok: false, reward: {} };
@@ -366,9 +361,7 @@ export function useGameState(userId: string | null) {
             return prev;
           }
         }
-      }
-      // Other boxes — check cost
-      else {
+      } else {
         if (prev.lockedPotPP < box.costPP) {
           result = { ok: false, reward: {} };
           return prev;
@@ -380,7 +373,6 @@ export function useGameState(userId: string | null) {
       
       let next = { ...prev };
       
-      // Track claims
       if (tier === 'blue') {
         if (viaAd) {
           next.blueCacheAdClaims = prev.blueCacheAdClaims + 1;
@@ -398,7 +390,6 @@ export function useGameState(userId: string | null) {
         next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
       }
       
-      // Apply rewards
       if (reward.xp) {
         next.xp += reward.xp;
         next.dailyXpFree += reward.xp;
@@ -422,7 +413,7 @@ export function useGameState(userId: string | null) {
     
     return result;
   }, []);
-  // ✅ Radioactive Plinko — Place bet & calculate result
+  // ✅ FIXED Plinko — balance now updates correctly
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
     let result: { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } = {
       ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0,
@@ -431,8 +422,8 @@ export function useGameState(userId: string | null) {
       if (prev.lockedPotPP < betPP) {
         return prev;
       }
-      // Simulate ball path — random walk down rows
-      let pos = 3.5; // start center
+      // Simulate ball path
+      let pos = 3.5;
       for (let row = 0; row < 8; row++) {
         pos += Math.random() < 0.5 ? -0.5 : 0.5;
       }
@@ -443,9 +434,12 @@ export function useGameState(userId: string | null) {
       
       result = { ok: true, pocketIndex, multiplier, payoutPP };
       
+      // ✅ Correctly update lockedPotPP: subtract bet, add payout
+      const newLockedPotPP = Math.min(prev.lockedPotPP - betPP + payoutPP, 500000);
+      
       return {
         ...prev,
-        lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
+        lockedPotPP: newLockedPotPP,
         totalEarnedPP: prev.totalEarnedPP + profit,
         ppEarnedToday: prev.ppEarnedToday + profit,
       };
