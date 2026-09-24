@@ -45,7 +45,7 @@ const roadmapData = [
     items: [
       '💰 Waste Withdrawal — Cash out via FaucetPay',
       '🎟️ Contamination Pass — Battle Pass, Free + Premium tiers',
-      '📦 Contagion Cache — Mystery Boxes: Common → Legendary',
+      '✅ 📦 Contagion Cache — Mystery Boxes: Common → Legendary',
       '🎡 Wheel of Misfortune — Daily mini-game, spins & rewards',
       '🛒 Toxic Shop — Boosts, perks, & exclusive items',
       '🎨 Profile Customisation — Avatars, frames, colours',
@@ -124,7 +124,6 @@ const roadmapData = [
     ],
   },
 ];
-
 export function RoadmapScreen({ onNavigate, actions }: Props) {
   const toast = useToast();
   const [localClaimed, setLocalClaimed] = useState(false);
@@ -137,26 +136,20 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     5: false,
     6: false,
   });
-
   // Sync local claimed state with stored value
   useEffect(() => {
     if (actions.state?.missions?.roadmapDailyGiftClaimed) {
       setLocalClaimed(true);
     }
   }, [actions.state?.missions?.roadmapDailyGiftClaimed]);
-
   const toggle = (i: number) => {
     setOpenSections((prev) => ({ ...prev, [i]: !prev[i] }));
   };
-
   const isClaimed = localClaimed || actions.state?.missions?.roadmapDailyGiftClaimed;
-
   const handleClaim = () => {
     if (isClaimed) return;
-
     // Lock button instantly
     setLocalClaimed(true);
-
     // Claim gift and check success
     const success = actions.claimRoadmapDailyGift();
     if (!success) {
@@ -164,14 +157,11 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
       setLocalClaimed(false);
       return;
     }
-
     // Give rewards
     actions.addXP(10, false, true);
     actions.addSpins(3);
-
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
-
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
       <div className="grunge-panel p-5 text-center space-y-2">
