@@ -1,602 +1,167 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { GameState, MissionState, WithdrawalRecord, CacheBoxTier } from './types';
-import {
-  ALL_MISSIONS_BONUS,
-  CACHE_BOXES,
-  DAILY_XP_BONUS_CAP,
-  DAILY_XP_FREE_CAP,
-  FREE_SPINS_BASE,
-  FREE_SPINS_DAILY_BONUS,
-  JACKPOT_FRAGMENTS_TO_UNLOCK,
-  MIN_UNLOCK_PP,
-  MISSIONS,
-  PLINKO_MULTIPLIERS,
-  rollCacheReward,
-} from './constants';
-import { supabase } from './lib/supabase';
-const STORAGE_KEY = 'puketown_cashlab_v1';
-function todayUTC(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-function daysBetween(a: string, b: string): number {
-  const da = new Date(a + 'T00:00:00Z').getTime();
-  const db = new Date(b + 'T00:00:00Z').getTime();
-  return Math.round((db - da) / 86400000);
-}
-function computeStreakReset(state: GameState, today: string): string | null {
-  const lastClaim = state.lastStreakClaimDate;
-  if (!lastClaim) return state.lastStreakClaimDate;
-  const gap = daysBetween(lastClaim, today);
-  if (gap >= 2) return null;
-  return lastClaim;
-}
-function defaultState(): GameState {
-  return {
-    xp: 0,
-    lockedPotPP: 0,
-    withdrawablePP: 0,
-    totalEarnedPP: 0,
-    spinsRemaining: FREE_SPINS_BASE,
-    freeSpinsClaimed: false,
-    dailyBoostClaimed: false,
-    dailyAdVideosWatched: 0,
-    dailyUnlocksUsed: 0,
-    dailyXpFree: 0,
-    dailyXpBonus: 0,
-    dailyDoubleUps: 0,
-    dailyExtraLucky: 0,
-    dailyHotStreak: 0,
-    dailyMysteryPacks: 0,
-    dailyPotAccel: 0,
-    dailyXpBoosts: 0,
-    xpBoostUntil: null,
-    hotStreakUntil: null,
-    potAccelUntil: null,
-    doubleUpPending: null,
-    extraLuckyPending: false,
-    missions: { spins: 0, adsWatched: 0, wheelSpins: 0, roadmapDailyGiftClaimed: false, allClaimed: false },
-    dailyMissionClaims: [],
-    allMissionsBonusClaimed: false,
-    allMissionsAdBonusClaimed: false,
-    ppEarnedToday: 0,
-    streakDay: 0,
-    streakClaimedToday: false,
-    streakAdWatchedToday: false,
-    lastStreakClaimDate: null,
-    bestStreak: 0,
-    streakPPBoostUntil: null,
-    referrals: 0,
-    loginStreak: 0,
-    lastLogin: null,
-    lastWithdraw: null,
-    faucetpayEmail: '',
-    withdrawalHistory: [],
-    lastReset: todayUTC(),
-    spinsToday: 0,
-    totalSpins: 0,
-    jackpotWins: 0,
-    leaderboardClaims: {},
-    leaderboardPeriodStarts: {},
-    flagsClaimedOn: todayUTC(),
-    monthlyResetDate: todayUTC(),
-    lastFreeCacheClaimDate: null,
-    blueCacheAdClaims: 0,
-    blueCacheClaimedToday: false,
-    purpleCacheAdClaimedDate: null,
-    jackpotFragments: 0,
+import { useState } from 'react';
+import { Info, Trophy, X } from 'lucide-react';
+import { useGameState } from '../useGameState';
+import { PLINKO_MULTIPLIERS } from '../constants';
+const FIXED_BET_PP = 100;
+export function PlinkoScreen() {
+  const { state, playPlinko } = useGameState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [lastResult, setLastResult] = useState<{
+    visible: boolean;
+    pocketIndex: number;
+    multiplier: number;
+    payoutPP: number;
+    win: boolean;
+  } | null>(null);
+  const handlePlay = () => {
+    if (isPlaying || state.lockedPotPP < FIXED_BET_PP) return;
+    
+    setIsPlaying(true);
+    setLastResult(null);
+    
+    setTimeout(() => {
+      const result = playPlinko(FIXED_BET_PP);
+      
+      if (result.ok) {
+        setLastResult({
+          visible: true,
+          pocketIndex: result.pocketIndex,
+          multiplier: result.multiplier,
+          payoutPP: result.payoutPP,
+          win: result.payoutPP > FIXED_BET_PP,
+        });
+      }
+      
+      setIsPlaying(false);
+    }, 1200);
   };
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-green-950 via-green-900 to-emerald-950 text-white p-4">
+      <div className="max-w-md mx-auto">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-lime-400">☢️ Radioactive Plinko</h1>
+          <p className="text-sm text-green-300 mt-1">Drop the ball — multiply your Puke Points!</p>
+          <p className="text-lg font-semibold text-yellow-300 mt-2">
+            Contagion Vault: {state.lockedPotPP.toLocaleString()} Puke Points
+          </p>
+        </div>
+        <div className="bg-black/40 rounded-xl p-4 mb-6">
+          <div className="flex justify-center mb-4">
+            <div className="w-4 h-4 bg-lime-400 rounded-full shadow-lg shadow-lime-400/50" />
+          </div>
+          
+          <div className="space-y-2 mb-4">
+            {[0, 1, 2, 3, 4, 5, 6].map((row) => (
+              <div
+                key={row}
+                className="flex justify-center gap-4"
+                style={{ paddingLeft: `${row * 8}px`, paddingRight: `${row * 8}px` }}
+              >
+                {Array.from({ length: row + 2 }).map((_, i) => (
+                  <div key={i} className="w-2 h-2 bg-lime-600/60 rounded-full" />
+                ))}
+              </div>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-8 gap-1">
+            {PLINKO_MULTIPLIERS.map((mult, idx) => {
+              const isHighlighted = lastResult?.visible && lastResult.pocketIndex === idx;
+              const isWin = mult >= 1;
+              return (
+                <div
+                  key={idx}
+                  className={`
+                    text-center py-2 rounded-lg text-sm font-bold transition-all
+                    ${isHighlighted
+                      ? 'bg-yellow-500 text-black scale-110 shadow-lg shadow-yellow-500/50'
+                      : isWin
+                        ? 'bg-lime-700/60 text-lime-200'
+                        : 'bg-red-900/60 text-red-200'
+                    }
+                  `}
+                >
+                  {mult}x
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="bg-black/40 rounded-xl p-4 mb-6">
+          <div className="text-center mb-4 py-2">
+            <span className="text-sm text-green-300">Fixed Bet: </span>
+            <span className="font-bold text-lime-400">100 Puke Points</span>
+          </div>
+          
+          <button
+            onClick={handlePlay}
+            disabled={isPlaying || state.lockedPotPP < FIXED_BET_PP}
+            className={`
+              w-full py-3 rounded-xl font-bold text-lg transition-all
+              ${isPlaying || state.lockedPotPP < FIXED_BET_PP
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-lime-500 hover:bg-lime-400 text-black shadow-lg shadow-lime-500/30 active:scale-98'
+              }
+            `}
+          >
+            {isPlaying ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                Dropping...
+              </span>
+            ) : (
+              `DROP BALL — 100 Puke Points`
+            )}
+          </button>
+          
+          {state.lockedPotPP < FIXED_BET_PP && (
+            <p className="text-center text-red-400 text-sm mt-3">
+              Need 100 Puke Points to play
+            </p>
+          )}
+        </div>
+        {lastResult?.visible && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-b from-green-900 to-green-950 rounded-2xl p-6 max-w-sm w-full text-center border border-lime-500/30 relative">
+              <button
+                onClick={() => setLastResult(null)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+              <Trophy className="mx-auto mb-3 text-yellow-400" size={40} />
+              <h3 className="text-xl font-bold mb-2">
+                {lastResult.win ? '🎉 WINNER!' : 'Better Luck Next Time'}
+              </h3>
+              <p className="text-3xl font-bold text-yellow-400 mb-2">
+                {lastResult.multiplier}x
+              </p>
+              <p className="text-lg mb-4">
+                Payout: <span className="font-bold text-lime-400">{lastResult.payoutPP.toLocaleString()}</span> Puke Points
+              </p>
+              <button
+                onClick={() => setLastResult(null)}
+                className="w-full py-2 bg-lime-600 hover:bg-lime-500 rounded-lg font-bold transition"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="bg-black/40 rounded-xl p-4 text-sm text-green-300">
+          <div className="flex items-center gap-2 mb-2">
+            <Info size={16} className="text-lime-400" />
+            <span className="font-bold text-white">How to Play</span>
+          </div>
+          <ul className="space-y-1">
+            <li>• Fixed bet: 100 Puke Points per drop</li>
+            <li>• Click DROP BALL to start</li>
+            <li>• Ball bounces down — lands in a pocket</li>
+            <li>• Multiplier × 100 = your payout</li>
+            <li>• 1.0x = break even | &gt;1.0x = profit!</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
 }
-function emptyMissions(): MissionState {
-  return { spins: 0, adsWatched: 0, wheelSpins: 0, roadmapDailyGiftClaimed: false, allClaimed: false };
-}
-function loadState(): GameState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    const parsed = JSON.parse(raw) as Partial<GameState>;
-    return { ...defaultState(), ...parsed };
-  } catch {
-    return defaultState();
-  }
-}
-function dailyResetIfNeeded(state: GameState): GameState {
-  const today = todayUTC();
-  if (state.lastReset === today) return state;
-  let loginStreak = state.loginStreak;
-  let lastLogin = state.lastLogin;
-  if (state.lastLogin) {
-    const gap = daysBetween(state.lastLogin, today);
-    if (gap > 1) loginStreak = 0;
-  }
-  return {
-    ...state,
-    spinsRemaining: FREE_SPINS_BASE,
-    freeSpinsClaimed: false,
-    dailyBoostClaimed: false,
-    dailyAdVideosWatched: 0,
-    dailyUnlocksUsed: 0,
-    dailyXpFree: 0,
-    dailyXpBonus: 0,
-    dailyExtraLucky: 0,
-    dailyHotStreak: 0,
-    dailyMysteryPacks: 0,
-    dailyPotAccel: 0,
-    dailyXpBoosts: 0,
-    xpBoostUntil: null,
-    hotStreakUntil: null,
-    potAccelUntil: null,
-    doubleUpPending: null,
-    extraLuckyPending: false,
-    missions: emptyMissions(),
-    dailyMissionClaims: [],
-    allMissionsBonusClaimed: false,
-    allMissionsAdBonusClaimed: false,
-    ppEarnedToday: 0,
-    streakClaimedToday: false,
-    streakAdWatchedToday: false,
-    streakDay: computeStreakReset(state, today) === null ? 0 : state.streakDay,
-    lastReset: today,
-    spinsToday: 0,
-    loginStreak,
-    lastLogin,
-    lastStreakClaimDate: computeStreakReset(state, today),
-    blueCacheAdClaims: 0,
-    blueCacheClaimedToday: false,
-    purpleCacheAdClaimedDate: null,
-  };
-}
-export function useGameState(userId: string | null) {
-  const [state, setState] = useState<GameState>(() => {
-    const loaded = loadState();
-    return dailyResetIfNeeded(loaded);
-  });
-  const [cloudLoading, setCloudLoading] = useState(false);
-  const stateRef = useRef(state);
-  stateRef.current = state;
-  const skipCloudSaveRef = useRef(false);
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    setCloudLoading(true);
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('data')
-          .eq('id', userId)
-          .maybeSingle();
-        if (cancelled) return;
-        if (error) {
-          console.error('Cloud load error:', error);
-          setCloudLoading(false);
-          return;
-        }
-        if (data?.data) {
-          const cloudState = { ...defaultState(), ...(data.data as Partial<GameState>) };
-          const reset = dailyResetIfNeeded(cloudState);
-          skipCloudSaveRef.current = true;
-          setState(reset);
-        } else {
-          await supabase.from('user_profiles').upsert({
-            id: userId,
-            data: stateRef.current,
-          });
-        }
-      } catch (err) {
-        console.error('Cloud load failed:', err);
-      } finally {
-        if (!cancelled) setCloudLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [userId]);
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {}
-  }, [state]);
-  useEffect(() => {
-    if (!userId) return;
-    if (skipCloudSaveRef.current) {
-      skipCloudSaveRef.current = false;
-      return;
-    }
-    const timer = setTimeout(async () => {
-      try {
-        await supabase.from('user_profiles').update({
-          data: stateRef.current,
-          last_synced: new Date().toISOString(),
-        }).eq('id', userId);
-      } catch (err) {
-        console.error('Cloud save failed:', err);
-      }
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [state, userId]);
-  const update = useCallback((fn: (s: GameState) => GameState) => {
-    setState((prev) => fn(prev));
-  }, []);
-  const addXP = useCallback((baseXp: number, viaAd: boolean, skipDailyCap = false) => {
-    setState((prev) => {
-      const xpToAdd = baseXp;
-      if (skipDailyCap) {
-        return { ...prev, xp: prev.xp + xpToAdd, dailyXpFree: prev.dailyXpFree + xpToAdd };
-      }
-      const freeRemaining = Math.max(0, DAILY_XP_FREE_CAP - prev.dailyXpFree);
-      const bonusRemaining = Math.max(0, DAILY_XP_BONUS_CAP - prev.dailyXpBonus);
-      if (viaAd) {
-        const freePart = Math.min(xpToAdd, freeRemaining);
-        const bonusPart = Math.min(Math.max(xpToAdd - freePart, 0), bonusRemaining);
-        return {
-          ...prev,
-          xp: prev.xp + freePart + bonusPart,
-          dailyXpFree: prev.dailyXpFree + freePart,
-          dailyXpBonus: prev.dailyXpBonus + bonusPart,
-        };
-      } else {
-        const actual = Math.min(xpToAdd, freeRemaining);
-        return { ...prev, xp: prev.xp + actual, dailyXpFree: prev.dailyXpFree + actual };
-      }
-    });
-  }, []);
-  const addPP = useCallback((pp: number) => {
-    setState((prev) => {
-      const hotStreak = prev.hotStreakUntil && prev.hotStreakUntil > Date.now() ? 1.5 : 1;
-      const streakBoost = prev.streakPPBoostUntil && prev.streakPPBoostUntil > Date.now() ? 1.2 : 1;
-      const accelerated = prev.potAccelUntil && prev.potAccelUntil > Date.now() ? pp * 2 : pp;
-      const final = Math.round(accelerated * hotStreak * streakBoost);
-      const newPot = Math.min(prev.lockedPotPP + final, 500000);
-      return {
-        ...prev,
-        lockedPotPP: newPot,
-        totalEarnedPP: prev.totalEarnedPP + (newPot - prev.lockedPotPP),
-        ppEarnedToday: prev.ppEarnedToday + (newPot - prev.lockedPotPP),
-      };
-    });
-  }, []);
-  const isPotFull = useCallback((s?: GameState) => {
-    const cur = s ?? stateRef.current;
-    return cur.lockedPotPP >= 500000;
-  }, []);
-  const unlockPot = useCallback(() => {
-    setState((prev) => {
-      if (prev.lockedPotPP < MIN_UNLOCK_PP) return prev;
-      const moved = prev.lockedPotPP;
-      return {
-        ...prev,
-        lockedPotPP: 0,
-        withdrawablePP: prev.withdrawablePP + moved,
-        dailyUnlocksUsed: prev.dailyUnlocksUsed + 1,
-      };
-    });
-  }, []);
-  const recordSpin = useCallback(() => {
-    setState((prev) => {
-      const xpToAdd = 1;
-      return {
-        ...prev,
-        spinsRemaining: Math.max(0, prev.spinsRemaining - 1),
-        spinsToday: prev.spinsToday + 1,
-        totalSpins: prev.totalSpins + 1,
-        missions: { ...prev.missions, spins: prev.missions.spins + 1 },
-        xp: prev.xp + xpToAdd,
-        dailyXpFree: prev.dailyXpFree + xpToAdd,
-      };
-    });
-  }, []);
-  const addSpins = useCallback((n: number) => {
-    setState((prev) => ({ ...prev, spinsRemaining: prev.spinsRemaining + n }));
-  }, []);
-  const watchAd = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      dailyAdVideosWatched: prev.dailyAdVideosWatched + 1,
-      missions: { ...prev.missions, adsWatched: prev.missions.adsWatched + 1 },
-    }));
-  }, []);
-  const claimDailyBonusSpins = useCallback(() => {
-    setState((prev) => {
-      if (prev.freeSpinsClaimed) return prev;
-      return { ...prev, freeSpinsClaimed: true, spinsRemaining: prev.spinsRemaining + FREE_SPINS_DAILY_BONUS };
-    });
-  }, []);
-  const claimDailyBoost = useCallback(() => {
-    setState((prev) => {
-      if (prev.dailyBoostClaimed) return prev;
-      return { ...prev, dailyBoostClaimed: true, spinsRemaining: prev.spinsRemaining + 5 };
-    });
-  }, []);
-  const claimRoadmapDailyGift = useCallback(() => {
-    let accepted = false;
-    setState((prev) => {
-      if (prev.missions.roadmapDailyGiftClaimed) return prev;
-      accepted = true;
-      return {
-        ...prev,
-        missions: { ...prev.missions, roadmapDailyGiftClaimed: true },
-      };
-    });
-    return accepted;
-  }, []);
-  const canClaimFreeCache = useCallback((): boolean => {
-    const today = todayUTC();
-    return stateRef.current.lastFreeCacheClaimDate !== today;
-  }, []);
-  const canClaimBlueCacheViaAd = useCallback((): boolean => {
-    return stateRef.current.blueCacheAdClaims < 2;
-  }, []);
-  const canClaimPurpleCacheViaAd = useCallback((): boolean => {
-    const today = todayUTC();
-    return stateRef.current.purpleCacheAdClaimedDate !== today;
-  }, []);
-  const openCacheBox = useCallback((tier: CacheBoxTier, viaAd: boolean = false): { ok: boolean; reward: ReturnType<typeof rollCacheReward> } => {
-    const box = CACHE_BOXES[tier];
-    if (!box) return { ok: false, reward: {} };
-    const today = todayUTC();
-    let result: { ok: boolean; reward: ReturnType<typeof rollCacheReward> } = { ok: false, reward: {} };
-    setState((prev) => {
-      if (tier === 'blue') {
-        if (viaAd) {
-          if (prev.blueCacheAdClaims >= 2) return prev;
-        } else {
-          if (prev.lastFreeCacheClaimDate === today) return prev;
-        }
-      } else if (tier === 'purple') {
-        if (viaAd) {
-          if (prev.purpleCacheAdClaimedDate === today) return prev;
-        } else {
-          if (prev.lockedPotPP < box.costPP) return prev;
-        }
-      } else {
-        if (prev.lockedPotPP < box.costPP) return prev;
-      }
-      const reward = rollCacheReward(tier);
-      result = { ok: true, reward };
-      let next = { ...prev };
-      if (tier === 'blue') {
-        if (viaAd) next.blueCacheAdClaims = prev.blueCacheAdClaims + 1;
-        else { next.lastFreeCacheClaimDate = today; next.blueCacheClaimedToday = true; }
-      } else if (tier === 'purple') {
-        if (viaAd) next.purpleCacheAdClaimedDate = today;
-        else next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
-      } else next.lockedPotPP = Math.max(0, next.lockedPotPP - box.costPP);
-      if (reward.xp) { next.xp += reward.xp; next.dailyXpFree += reward.xp; }
-      if (reward.spins) next.spinsRemaining += reward.spins;
-      if (reward.pp) {
-        next.lockedPotPP = Math.min(next.lockedPotPP + reward.pp, 500000);
-        next.totalEarnedPP += reward.pp;
-        next.ppEarnedToday += reward.pp;
-      }
-      if (reward.jackpotFragment) {
-        next.jackpotFragments += 1;
-        if (next.jackpotFragments >= JACKPOT_FRAGMENTS_TO_UNLOCK) {
-          next.jackpotFragments = 0;
-          next.spinsRemaining += 50;
-        }
-      }
-      return next;
-    });
-    return result;
-  }, []);
-  // ✅ FINAL CORRECTED playPlinko — no stale values
-  const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    // Calculate result FIRST — synchronous, no delays
-    let pos = 3.5;
-    for (let row = 0; row < 8; row++) {
-      pos += Math.random() < 0.5 ? -0.5 : 0.5;
-    }
-    const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
-    const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
-    const payoutPP = Math.round(betPP * multiplier);
-    const profit = Math.max(0, payoutPP - betPP);
-
-    // Check against LIVE ref value — not stale closure
-    if (stateRef.current.lockedPotPP < betPP) {
-      return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
-    }
-
-    // Update state with known-good values
-    setState((prev) => ({
-      ...prev,
-      lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
-      totalEarnedPP: prev.totalEarnedPP + profit,
-      ppEarnedToday: prev.ppEarnedToday + profit,
-    }));
-
-    return { ok: true, pocketIndex, multiplier, payoutPP };
-  }, []);
-  const loginCheck = useCallback(() => {
-    setState((prev) => {
-      const today = todayUTC();
-      if (prev.lastLogin === today) return prev;
-      let streakDay = prev.streakDay;
-      if (prev.lastStreakClaimDate) {
-        const gap = daysBetween(prev.lastStreakClaimDate, today);
-        if (gap >= 2) streakDay = 0;
-      }
-      const bestStreak = Math.max(prev.bestStreak, streakDay);
-      return { ...prev, loginStreak: prev.loginStreak, lastLogin: today, streakDay, streakClaimedToday: false, bestStreak };
-    });
-  }, []);
-  const setFaucetpayEmail = useCallback((email: string) => {
-    setState((prev) => ({ ...prev, faucetpayEmail: email }));
-  }, []);
-  const adjustWithdrawablePP = useCallback((delta: number) => {
-    setState((prev) => ({ ...prev, withdrawablePP: Math.max(0, prev.withdrawablePP + delta) }));
-  }, []);
-  const recordWithdrawal = useCallback((rec: WithdrawalRecord) => {
-    setState((prev) => ({
-      ...prev,
-      withdrawablePP: Math.max(0, prev.withdrawablePP - (rec.amountPP + rec.feePP)),
-      lastWithdraw: Date.now(),
-      withdrawalHistory: [rec, ...prev.withdrawalHistory].slice(0, 50),
-    }));
-  }, []);
-  const activateXPBoost = useCallback(() => {
-    setState((prev) => ({ ...prev, dailyXpBoosts: prev.dailyXpBoosts + 1, xpBoostUntil: Date.now() + 3600000 }));
-  }, []);
-  const activateHotStreak = useCallback(() => {
-    setState((prev) => ({ ...prev, dailyHotStreak: prev.dailyHotStreak + 1, hotStreakUntil: Date.now() + 10 * 60000 }));
-  }, []);
-  const activatePotAccel = useCallback(() => {
-    setState((prev) => ({ ...prev, dailyPotAccel: prev.dailyPotAccel + 1, potAccelUntil: Date.now() + 5 * 60000 }));
-  }, []);
-  const useDoubleUp = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      doubleUpPending: null,
-      missions: { ...prev.missions, wheelSpins: prev.missions.wheelSpins + 1 },
-    }));
-  }, []);
-  const useExtraLucky = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      dailyExtraLucky: prev.dailyExtraLucky + 1,
-      extraLuckyPending: false,
-      spinsRemaining: prev.spinsRemaining + 3,
-    }));
-  }, []);
-  const openMysteryPack = useCallback(() => {
-    const spins = 15 + Math.floor(Math.random() * 11);
-    setState((prev) => ({ ...prev, spinsRemaining: prev.spinsRemaining + spins }));
-    return spins;
-  }, []);
-  const setDoubleUpPending = useCallback((pp: number) => {
-    setState((prev) => ({ ...prev, doubleUpPending: pp }));
-  }, []);
-  const setExtraLuckyPending = useCallback(() => {
-    setState((prev) => ({ ...prev, extraLuckyPending: true }));
-  }, []);
-  const claimMission = useCallback((missionId: string, viaAd: boolean) => {
-    return { missionId, viaAd };
-  }, []);
-  const claimMissionReward = useCallback((missionId: string, viaAd: boolean = false): boolean => {
-    let accepted = false;
-    setState((prev) => {
-      if (prev.dailyMissionClaims.includes(missionId)) return prev;
-      accepted = true;
-      const mission = MISSIONS.find(m => m.id === missionId);
-      if (!mission) return { ...prev, dailyMissionClaims: [...prev.dailyMissionClaims, missionId] };
-      const xpValue = viaAd ? mission.adXp : mission.baseXp;
-      const spinsToAdd = viaAd ? mission.adSpins : 0;
-      return {
-        ...prev,
-        dailyMissionClaims: [...prev.dailyMissionClaims, missionId],
-        xp: prev.xp + xpValue,
-        dailyXpFree: prev.dailyXpFree + xpValue,
-        spinsRemaining: prev.spinsRemaining + spinsToAdd,
-      };
-    });
-    return accepted;
-  }, []);
-  const claimAllMissionsBonus = useCallback((): boolean => {
-    let accepted = false;
-    setState((prev) => {
-      if (prev.allMissionsBonusClaimed) return prev;
-      accepted = true;
-      const { baseXp, baseSpins } = ALL_MISSIONS_BONUS;
-      return {
-        ...prev,
-        allMissionsBonusClaimed: true,
-        xp: prev.xp + baseXp,
-        dailyXpFree: prev.dailyXpFree + baseXp,
-        spinsRemaining: prev.spinsRemaining + baseSpins,
-      };
-    });
-    return accepted;
-  }, []);
-  const claimAllMissionsAdBonus = useCallback((): boolean => {
-    let accepted = false;
-    setState((prev) => {
-      if (prev.allMissionsAdBonusClaimed) return prev;
-      accepted = true;
-      const { adXp, adSpins } = ALL_MISSIONS_BONUS;
-      return {
-        ...prev,
-        allMissionsAdBonusClaimed: true,
-        xp: prev.xp + adXp,
-        dailyXpBonus: prev.dailyXpBonus + adXp,
-        spinsRemaining: prev.spinsRemaining + adSpins,
-      };
-    });
-    return accepted;
-  }, []);
-  const claimStreakRewardViaAd = useCallback((reward: { spins: number; xp: number; ppBoost?: boolean }) => {
-    setState((prev) => {
-      if (prev.streakClaimedToday) return prev;
-      const newStreakDay = prev.streakDay >= 7 ? 1 : prev.streakDay + 1;
-      const bestStreak = Math.max(prev.bestStreak, newStreakDay);
-      return {
-        ...prev,
-        streakDay: newStreakDay,
-        streakClaimedToday: true,
-        streakAdWatchedToday: true,
-        lastStreakClaimDate: todayUTC(),
-        bestStreak,
-        spinsRemaining: prev.spinsRemaining + reward.spins,
-        xp: prev.xp + reward.xp,
-        dailyXpBonus: prev.dailyXpBonus + reward.xp,
-        dailyAdVideosWatched: prev.dailyAdVideosWatched + 1,
-        missions: { ...prev.missions, adsWatched: prev.missions.adsWatched + 1 },
-        streakPPBoostUntil: reward.ppBoost ? Date.now() + 24 * 60 * 60 * 1000 : prev.streakPPBoostUntil,
-      };
-    });
-  }, []);
-  const recordReferral = useCallback(() => {
-    setState((prev) => ({ ...prev, referrals: prev.referrals + 1, spinsRemaining: prev.spinsRemaining + 30 }));
-  }, []);
-  const recordJackpot = useCallback(() => {
-    setState((prev) => ({ ...prev, jackpotWins: prev.jackpotWins + 1 }));
-  }, []);
-  const claimLeaderboardPrize = useCallback((key: string, xp: number, pp: number, rewardType: 'xp' | 'pp') => {
-    setState((prev) => {
-      if (prev.leaderboardClaims[key]) return prev;
-      if (rewardType === 'xp') {
-        return { ...prev, xp: prev.xp + xp, dailyXpBonus: prev.dailyXpBonus + xp, leaderboardClaims: { ...prev.leaderboardClaims, [key]: true } };
-      }
-      const newPot = Math.min(prev.lockedPotPP + pp, 500000);
-      return { ...prev, lockedPotPP: newPot, totalEarnedPP: prev.totalEarnedPP + (newPot - prev.lockedPotPP), ppEarnedToday: prev.ppEarnedToday + (newPot - prev.lockedPotPP), leaderboardClaims: { ...prev.leaderboardClaims, [key]: true } };
-    });
-  }, []);
-  const resetLeaderboardClaims = useCallback((keys: string[]) => {
-    setState((prev) => {
-      const claims = { ...prev.leaderboardClaims };
-      for (const k of keys) delete claims[k];
-      return { ...prev, leaderboardClaims: claims };
-    });
-  }, []);
-  const resetAll = useCallback(() => {
-    const fresh = defaultState();
-    fresh.lastLogin = todayUTC();
-    fresh.loginStreak = 1;
-    fresh.streakDay = 0;
-    fresh.lastStreakClaimDate = null;
-    setState(fresh);
-  }, []);
-  return useMemo(() => ({
-    state, cloudLoading, update, addXP, addPP, isPotFull, unlockPot,
-    recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
-    claimRoadmapDailyGift, loginCheck, setFaucetpayEmail, adjustWithdrawablePP, recordWithdrawal,
-    activateXPBoost, activateHotStreak, activatePotAccel, useDoubleUp,
-    useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
-    claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
-    claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
-    playPlinko,
-  }), [
-    state, cloudLoading, update, addXP, addPP, isPotFull, unlockPot,
-    recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
-    claimRoadmapDailyGift, loginCheck, setFaucetpayEmail, adjustWithdrawablePP, recordWithdrawal,
-    activateXPBoost, activateHotStreak, activatePotAccel, useDoubleUp,
-    useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
-    claimMission, claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
-    claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll, canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
-    playPlinko,
-  ]);
-}
-export function isXPBoostActive(_s: GameState): boolean { return false; }
-export function isStreakPPBoostActive(s: GameState): boolean { return !!s.streakPPBoostUntil && s.streakPPBoostUntil > Date.now(); }
-export function isHotStreakActive(s: GameState): boolean { return !!s.hotStreakUntil && s.hotStreakUntil > Date.now(); }
-export function isPotAccelActive(s: GameState): boolean { return !!s.potAccelUntil && s.potAccelUntil > Date.now(); }
-export type GameActions = ReturnType<typeof useGameState>;
