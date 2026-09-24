@@ -3,10 +3,10 @@ import { Info, Trophy, X } from 'lucide-react';
 import { useGameState } from '../useGameState';
 import { PLINKO_MULTIPLIERS } from '../constants';
 
+const FIXED_BET_PP = 100;
+
 export function PlinkoScreen() {
-  // ✅ Removed null — useGameState without userId still works locally
   const { state, playPlinko } = useGameState(null);
-  const [betAmount, setBetAmount] = useState(100);
   const [isPlaying, setIsPlaying] = useState(false);
   const [lastResult, setLastResult] = useState<{
     visible: boolean;
@@ -17,14 +17,13 @@ export function PlinkoScreen() {
   } | null>(null);
 
   const handlePlay = () => {
-    if (isPlaying || state.lockedPotPP < betAmount) return;
+    if (isPlaying || state.lockedPotPP < FIXED_BET_PP) return;
     
     setIsPlaying(true);
     setLastResult(null);
     
     setTimeout(() => {
-      // ✅ Capture fresh state BEFORE calling play
-      const result = playPlinko(betAmount);
+      const result = playPlinko(FIXED_BET_PP);
       
       if (result.ok) {
         setLastResult({
@@ -32,7 +31,7 @@ export function PlinkoScreen() {
           pocketIndex: result.pocketIndex,
           multiplier: result.multiplier,
           payoutPP: result.payoutPP,
-          win: result.payoutPP > betAmount,
+          win: result.payoutPP > FIXED_BET_PP,
         });
       }
       
@@ -92,38 +91,17 @@ export function PlinkoScreen() {
         </div>
 
         <div className="bg-black/40 rounded-xl p-4 mb-6">
-          <label className="text-sm text-green-300 mb-2 block">Bet Amount (Puke Points)</label>
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={() => setBetAmount(Math.max(10, Math.floor(betAmount / 2)))}
-              className="px-3 py-2 bg-green-800 rounded-lg hover:bg-green-700 transition"
-              disabled={isPlaying}
-            >
-              ½
-            </button>
-            <input
-              type="number"
-              value={betAmount}
-              onChange={(e) => setBetAmount(Math.max(10, Number(e.target.value) || 10))}
-              className="flex-1 bg-green-900/50 border border-green-700 rounded-lg px-3 py-2 text-center font-bold"
-              min={10}
-              disabled={isPlaying}
-            />
-            <button
-              onClick={() => setBetAmount(Math.min(state.lockedPotPP, betAmount * 2))}
-              className="px-3 py-2 bg-green-800 rounded-lg hover:bg-green-700 transition"
-              disabled={isPlaying}
-            >
-              ×2
-            </button>
+          <div className="text-center mb-4 py-2">
+            <span className="text-sm text-green-300">Fixed Bet: </span>
+            <span className="font-bold text-lime-400">100 Puke Points</span>
           </div>
           
           <button
             onClick={handlePlay}
-            disabled={isPlaying || state.lockedPotPP < betAmount}
+            disabled={isPlaying || state.lockedPotPP < FIXED_BET_PP}
             className={`
               w-full py-3 rounded-xl font-bold text-lg transition-all
-              ${isPlaying || state.lockedPotPP < betAmount
+              ${isPlaying || state.lockedPotPP < FIXED_BET_PP
                 ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 : 'bg-lime-500 hover:bg-lime-400 text-black shadow-lg shadow-lime-500/30 active:scale-98'
               }
@@ -135,9 +113,15 @@ export function PlinkoScreen() {
                 Dropping...
               </span>
             ) : (
-              `DROP BALL — ${betAmount.toLocaleString()} Puke Points`
+              `DROP BALL — 100 Puke Points`
             )}
           </button>
+          
+          {state.lockedPotPP < FIXED_BET_PP && (
+            <p className="text-center text-red-400 text-sm mt-3">
+              Need 100 Puke Points to play
+            </p>
+          )}
         </div>
 
         {lastResult?.visible && (
@@ -175,10 +159,10 @@ export function PlinkoScreen() {
             <span className="font-bold text-white">How to Play</span>
           </div>
           <ul className="space-y-1">
-            <li>• Set your bet in Puke Points</li>
+            <li>• Fixed bet: 100 Puke Points per drop</li>
             <li>• Click DROP BALL to start</li>
             <li>• Ball bounces down — lands in a pocket</li>
-            <li>• Multiplier × your bet = your payout</li>
+            <li>• Multiplier × 100 = your payout</li>
             <li>• 1.0x = break even | &gt;1.0x = profit!</li>
           </ul>
         </div>
