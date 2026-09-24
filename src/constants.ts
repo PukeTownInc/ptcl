@@ -128,7 +128,7 @@ export const CACHE_BOXES: Record<CacheBoxTier, {
   orange: {
     id: 'orange',
     label: 'Toxic Strongbox',
-    costPP: 25000,
+    costPP: 10000,
     freeDaily: false,
     closeImage: `${CACHE_ASSET_PATH}orange-close.png`,
     openImage: `${CACHE_ASSET_PATH}orange-open.png`,
