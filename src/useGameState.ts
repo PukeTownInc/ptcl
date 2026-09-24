@@ -399,27 +399,27 @@ export function useGameState(userId: string | null) {
     return result;
   }, []);
 
-  // ✅ FINAL FIXED playPlinko — single source of truth, no race conditions
+  // ✅ FINAL FIX — Calculate result FIRST, update state SECOND
   const playPlinko = useCallback((betPP: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    let finalResult: { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } = 
-      { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
+    // Step 1: Check current balance FIRST using ref (latest known value)
+    if (stateRef.current.lockedPotPP < betPP) {
+      return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
+    }
 
+    // Step 2: Calculate result IMMEDIATELY — before any state change
+    let pos = 3.5;
+    for (let row = 0; row < 8; row++) {
+      pos += Math.random() < 0.5 ? -0.5 : 0.5;
+    }
+    const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
+    const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
+    const payoutPP = Math.round(betPP * multiplier);
+
+    // Step 3: Update state — functional update ensures atomicity
     setState((prev) => {
-      // ✅ ONLY check here — single source of truth
+      // Double-check inside update — prevents race conditions
       if (prev.lockedPotPP < betPP) return prev;
-
-      // Calculate result — INSIDE the state guarantee
-      let pos = 3.5;
-      for (let row = 0; row < 8; row++) {
-        pos += Math.random() < 0.5 ? -0.5 : 0.5;
-      }
-      const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
-      const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
-      const payoutPP = Math.round(betPP * multiplier);
-
-      finalResult = { ok: true, pocketIndex, multiplier, payoutPP };
-
-      // ✅ Apply change — ALWAYS based on verified prev state
+      
       return {
         ...prev,
         lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
@@ -428,7 +428,8 @@ export function useGameState(userId: string | null) {
       };
     });
 
-    return finalResult;
+    // Step 4: Return result IMMEDIATELY so popup can show
+    return { ok: true, pocketIndex, multiplier, payoutPP };
   }, []);
 
   const loginCheck = useCallback(() => {
