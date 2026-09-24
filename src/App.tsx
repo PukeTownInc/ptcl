@@ -85,6 +85,17 @@ function AppContent() {
     return <LoginScreen />;
   }
 
+  // Wait for cloud data before rendering ANYTHING — prevents 0.00 flash
+  if (cloudLoading || !state) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-white">
+        <div className="text-center">
+          <div className="text-green-400 text-lg">☢️ Syncing contamination...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header
@@ -95,11 +106,7 @@ function AppContent() {
         xp={state.xp}
       />
       <main className="p-4 flex-1">
-        {cloudLoading ? (
-          <div className="text-center py-10 text-gray-400">Syncing contamination...</div>
-        ) : (
-          <ErrorBoundary>{renderScreen()}</ErrorBoundary>
-        )}
+        <ErrorBoundary>{renderScreen()}</ErrorBoundary>
       </main>
       <div className="py-4 flex justify-center">
         <img
