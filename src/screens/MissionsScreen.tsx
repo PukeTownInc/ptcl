@@ -6,12 +6,10 @@ import type { GameActions } from '../useGameState';
 import { isStreakPPBoostActive } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
-
 interface Props {
   state: GameState;
   actions: GameActions;
 }
-
 function isMissionComplete(state: GameState, id: string): boolean {
   switch (id) {
     case 'spins': return state.missions.spins >= 50;
@@ -20,10 +18,10 @@ function isMissionComplete(state: GameState, id: string): boolean {
     case 'claistreak': return state.streakClaimedToday;
     case 'earnpp': return state.ppEarnedToday >= 250;
     case 'roadmapDailyGift': return state.missions.roadmapDailyGiftClaimed;
+    case 'claimBlueCache': return state.blueCacheClaimedToday;
     default: return false;
   }
 }
-
 function missionProgress(state: GameState, id: string): number {
   switch (id) {
     case 'spins': return Math.min(state.missions.spins, 50);
@@ -32,10 +30,10 @@ function missionProgress(state: GameState, id: string): number {
     case 'claistreak': return state.streakClaimedToday ? 1 : 0;
     case 'earnpp': return Math.min(state.ppEarnedToday, 250);
     case 'roadmapDailyGift': return state.missions.roadmapDailyGiftClaimed ? 1 : 0;
+    case 'claimBlueCache': return state.blueCacheClaimedToday ? 1 : 0;
     default: return 0;
   }
 }
-
 function useResetCountdown() {
   const [remaining, setRemaining] = useState('');
   useState(() => {
@@ -54,7 +52,6 @@ function useResetCountdown() {
   }, []);
   return remaining;
 }
-
 export function MissionsScreen({ state, actions }: Props) {
   const toast = useToast();
   const [adModal, setAdModal] = useState<null | { 
@@ -74,7 +71,6 @@ export function MissionsScreen({ state, actions }: Props) {
   const streakReward = STREAK_REWARDS[nextDay - 1];
   const isDay7 = nextDay === MAX_STREAK_DAY;
   const streakBoostActive = isStreakPPBoostActive(state);
-
   const handleStreakClaim = () => {
     if (state.streakClaimedToday) {
       toast('info', 'Already Contaminated', 'Return tomorrow for your next dose');
@@ -90,7 +86,6 @@ export function MissionsScreen({ state, actions }: Props) {
       },
     });
   };
-
   const handleClaimBase = (id: string) => {
     if (state.dailyMissionClaims.includes(id)) {
       toast('info', 'Already Collected', 'Base supply gathered today');
@@ -100,15 +95,17 @@ export function MissionsScreen({ state, actions }: Props) {
       toast('info', 'Visit Roadmap', 'Claim the daily gift there first →');
       return;
     }
+    if (id === 'claimBlueCache' && !state.blueCacheClaimedToday) {
+      toast('info', 'Visit Contagion Cache', 'Claim your free daily blue box first →');
+      return;
+    }
     const mission = MISSIONS.find(m => m.id === id);
     if (!mission) return;
     const accepted = actions.claimMissionReward(id, false);
     if (!accepted) return;
-    // ✅ Direct full reward — no cap interference
-    actions.addXP(mission.baseXp, false, true); // skip daily cap
+    actions.addXP(mission.baseXp, false, true);
     toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure`);
   };
-
   const handleClaimAdBonus = (id: string) => {
     const adClaimId = `${id}:ad`;
     if (state.dailyMissionClaims.includes(adClaimId)) {
@@ -128,15 +125,13 @@ export function MissionsScreen({ state, actions }: Props) {
       onComplete: () => {
         const accepted = actions.claimMissionReward(adClaimId, true);
         if (!accepted) return;
-        // ✅ Both rewards — no cap interference
-        actions.addXP(mission.adXp, true, true); // skip daily cap
+        actions.addXP(mission.adXp, true, true);
         actions.addSpins(mission.adSpins);
         actions.watchAd();
         toast('success', 'Radiation Absorbed!', `+${mission.adXp} Exposure + ${mission.adSpins} Twists`);
       },
     });
   };
-
   const handleAllBase = () => {
     if (state.allMissionsBonusClaimed) return;
     if (!allComplete) {
@@ -145,11 +140,10 @@ export function MissionsScreen({ state, actions }: Props) {
     }
     const accepted = actions.claimAllMissionsBonus();
     if (!accepted) return;
-    actions.addXP(ALL_MISSIONS_BONUS.baseXp, false, true); // skip daily cap
+    actions.addXP(ALL_MISSIONS_BONUS.baseXp, false, true);
     if (ALL_MISSIONS_BONUS.baseSpins) actions.addSpins(ALL_MISSIONS_BONUS.baseSpins);
     toast('success', '☢️ FULL CONTAMINATION!', `+${ALL_MISSIONS_BONUS.baseXp} Exposure Bonus`);
   };
-
   const handleAllAdBonus = () => {
     if (state.allMissionsAdBonusClaimed) return;
     if (!state.allMissionsBonusClaimed) {
@@ -163,14 +157,13 @@ export function MissionsScreen({ state, actions }: Props) {
       onComplete: () => {
         const accepted = actions.claimAllMissionsAdBonus();
         if (!accepted) return;
-        actions.addXP(ALL_MISSIONS_BONUS.adXp, true, true); // skip daily cap
+        actions.addXP(ALL_MISSIONS_BONUS.adXp, true, true);
         if (ALL_MISSIONS_BONUS.adSpins) actions.addSpins(ALL_MISSIONS_BONUS.adSpins);
         actions.watchAd();
         toast('success', '☢️ CRITICAL EXPOSURE!', `+${ALL_MISSIONS_BONUS.adXp} Exposure + ${ALL_MISSIONS_BONUS.adSpins} Twists`);
       },
     });
   };
-
   return (
     <div className="space-y-4">
       <div className="grunge-panel p-4 text-center">
@@ -182,7 +175,6 @@ export function MissionsScreen({ state, actions }: Props) {
           <span>Radiation levels reset in: <span className="text-toxic-400 font-bold tabular-nums">{countdown}</span></span>
         </div>
       </div>
-
       <div className={`grunge-panel p-4 ${isDay7 ? 'neon-border-yellow' : ''}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -267,7 +259,6 @@ export function MissionsScreen({ state, actions }: Props) {
           </div>
         )}
       </div>
-
       {MISSIONS.map((m) => {
         const complete = isMissionComplete(state, m.id);
         const progress = missionProgress(state, m.id);
@@ -275,6 +266,7 @@ export function MissionsScreen({ state, actions }: Props) {
         const hasClaimed = state.dailyMissionClaims.includes(m.id);
         const hasAdClaimed = state.dailyMissionClaims.includes(`${m.id}:ad`);
         const isRoadmap = m.id === 'roadmapDailyGift';
+        const isBlueCache = m.id === 'claimBlueCache';
         
         return (
           <div key={m.id} className="grunge-panel p-3.5">
@@ -288,6 +280,7 @@ export function MissionsScreen({ state, actions }: Props) {
                 <div className="text-[10px] text-toxic-100/40 font-mono mt-0.5">
                   Base: +{m.baseXp} Exposure • Radiation: +{m.adXp} Exposure + {m.adSpins} Twists
                   {isRoadmap && <span className="text-toxic-300/60"> • Roadmap button: +10 Exposure + 3 Twists (separate)</span>}
+                  {isBlueCache && <span className="text-toxic-300/60"> • Contagion Cache: free daily blue box</span>}
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <div className="h-1.5 flex-1 rounded-full bg-ink-700 overflow-hidden">
@@ -298,7 +291,7 @@ export function MissionsScreen({ state, actions }: Props) {
                 <div className="flex gap-2 mt-2.5">
                   <button
                     onClick={() => handleClaimBase(m.id)}
-                    disabled={hasClaimed || (!complete && isRoadmap)}
+                    disabled={hasClaimed || (!complete && (isRoadmap || isBlueCache))}
                     className={`flex-1 py-2 text-[11px] flex items-center justify-center gap-1 transition-all ${
                       hasClaimed ? 'toxic-btn opacity-60' : !complete ? 'ghost-btn opacity-40 cursor-not-allowed' : 'toxic-btn'
                     }`}
@@ -307,6 +300,8 @@ export function MissionsScreen({ state, actions }: Props) {
                       <><CheckCircle2 size={12} /> Contaminated</>
                     ) : !complete && isRoadmap ? (
                       <><Lock size={12} /> Visit Roadmap First</>
+                    ) : !complete && isBlueCache ? (
+                      <><Lock size={12} /> Claim Blue Cache First</>
                     ) : (
                       <><Gift size={12} /> +{m.baseXp} Exposure</>
                     )}
@@ -326,7 +321,6 @@ export function MissionsScreen({ state, actions }: Props) {
           </div>
         );
       })}
-
       <div className={`grunge-panel p-4 ${allComplete ? 'neon-border-yellow' : 'opacity-60'}`}>
         <div className="flex items-center gap-3 mb-3">
           <Trophy size={24} className="text-radioactive-400" />
@@ -362,7 +356,6 @@ export function MissionsScreen({ state, actions }: Props) {
           </button>
         </div>
       </div>
-
       <AdModal
         open={!!adModal}
         onClose={() => setAdModal(null)}
