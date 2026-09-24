@@ -1,27 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, ChevronDown, ChevronRight, Users, AlertTriangle, Globe, Box } from 'lucide-react';
 import type { Screen } from '../types';
+
 const SUBMENU_ALLIES_LABEL = 'TOXIC ALLIES';
 const SUBMENU_ALLIES_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'profile', label: 'Radiation Profile', icon: User },
   // FUTURE: add factions/teams here later
 ];
+
 const SUBMENU_INFECTION_LABEL = 'INFECTION & RANKS';
 const SUBMENU_INFECTION_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'missions', label: 'Daily Contamination', icon: Target },
   { id: 'leaderboards', label: 'Infection Ranks', icon: Trophy },
 ];
+
 const SUBMENU_GAMING_LABEL = 'INFECTIOUS GAMING';
 const SUBMENU_GAMING_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'slots', label: 'Reactor Reels', icon: Gamepad2 },
-  { id: 'contagioncache', label: 'Contagion Cache', icon: Box },
+  { id: 'contagion-cache', label: 'Contagion Cache', icon: Box },
+  { id: 'plinko', label: 'Radioactive Plinko', icon: Gamepad2 },
 ];
+
 const SUBMENU_ECOSYSTEM_LABEL = 'ECOSYSTEM OPTIONS';
 const SUBMENU_ECOSYSTEM_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'roadmap', label: 'Fallout Forecast', icon: Zap },
   { id: 'withdraw', label: 'Waste Withdrawal', icon: Wallet },
   { id: 'settings', label: 'Lab Controls', icon: Settings },
 ];
+
 export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s: Screen, target?: string) => void }) {
   const [open, setOpen] = useState(false);
   const [subAlliesOpen, setSubAlliesOpen] = useState(false);
@@ -29,6 +35,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
   const [subGamingOpen, setSubGamingOpen] = useState(false);
   const [subEcosystemOpen, setSubEcosystemOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open) {
       setSubAlliesOpen(false);
@@ -62,6 +69,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
       document.removeEventListener('keydown', handleKey);
     };
   }, [open]);
+
   const handleSelect = (s: Screen) => {
     onChange(s);
     setOpen(false);
@@ -70,10 +78,12 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
     setSubGamingOpen(false);
     setSubEcosystemOpen(false);
   };
+
   const isAlliesActive = SUBMENU_ALLIES_ITEMS.some(item => item.id === active);
   const isInfectionActive = SUBMENU_INFECTION_ITEMS.some(item => item.id === active);
   const isGamingActive = SUBMENU_GAMING_ITEMS.some(item => item.id === active);
   const isEcosystemActive = SUBMENU_ECOSYSTEM_ITEMS.some(item => item.id === active);
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -101,6 +111,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
           <p className="text-[8px] font-mono text-radioactive-400/70 leading-none mt-0.5">CASH LAB</p>
         </div>
       </button>
+
       {open && (
         <div
           className="absolute top-[50px] left-0 z-[999] py-2 min-w-[220px] animate-fade-in"
@@ -121,6 +132,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
             <span className="flex-1 text-left">Contamination Zone</span>
             {active === 'home' && <Check size={16} className="text-green-400" />}
           </button>
+
           {/* TOXIC ALLIES */}
           <button
             onClick={() => setSubAlliesOpen((v) => !v)}
@@ -148,6 +160,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
               ))}
             </div>
           )}
+
           {/* INFECTION & RANKS */}
           <button
             onClick={() => setSubInfectionOpen((v) => !v)}
@@ -175,6 +188,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
               ))}
             </div>
           )}
+
           {/* INFECTIOUS GAMING */}
           <button
             onClick={() => setSubGamingOpen((v) => !v)}
@@ -202,6 +216,7 @@ export function NavDropdown({ active, onChange }: { active: Screen; onChange: (s
               ))}
             </div>
           )}
+
           {/* ECOSYSTEM OPTIONS */}
           <button
             onClick={() => setSubEcosystemOpen((v) => !v)}
