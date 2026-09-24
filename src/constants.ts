@@ -161,11 +161,12 @@ export function rollCacheReward(tier: CacheBoxTier): CacheBoxReward {
   return { jackpotFragment: true };
 }
 // ==============================================
-// ✅ MISSIONS — Roadmap gift has FULL standard rewards
+// ✅ MISSIONS — includes Claim Daily Contagion Cache
 // ==============================================
 export const MISSIONS = [
   { id: 'claistreak',        label: 'Claim Daily Streak',              target: 1,   baseXp: 50, adXp: 75, icon: '📅', adSpins: 5 },
   { id: 'roadmapDailyGift',  label: 'Claim Roadmap Daily Gift',        target: 1,   baseXp: 50, adXp: 75, icon: '🎁', adSpins: 5 },
+  { id: 'claimBlueCache',    label: 'Claim Daily Contagion Cache',     target: 1,   baseXp: 50, adXp: 75, icon: '☢️', adSpins: 5 },
   { id: 'spins',             label: 'Spin 50 Times',                  target: 50,  baseXp: 50, adXp: 75, icon: '🎰', adSpins: 5 },
   { id: 'earnpp',            label: 'Earn 250 Puke Points',           target: 250, baseXp: 50, adXp: 75, icon: '🎯', adSpins: 5 },
   { id: 'wheel',             label: 'Claim Radioactive Risk 5 Times',  target: 5,   baseXp: 50, adXp: 75, icon: '🎬', adSpins: 5 },
