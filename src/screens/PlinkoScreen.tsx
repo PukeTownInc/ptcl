@@ -30,10 +30,13 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
     setIsPlaying(true);
     setLastResult(null);
 
-    const pocketIndex = Math.floor(Math.random() * PLINKO_MULTIPLIERS.length);
+    const chosenPocketIndex = Math.floor(Math.random() * PLINKO_MULTIPLIERS.length);
+
     const startX = 50;
     const startY = 0;
-    const endX = (pocketIndex / (PLINKO_MULTIPLIERS.length - 1)) * 100;
+
+    const pocketCount = PLINKO_MULTIPLIERS.length;
+    const endX = (chosenPocketIndex / (pocketCount - 1)) * 100;
     const endY = 100;
 
     setBallPosition({ x: startX, y: startY });
@@ -59,13 +62,13 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
-        const result = playPlinko(FIXED_BET_PP);
+        const result = playPlinko(FIXED_BET_PP, chosenPocketIndex);
 
         if (result.ok) {
           setLastResult({
             visible: true,
-            pocketIndex: result.pocketIndex,
-            multiplier: result.multiplier,
+            pocketIndex: chosenPocketIndex,
+            multiplier: PLINKO_MULTIPLIERS[chosenPocketIndex],
             payoutPP: result.payoutPP,
             win: result.payoutPP > FIXED_BET_PP,
           });
@@ -112,8 +115,8 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
               {[0, 1, 2, 3, 4, 5, 6].map((row) => (
                 <div
                   key={row}
-                  className="flex justify-center gap-4"
-                  style={{ paddingLeft: `${row * 8}px`, paddingRight: `${row * 8}px` }}
+                  className="flex justify-center"
+                  style={{ gap: '24px' }}
                 >
                   {Array.from({ length: row + 2 }).map((_, i) => (
                     <div key={i} className="w-2 h-2 bg-lime-600/60 rounded-full" />
