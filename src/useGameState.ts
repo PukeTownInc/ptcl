@@ -80,6 +80,7 @@ function defaultState(): GameState {
     monthlyResetDate: todayUTC(),
     lastFreeCacheClaimDate: null,
     blueCacheAdClaims: 0,
+    blueCacheClaimedToday: false,
     purpleCacheAdClaimedDate: null,
     jackpotFragments: 0,
   };
@@ -139,6 +140,7 @@ function dailyResetIfNeeded(state: GameState): GameState {
     lastLogin,
     lastStreakClaimDate: computeStreakReset(state, today),
     blueCacheAdClaims: 0,
+    blueCacheClaimedToday: false,
     purpleCacheAdClaimedDate: null,
   };
 }
@@ -383,6 +385,7 @@ export function useGameState(userId: string | null) {
           next.blueCacheAdClaims = prev.blueCacheAdClaims + 1;
         } else {
           next.lastFreeCacheClaimDate = today;
+          next.blueCacheClaimedToday = true;
         }
       } else if (tier === 'purple') {
         if (viaAd) {
