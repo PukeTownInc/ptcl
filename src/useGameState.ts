@@ -439,14 +439,15 @@ export function useGameState(userId: string | null) {
       const pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
       const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
       const payoutPP = Math.round(betPP * multiplier);
+      const profit = Math.max(0, payoutPP - betPP);
       
       result = { ok: true, pocketIndex, multiplier, payoutPP };
       
       return {
         ...prev,
         lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
-        totalEarnedPP += Math.max(0, payoutPP - betPP),
-        ppEarnedToday += Math.max(0, payoutPP - betPP),
+        totalEarnedPP: prev.totalEarnedPP + profit,
+        ppEarnedToday: prev.ppEarnedToday + profit,
       };
     });
     return result;
