@@ -21,7 +21,7 @@ import { DAILY_XP_FREE_CAP } from './constants';
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
-  const { state, cloudLoading, ...actions } = useGameState(userId);
+  const { state, cloudLoading, cloudError, ...actions } = useGameState(userId);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
