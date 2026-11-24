@@ -43,7 +43,7 @@ export function GamesArenaScreen({ onNavigate }: Props) {
       </div>
       <div className="pt-section-heading"><span>OTHER GAME BAYS</span><i>UNDER DEVELOPMENT</i></div>
       <div className="pt-future-grid">
-        {futureGames.map(({title,icon:Icon}) => <button key={title} onClick={() => {setSelected(title);toast.show(`${title} is not enabled yet. No game balance has been changed.`);}}><Icon size={20}/><b>{title}</b><Lock size={12}/></button>)}
+        {futureGames.map(({title,icon:Icon}) => <button key={title} onClick={() => {setSelected(title);toast('info', `${title} is not enabled yet`, 'No game balance has been changed.');}}><Icon size={20}/><b>{title}</b><Lock size={12}/></button>)}
       </div>
       {selected && <p className="pt-muted-note">{selected} is shown as a future bay only. It cannot currently be entered.</p>}
     </section>
