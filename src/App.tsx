@@ -85,6 +85,23 @@ function AppContent() {
     return <LoginScreen />;
   }
 
+  if (cloudError) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-white px-6">
+        <div className="text-center max-w-sm">
+          <div className="text-red-400 text-lg mb-3">Unable to load your saved game</div>
+          <p className="text-sm text-white/70 mb-5">{cloudError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="yellow-btn px-5 py-3"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (cloudLoading || !state) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
