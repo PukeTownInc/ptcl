@@ -1,4 +1,4 @@
-import { ArrowLeft, Boxes, CircleDot, Dice5, Gem, Grid3X3, Play, Radio, ShieldAlert, Sparkles } from 'lucide-react';
+import { ArrowLeft, Boxes, CircleDot, Dice5, Grid3X3, Play, Radio, ShieldAlert, Sparkles } from 'lucide-react';
 import type { Screen } from '../types';
 
 type Props = { onNavigate: (screen: Screen) => void };
