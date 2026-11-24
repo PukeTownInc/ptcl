@@ -1,26 +1,29 @@
 import { useState } from 'react';
-import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Zap } from 'lucide-react';
+import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Zap, Box, Trophy, User, Wallet } from 'lucide-react';
 import type { GameState, Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
+
 interface Props {
   state: GameState;
   actions: GameActions;
   onNavigate: (s: Screen, target?: string) => void;
 }
+
 export function HomeScreen({ state, actions, onNavigate }: Props) {
   const toast = useToast();
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
+
   const handleDailyBonus = () => {
     if (state.freeSpinsClaimed) {
       toast('info', 'Already Contaminated', 'Return tomorrow for more');
       return;
     }
-    // ✅ No ad gate — direct claim, 5 spins only
     actions.claimDailyBonusSpins();
     toast('success', 'Contagion Absorbed!', '+5 Twists added');
   };
+
   const handleDailyBoost = () => {
     if (state.dailyBoostClaimed) {
       toast('info', 'Already Exposed', 'Return tomorrow for more');
@@ -38,88 +41,56 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       },
     });
   };
+
+  const destinations: { id: Screen; title: string; subtitle: string; icon: typeof Play; status: string }[] = [
+    { id: 'slots', title: 'Reactor Reels', subtitle: 'Main gaming reactor', icon: Play, status: 'LIVE' },
+    { id: 'contagion-cache', title: 'Contagion Cache', subtitle: 'Open sealed reward crates', icon: Box, status: 'LIVE' },
+    { id: 'missions', title: 'Hazard Duties', subtitle: 'Daily missions and streaks', icon: Target, status: 'LIVE' },
+    { id: 'leaderboards', title: 'Infection Ranks', subtitle: 'Monthly player rankings', icon: Trophy, status: 'LIVE' },
+    { id: 'profile', title: 'Radiation Profile', subtitle: 'Your stats and referrals', icon: User, status: 'LIVE' },
+    { id: 'roadmap', title: 'Roadmap Lab', subtitle: 'Development phases and ideas', icon: Zap, status: 'LAB' },
+    { id: 'withdraw', title: 'Waste Withdrawal', subtitle: 'Reward balance information', icon: Wallet, status: 'LAB' },
+  ];
+
   return (
-    <div className="space-y-4">
-      {/* Logo panel */}
-      <div className="relative grunge-panel overflow-hidden">
-        <div className="absolute inset-0 hazard-stripes opacity-[0.03]" />
-        <div className="relative p-3 text-center flex items-center justify-center min-h-[140px]">
-          <img 
-            src="/logo.png" 
-            alt="Logo" 
-            style={{ 
-              height: 'calc(100% - 16px)',
-              width: 'auto',
-              maxWidth: 'calc(100% - 16px)',
-              objectFit: 'contain',
-              display: 'block'
-            }} 
-          />
+    <div className="town-screen">
+      <section className="town-scene" aria-label="Puke Town control zone">
+        <div className="town-haze" />
+        <div className="town-skyline" />
+        <div className="town-ground" />
+        <div className="town-brand">
+          <img src="/logo.png" alt="Puke Town" />
+          <div><span>TOXIC INDUSTRIES</span><strong>CONTAMINATION ZONE</strong><small>SECTOR 01 · MAIN CONTROL</small></div>
         </div>
-      </div>
-      {/* Twists banner */}
-      <button
-        onClick={() => onNavigate('slots')}
-        className="toxic-btn w-full py-4 flex items-center justify-between px-5 group"
-      >
-        <div className="flex items-center gap-2">
-          <Sparkles size={20} />
-          <span className="text-left">
-            <div className="text-sm">{state.spinsRemaining} Toxic Twists Ready</div>
-            <div className="text-[10px] opacity-70 font-normal">Twist reels & gather Puke Points</div>
-          </span>
+        <div className="town-status"><i /> SYSTEMS ONLINE <span>PLAYER ACCESS GRANTED</span></div>
+        <div className="town-pin-grid">
+          {destinations.map(({ id, title, subtitle, icon: Icon, status }, index) => (
+            <button key={id} className={`town-pin town-pin-${index + 1}`} onClick={() => onNavigate(id)}>
+              <span className="town-pin-icon"><Icon size={19} /></span>
+              <span className="town-pin-copy"><strong>{title}</strong><small>{subtitle}</small></span>
+              <span className="town-pin-status">{status}</span>
+            </button>
+          ))}
         </div>
-        <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-      </button>
-      {/* Daily buttons */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={handleDailyBonus}
-          disabled={state.freeSpinsClaimed}
-          className="yellow-btn p-3 text-left h-full disabled:opacity-30"
-        >
-          <Gift size={20} className="mb-1" />
-          <div className="text-xs">Daily Contagion</div>
-          <div className="text-[10px] opacity-80 font-normal">+5 Toxic Twists</div>
+        <div className="town-scene-footer"><span>☢ Puke Town Network</span><span>ALL ACTIVITY SYNCED TO YOUR ACCOUNT</span></div>
+      </section>
+
+      <section className="town-daily">
+        <div className="town-section-heading"><div><span>DAILY SUPPLY</span><h2>Radiation Replenishment</h2></div><span className="town-reset">RESETS 00:00 UTC</span></div>
+        <div className="town-daily-grid">
+          <button onClick={handleDailyBonus} disabled={state.freeSpinsClaimed} className="town-reward-card">
+            <Gift size={22} /><span><strong>Daily Contagion</strong><small>+5 Toxic Twists</small></span><b>{state.freeSpinsClaimed ? 'CLAIMED' : 'COLLECT'}</b>
+          </button>
+          <button onClick={handleDailyBoost} disabled={state.dailyBoostClaimed} className="town-reward-card town-reward-purple">
+            <Tv size={22} /><span><strong>Radiation Surge</strong><small>+5 Twists + 50 Exposure</small></span><b>{state.dailyBoostClaimed ? 'CLAIMED' : 'AD BONUS'}</b>
+          </button>
+        </div>
+        <button onClick={() => onNavigate('slots')} className="town-play-banner">
+          <Sparkles size={20} /><span><strong>{state.spinsRemaining} TOXIC TWISTS READY</strong><small>Enter Reactor Reels and collect Puke Points</small></span><ChevronRight size={22} />
         </button>
-        <button
-          onClick={handleDailyBoost}
-          disabled={state.dailyBoostClaimed}
-          className="yellow-btn p-3 text-left h-full disabled:opacity-30"
-        >
-          <Tv size={20} className="mb-1" />
-          <div className="text-xs">Radiation Surge</div>
-          <div className="text-[10px] opacity-80 font-normal">+5 Twists + 50 Exposure</div>
-          <div className="ad-badge mt-1.5"><Tv size={8} /> Contagion Feed</div>
-        </button>
-      </div>
-      {/* Quick links */}
-      <div className="grunge-panel divide-y divide-toxic-900/30">
-        <QuickLink icon={<Target />} label="Daily Contamination" sub="Infect every target → Unlock maximum radiation exposure!" onClick={() => onNavigate('missions')} />
-        <QuickLink icon={<Play />} label="Reactor Reels" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
-        <QuickLink icon={<Users />} label="Spread Infection" sub="+30 Twists + 100 Exposure each" onClick={() => onNavigate('profile', 'referral-box')} />
-        <QuickLink icon={<Zap />} label="Fallout Forecast" sub="See what's contaminating the app next!" onClick={() => onNavigate('roadmap')} />
-      </div>
-      <AdModal
-        open={!!adModal}
-        onClose={() => setAdModal(null)}
-        onComplete={() => adModal?.onComplete()}
-        title={adModal?.title ?? ''}
-        subtitle={adModal?.subtitle}
-        reward={adModal?.reward ?? ''}
-      />
+      </section>
+
+      <AdModal open={!!adModal} onClose={() => setAdModal(null)} onComplete={() => adModal?.onComplete()} title={adModal?.title ?? ''} subtitle={adModal?.subtitle} reward={adModal?.reward ?? ''} />
     </div>
-  );
-}
-function QuickLink({ icon, label, sub, onClick }: { icon: React.ReactNode; label: string; sub: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex items-center gap-3 px-4 py-3 w-full hover:bg-toxic-500/5 transition-colors text-left">
-      <span className="text-toxic-400">{icon}</span>
-      <div className="flex-1 min-w-0">
-        <div className="font-display font-bold text-sm text-toxic-200">{label}</div>
-        <div className="text-[11px] text-toxic-100/40 truncate">{sub}</div>
-      </div>
-      <ChevronRight size={16} className="text-toxic-100/30" />
-    </button>
   );
 }
