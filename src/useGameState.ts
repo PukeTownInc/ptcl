@@ -625,7 +625,6 @@ export function useGameState(userId: string | null) {
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
     resetLeaderboardClaims, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
-    playPlinko,
   ]);
 }
 
