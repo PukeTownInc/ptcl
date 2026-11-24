@@ -6,6 +6,7 @@ import { ToastProvider } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
 import { HomeScreen } from './screens/HomeScreen';
+import { GameArenaScreen } from './screens/GameArenaScreen';
 import { SlotScreen } from './screens/SlotScreen';
 import { MissionsScreen } from './screens/MissionsScreen';
 import { WithdrawScreen } from './screens/WithdrawScreen';
@@ -16,6 +17,7 @@ import { RoadmapScreen } from './screens/RoadmapScreen';
 import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { DAILY_XP_FREE_CAP } from './constants';
+import './redesign.css';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -55,6 +57,7 @@ function AppContent() {
   const renderScreen = () => {
     switch (activeScreen) {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
+      case 'games-arena': return <GameArenaScreen onNavigate={handleNavigate} />;
       case 'slots': return <SlotScreen state={state} actions={actions} onNavigate={handleNavigate} />;
       case 'missions': return <MissionsScreen state={state} actions={actions} />;
       case 'withdraw': return <WithdrawScreen state={state} actions={actions} />;
@@ -62,7 +65,7 @@ function AppContent() {
       case 'leaderboards': return <LeaderboardsScreen state={state} actions={actions} />;
       case 'profile': return <ProfileScreen state={state} actions={actions} />;
       case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
-      case 'contagion-cache':
+      case 'contagioncache':
         return <ContagionCacheScreen state={state} actions={actions} onBack={() => handleNavigate('home')} />;
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }

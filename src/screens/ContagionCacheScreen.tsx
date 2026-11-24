@@ -70,9 +70,9 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
   const isAdClaimAvailable = actions.canClaimBlueCacheViaAd();
   const isPurpleAdAvailable = actions.canClaimPurpleCacheViaAd?.() ?? false;
   return (
-    <div className="min-h-screen bg-black text-white p-4">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-lime-400">☢️ CONTAGION CACHE</h1>
+    <div className="pt-warehouse min-h-screen text-white">
+      <div className="flex items-center justify-between mb-4 border-b border-lime-400/20 pb-3">
+        <div className="pt-warehouse-heading flex-1"><div className="text-3xl text-lime-300">☣</div><h1 className="text-2xl font-black tracking-wide text-lime-300">CONTAGION WAREHOUSE</h1><p className="mt-1 text-[10px] tracking-widest text-emerald-100/50">SEALED CRATES · CLASSIFIED REWARDS</p></div>
         <button
           onClick={onBack}
           className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
@@ -97,7 +97,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           Collect {JACKPOT_FRAGMENTS_TO_UNLOCK} fragments → 50 Free Spins!
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="pt-crate-grid">
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
           const canOpen = canOpenBox(tier);
           const isOpening = opening === tier;
@@ -109,7 +109,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
             <div
               key={tier}
               className={`
-                relative p-3 rounded-xl transition-all duration-300 overflow-hidden w-full bg-gray-900 border border-gray-700
+                pt-crate relative p-3 rounded-xl transition-all duration-300 overflow-hidden w-full
                 ${canOpen || (isPurpleBox && isPurpleAdAvailable) ? '' : 'opacity-60'}
               `}
             >

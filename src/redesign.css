@@ -1,0 +1,30 @@
+/* Puke Town visual system — responsive radioactive industrial interface */
+:root{--pt-acid:#a6ff21;--pt-green:#70ff27;--pt-ink:#030805;--pt-panel:#09110b;--pt-line:rgba(166,255,33,.34)}
+.pt-town{max-width:920px;margin:0 auto;padding-bottom:28px}
+.pt-town>.grunge-panel:first-child{border:1px solid var(--pt-line);background:radial-gradient(ellipse at 50% 20%,#25421a 0%,#0a140b 48%,#030704 100%);box-shadow:0 0 28px #6bff2417,inset 0 0 32px #8dff160d}
+.pt-town .toxic-btn{border:1px solid #c7ff68;background:linear-gradient(110deg,#19300d,#467d16 48%,#14250a);box-shadow:0 0 18px #83ff2930,inset 0 1px #eaffb955;color:#f4ffe8}
+.pt-town .yellow-btn{border:1px solid #a6ff21;background:linear-gradient(145deg,#253c11,#0b1409);box-shadow:inset 0 0 16px #9aff2110}
+.pt-arena{border:1px solid #5f9b38;background:radial-gradient(ellipse at 50% 34%,#233d20 0%,#0a120c 46%,#020503 100%);box-shadow:0 0 35px #6bff241c,inset 0 0 50px #72ff1b0c}
+.pt-arena-top{border-bottom:1px solid #a6ff2133;background:linear-gradient(180deg,#142017,#070c08)}
+.pt-outline-button{border:1px solid #9cff45;border-radius:8px;padding:9px 12px;background:#09130b;color:#eaffd8;font-size:11px;font-weight:900}
+.pt-machine{border:1px solid #567b42;background:linear-gradient(145deg,#1c2b1c,#080d09 70%);box-shadow:inset 0 0 18px #a6ff210b,0 7px 18px #0009}
+.pt-machine-live{border-color:#8ccf45;box-shadow:inset 0 0 20px #a6ff2110,0 0 14px #8dff241b}
+.pt-machine-live:active{transform:translateY(1px);filter:brightness(1.2)}
+.pt-machine-locked{opacity:.64;cursor:not-allowed;filter:saturate(.55)}
+.pt-machine-icon{display:grid;place-items:center;width:44px;height:44px;border:1px solid #a6ff214a;border-radius:10px;background:#0b160b;color:#b8ff68;box-shadow:0 0 14px #8cff1c22}
+.pt-warehouse{max-width:1100px;margin:0 auto;padding:12px;border:1px solid #729b50;background:linear-gradient(180deg,#18231a,#080c09 60%);box-shadow:0 0 30px #000,inset 0 0 40px #a6ff210c}
+.pt-warehouse .pt-warehouse-heading{padding:20px 10px;text-align:center;background:radial-gradient(ellipse at center,#3a522b88,transparent 70%)}
+.pt-warehouse .pt-warehouse-heading h1{font-size:clamp(26px,6vw,44px);font-weight:1000;line-height:1;color:#a6ff21;text-shadow:0 0 18px #83ff3a77}
+.pt-warehouse .pt-crate-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.pt-warehouse .pt-crate{border:1px solid #71845e;background:linear-gradient(145deg,#263326,#080c09);box-shadow:0 7px 14px #0009,inset 0 0 18px #a6ff210a}
+.pt-warehouse .pt-crate img{max-height:180px;object-fit:contain;filter:drop-shadow(0 5px 8px #000)}
+.pt-roadmap{max-width:960px;margin:0 auto;padding-bottom:28px}
+.pt-roadmap .pt-roadmap-hero{border:1px solid #8dcf42;background:radial-gradient(ellipse at 50% 0%,#344b22,#10190d 54%,#050805);box-shadow:0 0 25px #8cff1c18}
+.pt-roadmap .pt-phase{border:1px solid #577746;background:linear-gradient(145deg,#172417,#070c08);box-shadow:0 8px 20px #0008}
+.pt-roadmap .pt-phase button:focus-visible,.pt-machine:focus-visible{outline:2px solid #d3ff65;outline-offset:3px}
+.pt-slot{max-width:941px;margin:0 auto}
+.pt-slot>.space-y-4>.grunge-panel{border-color:#507b39;background:linear-gradient(145deg,#152116,#050805);box-shadow:0 0 22px #6bff2417}
+.pt-slot button{touch-action:manipulation}
+@media(min-width:700px){.pt-warehouse .pt-crate-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:360px){.pt-warehouse{padding:8px}.pt-warehouse .pt-crate-grid{gap:7px}}
+@media(prefers-reduced-motion:reduce){.pt-town *,.pt-arena *,.pt-warehouse *,.pt-roadmap *,.pt-slot *{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}

@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - fix/login-profile-loading-safety
+      - redesign/five-screen-overhaul
   pull_request:
     branches:
       - main
+      - fix/login-profile-loading-safety
   workflow_dispatch:
 
 jobs:
@@ -24,3 +26,5 @@ jobs:
         run: npm ci
       - name: Run TypeScript check
         run: npm run typecheck
+      - name: Build production bundle
+        run: npm run build
