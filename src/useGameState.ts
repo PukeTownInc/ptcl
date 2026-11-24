@@ -591,6 +591,10 @@ export function useGameState(userId: string | null) {
     });
   }, [updateState]);
 
+  const setLeaderboardPeriodStart = useCallback((key: string, value: number) => {
+    updateState((prev) => ({ ...prev, leaderboardPeriodStarts: { ...prev.leaderboardPeriodStarts, [key]: value } }));
+  }, [updateState]);
+
   const resetAll = useCallback(() => {
     const fresh = dailyResetIfNeeded(defaultState());
     fresh.lastLogin = todayUTC();
@@ -612,7 +616,7 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll,
+    resetLeaderboardClaims, setLeaderboardPeriodStart, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
   }), [
     state, cloudLoading, cloudError,
@@ -623,7 +627,7 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll,
+    resetLeaderboardClaims, setLeaderboardPeriodStart, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
   ]);
 }
