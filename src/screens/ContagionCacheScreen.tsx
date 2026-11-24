@@ -71,7 +71,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
   const isAdClaimAvailable = actions.canClaimBlueCacheViaAd();
   const isPurpleAdAvailable = actions.canClaimPurpleCacheViaAd?.() ?? false;
   return (
-    <div className="min-h-screen bg-black text-white p-4">
+    <div className="min-h-screen bg-black text-white p-4 warehouse-screen">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-lime-400">☢️ CONTAGION CACHE</h1>
         <button
