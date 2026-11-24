@@ -225,11 +225,15 @@ export function useGameState(userId: string | null) {
 
       isSavingRef.current = true;
       try {
-        await supabase.from('user_profiles').upsert({
+        const { error: saveError } = await supabase.from('user_profiles').upsert({
           id: userId,
           data: state,
           last_synced: new Date().toISOString(),
         });
+        if (saveError) {
+          console.error('Cloud save failed:', saveError);
+          setCloudError('Your latest changes could not be saved to the cloud. Keep this page open, check your connection, and retry before signing out.');
+        }
       } catch (err) {
         console.error('Cloud save failed:', err);
       } finally {
