@@ -1,4 +1,5 @@
-export type Screen = 'home' | 'slots' | 'missions' | 'leaderboards' | 'withdraw' | 'roadmap' | 'settings' | 'profile' | 'contagioncache';
+export type Screen = 'home' | 'slots' | 'missions' | 'leaderboards' | 'withdraw' | 'roadmap' | 'settings' | 'profile' | 'contagion-cache';
+export type Tier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type LeaderboardCategory = 'xp' | 'pp' | 'spins' | 'referrals';
 export type LeaderboardPeriod = 'monthly';
 export interface PrizeTier {
@@ -74,7 +75,7 @@ export interface GameState {
   dailyXpFree: number;
   dailyXpBonus: number;
   dailyDoubleUps: number;
-  dailyExtraLucky: boolean;
+  dailyExtraLucky: number;
   dailyHotStreak: number;
   dailyMysteryPacks: number;
   dailyPotAccel: number;
