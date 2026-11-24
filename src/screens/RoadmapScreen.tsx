@@ -162,7 +162,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     toast('success', 'Daily gift claimed', '+10 Exposure • +3 Twists added');
   };
   return (
-    <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
+    <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8 roadmap-lab">
       <div className="grunge-panel p-5 text-center space-y-2">
         <h1 className="font-display font-black text-2xl text-toxic-400 neon-text">☢️ FALLOUT FORECAST</h1>
         <p className="text-radioactive-300 text-sm">Contamination Roadmap • Updated 14 September 2026</p>
