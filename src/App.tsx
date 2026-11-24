@@ -14,7 +14,6 @@ import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { RoadmapScreen } from './screens/RoadmapScreen';
 import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
-import { PlinkoScreen } from './screens/PlinkoScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { DAILY_XP_FREE_CAP } from './constants';
 
@@ -65,8 +64,6 @@ function AppContent() {
       case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
       case 'contagion-cache':
         return <ContagionCacheScreen state={state} actions={actions} onBack={() => handleNavigate('home')} />;
-      case 'plinko':
-        return <PlinkoScreen state={state} actions={actions} />;
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
   };
