@@ -63,8 +63,8 @@ export function getNextTier(xp: number): TierInfo | null {
 // SYMBOLS — PNG paths, all preserved
 // ==============================================
 export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
-  cashlab:  { id: 'cashlab',  emoji: '🤑', label: 'Cash Lab',        pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cash-lab.png?v=11` },
-  puke:     { id: 'puke',     emoji: '🤢', label: 'Puke Town',       pays: [2, 3, 9],     weight: 26,  image: `${SYMBOL_IMAGE_PATH}symbol-puke-town.png?v=11` },
+  cashlab:  { id: 'cashlab',  emoji: '🤑', label: 'Cash Lab',        pays: [20, 60, 240], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cash-lab.png?v=11` },
+  puke:     { id: 'puke',     emoji: '🤢', label: 'Puke Town',       pays: [25, 75, 300], weight: 26,  image: `${SYMBOL_IMAGE_PATH}symbol-puke-town.png?v=11` },
   slime:    { id: 'slime',    emoji: '🟡', label: 'Slime Blob',      pays: [2, 4, 11],    weight: 24,  image: `${SYMBOL_IMAGE_PATH}symbol-slime-blob.png?v=11` },
   sneeze:   { id: 'sneeze',   emoji: '😷', label: 'Gas Mask',        pays: [2, 5, 13],    weight: 21,  image: `${SYMBOL_IMAGE_PATH}symbol-gas-mask.png?v=11` },
   tp:       { id: 'tp',       emoji: '🐀', label: 'Mutant Rat',      pays: [3, 6, 16],    weight: 18,  image: `${SYMBOL_IMAGE_PATH}symbol-mutant-rat.png?v=11` },
@@ -76,6 +76,10 @@ export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
   barrel:   { id: 'barrel',   emoji: '🛢️', label: 'Waste Drum',       pays: [7, 20, 64],   weight: 4,   image: `${SYMBOL_IMAGE_PATH}symbol-waste-drum.png?v=11` },
   warn:     { id: 'warn',     emoji: '⚠️', label: 'Radioactive Skull', pays: [12, 35, 130], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-radioactive-skull.png?v=11` },
   rich:     { id: 'rich',     emoji: '📻', label: 'Geiger Counter',   pays: [18, 55, 220],  weight: 1.5, image: `${SYMBOL_IMAGE_PATH}symbol-geiger-counter.png?v=11` },
+  beetle:   { id: 'beetle',   emoji: '🪲', label: 'Mutant Beetle',    pays: [9, 27, 85],   weight: 3,   image: `${SYMBOL_IMAGE_PATH}symbol-mutant-beetle.png?v=11` },
+  wastepit: { id: 'wastepit', emoji: '☣️', label: 'Waste Pit',        pays: [11, 33, 110], weight: 2,   image: `${SYMBOL_IMAGE_PATH}symbol-waste-pit.png?v=11` },
+  toxiccloud:{ id: 'toxiccloud', emoji: '☁️', label: 'Toxic Cloud',    pays: [15, 45, 170], weight: 1.5, image: `${SYMBOL_IMAGE_PATH}toxic-cloud.png?v=11` },
+
   wild:     { id: 'wild',     emoji: '🤮', label: 'Puke Wild',       pays: [0, 0, 0], weight: 3.5, special: 'wild', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-wild.png?v=11` },
   scatter:  { id: 'scatter',  emoji: '🤒', label: 'Sick Scatter',     pays: [0, 0, 0], weight: 2, special: 'scatter', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-scatter.png?v=11` },
   bonus:    { id: 'bonus',    emoji: '☢️', label: 'Toxic Bonus',      pays: [0, 0, 0], weight: 1.5, special: 'bonus', isSpecial: true, image: `${SYMBOL_IMAGE_PATH}symbol-bonus.png?v=11` },
