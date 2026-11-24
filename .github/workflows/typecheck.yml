@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/login-profile-loading-safety
+      - redesign/puketown-visual-system
   pull_request:
     branches:
       - main
