@@ -323,7 +323,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 reactor-screen">
       {/* Bonus Buttons */}
       <div className="grid grid-cols-2 gap-2">
         <BonusBtn
