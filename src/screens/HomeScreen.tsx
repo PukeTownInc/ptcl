@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Zap } from 'lucide-react';
+import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Zap, Gamepad2 } from 'lucide-react';
 import type { GameState, Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { AdModal } from '../components/AdModal';
@@ -95,6 +95,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       </div>
       {/* Quick links */}
       <div className="grunge-panel divide-y divide-toxic-900/30">
+        <QuickLink icon={<Gamepad2 />} label="Games Arena" sub="Enter the radioactive arcade district" onClick={() => onNavigate('games-arena')} />
         <QuickLink icon={<Target />} label="Daily Contamination" sub="Infect every target → Unlock maximum radiation exposure!" onClick={() => onNavigate('missions')} />
         <QuickLink icon={<Play />} label="Reactor Reels" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
         <QuickLink icon={<Users />} label="Spread Infection" sub="+30 Twists + 100 Exposure each" onClick={() => onNavigate('profile', 'referral-box')} />
