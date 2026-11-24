@@ -6,6 +6,7 @@ import { ToastProvider } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
 import { HomeScreen } from './screens/HomeScreen';
+import { GamesArenaScreen } from './screens/GamesArenaScreen';
 import { SlotScreen } from './screens/SlotScreen';
 import { MissionsScreen } from './screens/MissionsScreen';
 import { WithdrawScreen } from './screens/WithdrawScreen';
@@ -14,14 +15,14 @@ import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { RoadmapScreen } from './screens/RoadmapScreen';
 import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
-import { PlinkoScreen } from './screens/PlinkoScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { DAILY_XP_FREE_CAP } from './constants';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
-  const { state, cloudLoading, ...actions } = useGameState(userId);
+  const game = useGameState(userId);
+  const { state, cloudLoading, cloudError } = game;
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -55,7 +56,8 @@ function AppContent() {
 
   const renderScreen = () => {
     switch (activeScreen) {
-      case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
+      case 'home': return <HomeScreen state={state} actions={game} onNavigate={handleNavigate} />;
+      case 'games': return <GamesArenaScreen onNavigate={handleNavigate} />;
       case 'slots': return <SlotScreen state={state} actions={actions} onNavigate={handleNavigate} />;
       case 'missions': return <MissionsScreen state={state} actions={actions} />;
       case 'withdraw': return <WithdrawScreen state={state} actions={actions} />;
@@ -63,10 +65,8 @@ function AppContent() {
       case 'leaderboards': return <LeaderboardsScreen state={state} actions={actions} />;
       case 'profile': return <ProfileScreen state={state} actions={actions} />;
       case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
-      case 'contagion-cache':
+      case 'contagioncache':
         return <ContagionCacheScreen state={state} actions={actions} onBack={() => handleNavigate('home')} />;
-      case 'plinko':
-        return <PlinkoScreen state={state} actions={actions} />;
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
   };
@@ -83,6 +83,23 @@ function AppContent() {
 
   if (!user) {
     return <LoginScreen />;
+  }
+
+  if (cloudError) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-white px-6">
+        <div className="text-center max-w-sm">
+          <div className="text-red-400 text-lg mb-3">Unable to load your saved game</div>
+          <p className="text-sm text-white/70 mb-5">{cloudError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="yellow-btn px-5 py-3"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (cloudLoading || !state) {

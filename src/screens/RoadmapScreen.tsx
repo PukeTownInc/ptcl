@@ -47,7 +47,6 @@ const roadmapData = [
       '🎟️ Contamination Pass — Battle Pass, Free + Premium tiers',
       '✅ 📦 Contagion Cache — Mystery Boxes: Common → Legendary',
       '🎡 Wheel of Misfortune — Daily mini-game, spins & rewards',
-      '☢️ Radioactive Plinko — Drop the pellet, ride the radiation, win big!',
       '🛒 Toxic Shop — Boosts, perks, & exclusive items',
       '🎨 Profile Customisation — Avatars, frames, colours',
       '🏅 Long-Term Achievements — Badges, titles & hidden rewards',
@@ -65,7 +64,6 @@ const roadmapData = [
       '🔔 Update Alerts — Never miss when new features drop',
       '🦠 Puke Chaotic Tap — Tap fast, earn fast!',
       '💀 Toxic Pick\'em — Pick the safe barrel or lose your stash',
-      '🧪 Vial Mixer — Combine toxic brews, discover rare rewards',
       '📡 Signal Detector — Hunt hidden radiation blips, claim hidden loot',
       '🔴 Radiation Roulette — Bet safe or glow, multiply your risk',
       '📊 Geiger Grid — Scan for radiation, collect or get contaminated',
@@ -161,7 +159,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     // Give rewards
     actions.addXP(10, false, true);
     actions.addSpins(3);
-    toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
+    toast('success', 'Gift claimed', '+10 Exposure • +3 Twists added!');
   };
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">

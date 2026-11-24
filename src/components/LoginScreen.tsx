@@ -1,16 +1,22 @@
 import { useState } from 'react';
 import { Tv, LogOut, Zap, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../lib/auth';
-interface Props {
-  onSkip: () => void;
-}
-export function LoginScreen({ onSkip }: Props) {
-  const { signInWithEmailPassword, signUpWithEmailPassword } = useAuth();
+export function LoginScreen() {
+  const { signInWithEmailPassword, signUpWithEmailPassword, signInAnonymously } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [status, setStatus] = useState<null | { type: 'success' | 'error'; msg: string }>(null);
   const [busy, setBusy] = useState(false);
+  const handleGuest = async () => {
+    setBusy(true);
+    setStatus(null);
+    const result = await signInAnonymously();
+    setBusy(false);
+    if (!result.success) {
+      setStatus({ type: 'error', msg: result.error ?? 'Guest sign-in failed' });
+    }
+  };
   const handlePassword = async () => {
     if (!email.trim() || !password.trim()) return;
     setBusy(true);
@@ -92,7 +98,8 @@ export function LoginScreen({ onSkip }: Props) {
           </div>
         </div>
         <button
-          onClick={onSkip}
+          onClick={handleGuest}
+          disabled={busy}
           className="w-full py-2.5 text-[11px] text-toxic-100/40 hover:text-toxic-100/70 font-mono transition-colors flex items-center justify-center gap-1.5"
         >
           <Zap size={12} /> Continue as Guest

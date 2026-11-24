@@ -10,7 +10,6 @@ import {
   JACKPOT_FRAGMENTS_TO_UNLOCK,
   MIN_UNLOCK_PP,
   MISSIONS,
-  PLINKO_MULTIPLIERS,
   rollCacheReward,
 } from './constants';
 import { supabase } from './lib/supabase';
@@ -146,6 +145,7 @@ function dailyResetIfNeeded(state: GameState): GameState {
 export function useGameState(userId: string | null) {
   const [state, setState] = useState<GameState | null>(null);
   const [cloudLoading, setCloudLoading] = useState(true);
+  const [cloudError, setCloudError] = useState<string | null>(null);
   const stateRef = useRef<GameState | null>(null);
   const isSavingRef = useRef(false);
   const pendingUpdateRef = useRef<GameState | null>(null);
@@ -155,11 +155,15 @@ export function useGameState(userId: string | null) {
       setState(null);
       stateRef.current = null;
       setCloudLoading(false);
+      setCloudError(null);
       return;
     }
 
     let cancelled = false;
     setCloudLoading(true);
+    setCloudError(null);
+    setState(null);
+    stateRef.current = null;
 
     (async () => {
       try {
@@ -171,7 +175,13 @@ export function useGameState(userId: string | null) {
 
         if (cancelled) return;
 
-        if (!error && data?.data) {
+        if (error) {
+          console.error('Cloud profile load failed:', error);
+          setCloudError('Your saved game could not be loaded. Your progress has not been reset. Check your connection and reload to try again.');
+          return;
+        }
+
+        if (data?.data) {
           const merged = { ...defaultState(), ...(data.data as Partial<GameState>) };
           const reset = dailyResetIfNeeded(merged);
           setState(reset);
@@ -180,16 +190,22 @@ export function useGameState(userId: string | null) {
           const fresh = dailyResetIfNeeded(defaultState());
           setState(fresh);
           stateRef.current = fresh;
-          await supabase.from('user_profiles').upsert({
+          const { error: createError } = await supabase.from('user_profiles').upsert({
             id: userId,
             data: fresh,
           });
+          if (createError) {
+            console.error('Cloud profile creation failed:', createError);
+            setState(null);
+            stateRef.current = null;
+            setCloudError('Your new game profile could not be created. No game progress has been saved. Please reload to try again.');
+          }
         }
       } catch (err) {
         console.error('Cloud load failed:', err);
-        const fresh = dailyResetIfNeeded(defaultState());
-        setState(fresh);
-        stateRef.current = fresh;
+        setState(null);
+        stateRef.current = null;
+        setCloudError('Your saved game could not be loaded. Your progress has not been reset. Check your connection and reload to try again.');
       } finally {
         if (!cancelled) setCloudLoading(false);
       }
@@ -199,7 +215,7 @@ export function useGameState(userId: string | null) {
   }, [userId]);
 
   useEffect(() => {
-    if (!userId || !state || cloudLoading) return;
+    if (!userId || !state || cloudLoading || cloudError) return;
 
     const saveToCloud = async () => {
       if (isSavingRef.current) {
@@ -231,7 +247,7 @@ export function useGameState(userId: string | null) {
 
     const timer = setTimeout(saveToCloud, 300);
     return () => clearTimeout(timer);
-  }, [state, userId, cloudLoading]);
+  }, [state, userId, cloudLoading, cloudError]);
 
   const updateState = useCallback((updater: (prev: GameState) => GameState) => {
     setState((prev) => {
@@ -393,37 +409,7 @@ export function useGameState(userId: string | null) {
     return result;
   }, [updateState]);
 
-  const playPlinko = useCallback((betPP: number, chosenPocketIndex?: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    if (!stateRef.current || stateRef.current.lockedPotPP < betPP) {
-      return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
-    }
 
-    let pocketIndex: number;
-    if (chosenPocketIndex !== undefined) {
-      pocketIndex = chosenPocketIndex;
-    } else {
-      let pos = 3.5;
-      for (let row = 0; row < 8; row++) {
-        pos += Math.random() < 0.5 ? -0.5 : 0.5;
-      }
-      pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
-    }
-
-    const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
-    const payoutPP = Math.round(betPP * multiplier);
-
-    updateState((prev) => {
-      if (prev.lockedPotPP < betPP) return prev;
-      return {
-        ...prev,
-        lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
-        totalEarnedPP: prev.totalEarnedPP + Math.max(0, payoutPP - betPP),
-        ppEarnedToday: prev.ppEarnedToday + Math.max(0, payoutPP - betPP),
-      };
-    });
-
-    return { ok: true, pocketIndex, multiplier, payoutPP };
-  }, [updateState]);
 
   const loginCheck = useCallback(() => {
     updateState((prev) => {
@@ -618,6 +604,7 @@ export function useGameState(userId: string | null) {
   return useMemo(() => ({
     state,
     cloudLoading,
+    cloudError,
     addXP, addPP, isPotFull, unlockPot,
     recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
     claimRoadmapDailyGift, loginCheck, setFaucetpayEmail, adjustWithdrawablePP, recordWithdrawal,
@@ -627,9 +614,8 @@ export function useGameState(userId: string | null) {
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
     resetLeaderboardClaims, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
-    playPlinko,
   }), [
-    state, cloudLoading,
+    state, cloudLoading, cloudError,
     addXP, addPP, isPotFull, unlockPot,
     recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
     claimRoadmapDailyGift, loginCheck, setFaucetpayEmail, adjustWithdrawablePP, recordWithdrawal,
@@ -639,7 +625,6 @@ export function useGameState(userId: string | null) {
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
     resetLeaderboardClaims, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
-    playPlinko,
   ]);
 }
 

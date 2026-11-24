@@ -94,6 +94,19 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         </button>
       </div>
       {/* Quick links */}
+      <div className="pt-town-panel">
+        <div className="pt-town-title"><span>PUKE TOWN</span><small>TOXIC INDUSTRIES · MAIN DISTRICT</small></div>
+        <p>Choose a district to continue your contamination run.</p>
+        <button className="pt-town-arena" onClick={() => onNavigate('games')}>
+          <span className="pt-town-arena-icon">☢</span>
+          <span><strong>ENTER GAMES ARENA</strong><small>Cash Lab Slots · Active game bays</small></span>
+          <ChevronRight size={20}/>
+        </button>
+        <div className="pt-town-shortcuts">
+          <button onClick={() => onNavigate('contagioncache')}><span>▣</span> WAREHOUSE</button>
+          <button onClick={() => onNavigate('roadmap')}><span>⌖</span> ROADMAP LAB</button>
+        </div>
+      </div>
       <div className="grunge-panel divide-y divide-toxic-900/30">
         <QuickLink icon={<Target />} label="Daily Contamination" sub="Infect every target → Unlock maximum radiation exposure!" onClick={() => onNavigate('missions')} />
         <QuickLink icon={<Play />} label="Reactor Reels" sub="Twist reels & collect Puke Points" onClick={() => onNavigate('slots')} />
