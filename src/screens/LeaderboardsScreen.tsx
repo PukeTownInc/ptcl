@@ -93,13 +93,7 @@ export function LeaderboardsScreen({ state, actions }: Props) {
     }
     if (storedStart !== periodStart) {
       const key = periodStartKey(category);
-      actions.update((s) => ({
-        ...s,
-        leaderboardPeriodStarts: {
-          ...s.leaderboardPeriodStarts,
-          [key]: periodStart,
-        },
-      }));
+      actions.setLeaderboardPeriodStart(key, periodStart);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periodChanged, periodStart, storedStart, category]);
