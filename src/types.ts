@@ -25,6 +25,7 @@ export type SymbolId =
   | 'cashlab'
   | 'puke' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
   | 'beaker' | 'vomit' | 'toxic' | 'barrel' | 'warn' | 'rich'
+  | 'beetle' | 'wastepit' | 'toxiccloud'
   | 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
 // ✅ Contagion Cache — Box definitions
 // Tier order: blue > purple > orange > yellow
