@@ -6,6 +6,7 @@ import { ToastProvider } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
 import { HomeScreen } from './screens/HomeScreen';
+import { GameArenaScreen } from './screens/GameArenaScreen';
 import { SlotScreen } from './screens/SlotScreen';
 import { MissionsScreen } from './screens/MissionsScreen';
 import { WithdrawScreen } from './screens/WithdrawScreen';
@@ -55,6 +56,7 @@ function AppContent() {
   const renderScreen = () => {
     switch (activeScreen) {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
+      case 'games-arena': return <GameArenaScreen onNavigate={handleNavigate} />;
       case 'slots': return <SlotScreen state={state} actions={actions} onNavigate={handleNavigate} />;
       case 'missions': return <MissionsScreen state={state} actions={actions} />;
       case 'withdraw': return <WithdrawScreen state={state} actions={actions} />;
