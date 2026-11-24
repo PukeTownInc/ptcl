@@ -1,4 +1,5 @@
 export type Screen = 'home' | 'games-arena' | 'slots' | 'missions' | 'leaderboards' | 'withdraw' | 'roadmap' | 'settings' | 'profile' | 'contagioncache';
+export type Tier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type LeaderboardCategory = 'xp' | 'pp' | 'spins' | 'referrals';
 export type LeaderboardPeriod = 'monthly';
 export interface PrizeTier {
