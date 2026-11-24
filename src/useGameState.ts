@@ -10,7 +10,6 @@ import {
   JACKPOT_FRAGMENTS_TO_UNLOCK,
   MIN_UNLOCK_PP,
   MISSIONS,
-  PLINKO_MULTIPLIERS,
   rollCacheReward,
 } from './constants';
 import { supabase } from './lib/supabase';
@@ -410,37 +409,7 @@ export function useGameState(userId: string | null) {
     return result;
   }, [updateState]);
 
-  const playPlinko = useCallback((betPP: number, chosenPocketIndex?: number): { ok: boolean; pocketIndex: number; multiplier: number; payoutPP: number } => {
-    if (!stateRef.current || stateRef.current.lockedPotPP < betPP) {
-      return { ok: false, pocketIndex: 0, multiplier: 0, payoutPP: 0 };
-    }
 
-    let pocketIndex: number;
-    if (chosenPocketIndex !== undefined) {
-      pocketIndex = chosenPocketIndex;
-    } else {
-      let pos = 3.5;
-      for (let row = 0; row < 8; row++) {
-        pos += Math.random() < 0.5 ? -0.5 : 0.5;
-      }
-      pocketIndex = Math.max(0, Math.min(7, Math.round(pos)));
-    }
-
-    const multiplier = PLINKO_MULTIPLIERS[pocketIndex];
-    const payoutPP = Math.round(betPP * multiplier);
-
-    updateState((prev) => {
-      if (prev.lockedPotPP < betPP) return prev;
-      return {
-        ...prev,
-        lockedPotPP: Math.min(prev.lockedPotPP - betPP + payoutPP, 500000),
-        totalEarnedPP: prev.totalEarnedPP + Math.max(0, payoutPP - betPP),
-        ppEarnedToday: prev.ppEarnedToday + Math.max(0, payoutPP - betPP),
-      };
-    });
-
-    return { ok: true, pocketIndex, multiplier, payoutPP };
-  }, [updateState]);
 
   const loginCheck = useCallback(() => {
     updateState((prev) => {
@@ -645,7 +614,6 @@ export function useGameState(userId: string | null) {
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
     resetLeaderboardClaims, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
-    playPlinko,
   }), [
     state, cloudLoading, cloudError,
     addXP, addPP, isPotFull, unlockPot,
