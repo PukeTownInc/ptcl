@@ -96,6 +96,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [spinHistory, setSpinHistory] = useState<SpinHistoryEntry[]>([]);
   const [potAccelCountdown, setPotAccelCountdown] = useState('');
   const [showPaytable, setShowPaytable] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -489,50 +490,68 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </button>
       </div>
 
-      <div className="max-w-lg mx-auto">
-        <SpinHistory entries={spinHistory} />
+      <div className="max-w-lg mx-auto grid grid-cols-2 gap-3">
+        <button type="button" onClick={() => setShowHistory(true)}
+          className="min-h-[88px] rounded-xl border border-toxic-400/90 bg-gradient-to-b from-toxic-800 via-toxic-900 to-ink-900 text-toxic-100 font-display font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+          style={{ boxShadow: '0 0 14px #39ff1455, inset 0 1px 0 #baff9a55' }}>
+          <History size={20} className="text-toxic-300" />
+          <span className="text-sm">Spin History</span>
+          <span className="text-[9px] text-toxic-100/70 tracking-wide">VIEW RECENT SPINS</span>
+        </button>
+        <button type="button" onClick={() => setShowPaytable(true)}
+          className="min-h-[88px] rounded-xl border border-toxic-400/90 bg-gradient-to-b from-toxic-800 via-toxic-900 to-ink-900 text-toxic-100 font-display font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+          style={{ boxShadow: '0 0 14px #39ff1455, inset 0 1px 0 #baff9a55' }}>
+          <Layers size={20} className="text-toxic-300" />
+          <span className="text-sm">Paytable</span>
+          <span className="text-[9px] text-toxic-100/70 tracking-wide">SYMBOLS &amp; PAYOUTS</span>
+        </button>
+      </div>
 
-        <div className="grunge-panel overflow-hidden mt-4">
-          <button
-            onClick={() => setShowPaytable((o) => !o)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5"
-          >
-            <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2">
-              <Layers size={16} /> ☢️ GOOP PAYTABLE
-            </span>
-            <span className="text-toxic-100/40 text-xs">{showPaytable ? 'Collapse' : 'Reveal'}</span>
-          </button>
-          {showPaytable && (
-            <div className="px-3 pb-3 space-y-2 animate-slide-up">
-              <div className="grid grid-cols-12 gap-2 text-[10px] font-mono text-toxic-100/50 border-b border-toxic-900/40 pb-2">
-                <span className="col-span-5">SYMBOL</span>
-                <span className="col-span-2 text-center">MATCH 3</span>
-                <span className="col-span-2 text-center">MATCH 4</span>
-                <span className="col-span-3 text-center">MATCH 5 ☢️</span>
+      {showHistory && (
+        <div className="fixed inset-0 z-[80] bg-black/90 backdrop-blur-sm flex items-center justify-center p-3" onClick={() => setShowHistory(false)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="spin-history-title" className="w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-xl border border-toxic-400 bg-ink-900 p-3" style={{ boxShadow: '0 0 28px #39ff1466' }} onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 px-1 pb-3">
+              <h2 id="spin-history-title" className="font-display font-black text-toxic-300 text-base flex items-center gap-2"><History size={18} /> SPIN HISTORY</h2>
+              <button type="button" onClick={() => setShowHistory(false)} aria-label="Close spin history" className="rounded-lg border border-toxic-700 px-3 py-1.5 text-toxic-200 text-xs font-bold">CLOSE</button>
+            </div>
+            <SpinHistory entries={spinHistory} />
+          </section>
+        </div>
+      )}
+
+      {showPaytable && (
+        <div className="fixed inset-0 z-[80] bg-black/90 backdrop-blur-sm flex items-center justify-center p-3" onClick={() => setShowPaytable(false)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="slot-paytable-title" className="w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-xl border border-toxic-400 bg-ink-900 p-3" style={{ boxShadow: '0 0 28px #39ff1466' }} onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 px-1 pb-3">
+              <h2 id="slot-paytable-title" className="font-display font-black text-toxic-300 text-base flex items-center gap-2"><Layers size={18} /> ☢️ PAYTABLE</h2>
+              <button type="button" onClick={() => setShowPaytable(false)} aria-label="Close paytable" className="rounded-lg border border-toxic-700 px-3 py-1.5 text-toxic-200 text-xs font-bold">CLOSE</button>
+            </div>
+            <div className="space-y-2">
+              <p className="text-[10px] font-mono text-toxic-100/50">Highest five-symbol payout first. Values are Puke Points per bet unit.</p>
+              <div className="grid grid-cols-12 gap-2 text-[9px] font-mono text-toxic-100/50 border-b border-toxic-900/40 pb-2">
+                <span className="col-span-5">SYMBOL</span><span className="col-span-2 text-center">3 MATCH</span><span className="col-span-2 text-center">4 MATCH</span><span className="col-span-3 text-center">5 MATCH</span>
               </div>
-              {PAYTABLE.map((sym, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
-                  <span className="col-span-5 font-mono text-sm flex items-center gap-2">
-                    {sym.image ? (
-                      <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain" style={{ background: 'transparent' }} />
-                    ) : sym.emoji}
-                    {sym.label}
+              {PAYTABLE.map((sym) => (
+                <div key={sym.id} className="grid grid-cols-12 gap-2 items-center px-1 py-2 rounded bg-ink-700/40">
+                  <span className="col-span-5 min-w-0 font-mono text-[11px] flex items-center gap-1.5">
+                    {sym.image ? <img src={sym.image} alt={sym.label} className="w-7 h-7 object-contain shrink-0" style={{ background: 'transparent' }} /> : sym.emoji}
+                    <span className="truncate">{sym.label}</span>
                   </span>
-                  <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
-                  <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
-                  <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
+                  <span className="col-span-2 text-center font-mono text-toxic-200 text-xs">{sym.pays[0]}</span>
+                  <span className="col-span-2 text-center font-mono text-toxic-300 text-xs">{sym.pays[1]}</span>
+                  <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-xs">{sym.pays[2]}</span>
                 </div>
               ))}
-              <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
+              <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/60 space-y-2 px-1">
                 <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
                 <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
                 <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
                 <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
               </div>
             </div>
-          )}
+          </section>
         </div>
-      </div>
+      )}
 
       {showDoubleUp && state.doubleUpPending && (
         <SpinWheelModal
