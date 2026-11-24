@@ -225,11 +225,15 @@ export function useGameState(userId: string | null) {
 
       isSavingRef.current = true;
       try {
-        await supabase.from('user_profiles').upsert({
+        const { error: saveError } = await supabase.from('user_profiles').upsert({
           id: userId,
           data: state,
           last_synced: new Date().toISOString(),
         });
+        if (saveError) {
+          console.error('Cloud save failed:', saveError);
+          setCloudError('Your latest changes could not be saved to the cloud. Keep this page open, check your connection, and retry before signing out.');
+        }
       } catch (err) {
         console.error('Cloud save failed:', err);
       } finally {
@@ -591,6 +595,10 @@ export function useGameState(userId: string | null) {
     });
   }, [updateState]);
 
+  const setLeaderboardPeriodStart = useCallback((key: string, value: number) => {
+    updateState((prev) => ({ ...prev, leaderboardPeriodStarts: { ...prev.leaderboardPeriodStarts, [key]: value } }));
+  }, [updateState]);
+
   const resetAll = useCallback(() => {
     const fresh = dailyResetIfNeeded(defaultState());
     fresh.lastLogin = todayUTC();
@@ -612,7 +620,7 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll,
+    resetLeaderboardClaims, setLeaderboardPeriodStart, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
   }), [
     state, cloudLoading, cloudError,
@@ -623,9 +631,8 @@ export function useGameState(userId: string | null) {
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll,
+    resetLeaderboardClaims, setLeaderboardPeriodStart, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
-    playPlinko,
   ]);
 }
 

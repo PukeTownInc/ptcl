@@ -43,7 +43,7 @@ const roadmapData = [
     borderColor: 'border-yellow-500/40',
     bgColor: 'bg-yellow-500/5',
     items: [
-      '💰 Waste Withdrawal — Cash out via FaucetPay',
+      '💰 Secure payout integration — planned; not currently live',
       '🎟️ Contamination Pass — Battle Pass, Free + Premium tiers',
       '✅ 📦 Contagion Cache — Mystery Boxes: Common → Legendary',
       '🎡 Wheel of Misfortune — Daily mini-game, spins & rewards',
@@ -159,17 +159,17 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     // Give rewards
     actions.addXP(10, false, true);
     actions.addSpins(3);
-    toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
+    toast('success', 'Daily gift claimed', '+10 Exposure • +3 Twists added');
   };
   return (
-    <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
+    <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8 roadmap-lab">
       <div className="grunge-panel p-5 text-center space-y-2">
         <h1 className="font-display font-black text-2xl text-toxic-400 neon-text">☢️ FALLOUT FORECAST</h1>
-        <p className="text-radioactive-300 text-sm">Contamination Roadmap • Updated 14 September 2026</p>
-        <p className="text-toxic-200 text-sm font-semibold">☢️ OVER 80+ CONTAMINATED FEATURES INCOMING ☢️</p>
-        <p className="text-toxic-300/90 text-sm">☣️ A one-of-a-kind toxic digital ecosystem ☣️</p>
-        <p className="text-toxic-300/90 text-sm">☣️ Created for YOUR benefit ☣️</p>
-        <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere!</p>
+        <p className="text-radioactive-300 text-sm">Contamination Roadmap • Updated 24 November 2026</p>
+        <p className="text-toxic-200 text-sm font-semibold">A phased plan for reliable gaming, progression and community features</p>
+        <p className="text-toxic-300/90 text-sm">Core systems are prioritised before new feature releases</p>
+        <p className="text-toxic-300/90 text-sm">Player data, fair progression and transparent rewards come first</p>
+        <p className="text-toxic-300/90 text-sm">Future features remain subject to testing, funding and technical review</p>
       </div>
       {roadmapData.map((section, idx) => (
         <div

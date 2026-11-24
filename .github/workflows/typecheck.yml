@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - fix/login-profile-loading-safety
   workflow_dispatch:
 
 jobs:
