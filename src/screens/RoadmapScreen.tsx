@@ -162,19 +162,19 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
   };
   return (
-    <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
-      <div className="grunge-panel p-5 text-center space-y-2">
+    <div className="pt-roadmap p-3 sm:p-5 space-y-4">
+      <div className="pt-roadmap-hero grunge-panel p-5 text-center space-y-2">
         <h1 className="font-display font-black text-2xl text-toxic-400 neon-text">☢️ FALLOUT FORECAST</h1>
-        <p className="text-radioactive-300 text-sm">Contamination Roadmap • Updated 14 September 2026</p>
-        <p className="text-toxic-200 text-sm font-semibold">☢️ OVER 80+ CONTAMINATED FEATURES INCOMING ☢️</p>
+        <p className="text-radioactive-300 text-sm">Contamination Roadmap • Development roadmap</p>
+        <p className="text-toxic-200 text-sm font-semibold">A phased plan for a safer, more reliable Puke Town</p>
         <p className="text-toxic-300/90 text-sm">☣️ A one-of-a-kind toxic digital ecosystem ☣️</p>
         <p className="text-toxic-300/90 text-sm">☣️ Created for YOUR benefit ☣️</p>
-        <p className="text-toxic-300/90 text-sm">⚠️ Many have NEVER been combined on a single platform — anywhere!</p>
+        <p className="text-toxic-300/90 text-sm">Features are planned in stages and are not promises of release dates.</p>
       </div>
       {roadmapData.map((section, idx) => (
         <div
           key={idx}
-          className={`grunge-panel border-l-4 ${section.borderColor} ${section.bgColor} overflow-hidden`}
+          className={`pt-phase grunge-panel border-l-4 ${section.borderColor} ${section.bgColor} overflow-hidden`}
         >
           <button
             onClick={() => toggle(idx)}
