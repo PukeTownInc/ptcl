@@ -46,7 +46,7 @@ function defaultState(): GameState {
     dailyXpFree: 0,
     dailyXpBonus: 0,
     dailyDoubleUps: 0,
-    dailyExtraLucky: 0,
+    dailyExtraLucky: false,
     dailyHotStreak: 0,
     dailyMysteryPacks: 0,
     dailyPotAccel: 0,
@@ -467,7 +467,7 @@ export function useGameState(userId: string | null) {
   const useExtraLucky = useCallback(() => {
     updateState((prev) => ({
       ...prev,
-      dailyExtraLucky: prev.dailyExtraLucky + 1,
+      dailyExtraLucky: true,
       extraLuckyPending: false,
       spinsRemaining: prev.spinsRemaining + 3,
     }));
