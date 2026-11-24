@@ -51,7 +51,7 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
         <img
           src={sym.image}
           alt={symId}
-          className="w-5 h-5 object-contain"
+          className="w-6 h-6 object-contain"
           style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
         />
       ) : (
@@ -514,7 +514,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
                 <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
                   <span className="col-span-5 font-mono text-sm flex items-center gap-2">
                     {sym.image ? (
-                      <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain" style={{ background: 'transparent' }} />
+                      <img src={sym.image} alt={sym.label} className="w-7 h-7 object-contain" style={{ background: 'transparent' }} />
                     ) : sym.emoji}
                     {sym.label}
                   </span>
