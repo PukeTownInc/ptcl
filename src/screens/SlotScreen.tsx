@@ -231,22 +231,22 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     if (result.outcome === 'double') {
       actions.addPP(result.amount);
       toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} Puke Points (x2 stake)`);
-      setSpinHistory((prev) => [{ kind: 'double', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
+      setSpinHistory((prev) => [{ kind: 'double' as const, pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     }
     else if (result.outcome === 'safe') {
       actions.addPP(result.amount);
       toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} Puke Points (x1 stake)`);
-      setSpinHistory((prev) => [{ kind: 'safe', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
+      setSpinHistory((prev) => [{ kind: 'safe' as const, pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     }
     else if (result.outcome === 'half') {
       actions.addPP(result.amount);
       toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} Puke Points (0.5× stake)`);
-      setSpinHistory((prev) => [{ kind: 'half', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
+      setSpinHistory((prev) => [{ kind: 'half' as const, pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
     }
     else if (result.outcome === 'lose') {
       setWinPP(0);
       toast('error', '☠️ SPILLED!', 'Stake lost — nothing returned');
-      setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
+      setSpinHistory((prev) => [{ kind: 'lose' as const, pp: 0 }, ...prev].slice(0, MAX_HISTORY));
     }
   }, [actions, toast]);
 
@@ -256,7 +256,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     setShowDoubleUp(false);
     actions.useDoubleUp();
     toast('info', '☣️ FORFEITED', 'Stake lost — nothing returned');
-    setSpinHistory((prev) => [{ kind: 'forfeit', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
+    setSpinHistory((prev) => [{ kind: 'forfeit' as const, pp: 0 }, ...prev].slice(0, MAX_HISTORY));
   }, [actions, toast]);
 
   const handleMysteryPack = () => {
