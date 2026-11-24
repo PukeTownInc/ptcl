@@ -17,6 +17,7 @@ import { RoadmapScreen } from './screens/RoadmapScreen';
 import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
 import { LoginScreen } from './components/LoginScreen';
 import { DAILY_XP_FREE_CAP } from './constants';
+import './redesign.css';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -64,7 +65,7 @@ function AppContent() {
       case 'leaderboards': return <LeaderboardsScreen state={state} actions={actions} />;
       case 'profile': return <ProfileScreen state={state} actions={actions} />;
       case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
-      case 'contagion-cache':
+      case 'contagioncache':
         return <ContagionCacheScreen state={state} actions={actions} onBack={() => handleNavigate('home')} />;
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
