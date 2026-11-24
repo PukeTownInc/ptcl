@@ -39,7 +39,7 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
     });
   };
   return (
-    <div className="space-y-4">
+    <div className="pt-town space-y-4">
       {/* Logo panel */}
       <div className="relative grunge-panel overflow-hidden">
         <div className="absolute inset-0 hazard-stripes opacity-[0.03]" />
