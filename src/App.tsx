@@ -21,7 +21,8 @@ import { DAILY_XP_FREE_CAP } from './constants';
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
-  const { state, cloudLoading, cloudError, ...actions } = useGameState(userId);
+  const game = useGameState(userId);
+  const { state, cloudLoading, cloudError } = game;
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -55,7 +56,7 @@ function AppContent() {
 
   const renderScreen = () => {
     switch (activeScreen) {
-      case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
+      case 'home': return <HomeScreen state={state} actions={game} onNavigate={handleNavigate} />;
       case 'games': return <GamesArenaScreen onNavigate={handleNavigate} />;
       case 'slots': return <SlotScreen state={state} actions={actions} onNavigate={handleNavigate} />;
       case 'missions': return <MissionsScreen state={state} actions={actions} />;
@@ -64,7 +65,7 @@ function AppContent() {
       case 'leaderboards': return <LeaderboardsScreen state={state} actions={actions} />;
       case 'profile': return <ProfileScreen state={state} actions={actions} />;
       case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
-      case 'contagion-cache':
+      case 'contagioncache':
         return <ContagionCacheScreen state={state} actions={actions} onBack={() => handleNavigate('home')} />;
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
