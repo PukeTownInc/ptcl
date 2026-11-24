@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Lock, Zap, Coins, Flame, X, Tv } from 'lucide-react';
-import type { CacheBoxTier, GameState, GameActions } from '../types';
+import type { CacheBoxTier, GameState } from '../types';
+import type { GameActions } from '../useGameState';
 import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK, CACHE_ASSET_PATH } from '../constants';
 import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
@@ -30,7 +31,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
     
     if (!ok) {
       setOpening(null);
-      if (toast) toast.show('Claim failed — try again later', 'error');
+      toast('error', 'Claim failed', 'Try again later');
       return;
     }
     
