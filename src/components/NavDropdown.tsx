@@ -17,7 +17,7 @@ const SUBMENU_INFECTION_ITEMS: { id: Screen; label: string; icon: typeof Home }[
 const SUBMENU_GAMING_LABEL = 'INFECTIOUS GAMING';
 const SUBMENU_GAMING_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'slots', label: 'Reactor Reels', icon: Gamepad2 },
-  { id: 'contagion-cache', label: 'Contagion Cache', icon: Box },
+  { id: 'contagioncache', label: 'Contagion Cache', icon: Box },
 ];
 
 const SUBMENU_ECOSYSTEM_LABEL = 'ECOSYSTEM OPTIONS';
