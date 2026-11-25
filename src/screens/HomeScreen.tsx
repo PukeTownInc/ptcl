@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Zap } from 'lucide-react';
 import type { GameState, Screen } from '../types';
 import type { GameActions } from '../useGameState';
-import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
 interface Props {
   state: GameState;
@@ -11,33 +10,8 @@ interface Props {
 }
 export function HomeScreen({ state, actions, onNavigate }: Props) {
   const toast = useToast();
-  const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
-  const handleDailyBonus = () => {
-    if (state.freeSpinsClaimed) {
-      toast('info', 'Already Contaminated', 'Return tomorrow for more');
-      return;
-    }
-    // ✅ No ad gate — direct claim, 5 spins only
-    actions.claimDailyBonusSpins();
-    toast('success', 'Contagion Absorbed!', '+5 Twists added');
-  };
-  const handleDailyBoost = () => {
-    if (state.dailyBoostClaimed) {
-      toast('info', 'Already Exposed', 'Return tomorrow for more');
-      return;
-    }
-    setAdModal({
-      title: 'Radiation Surge',
-      subtitle: 'Absorb broadcast for daily boost',
-      reward: '+5 Twists + 50 Exposure',
-      onComplete: () => {
-        actions.claimDailyBoost();
-        actions.addXP(50, true);
-        actions.watchAd();
-        toast('success', 'Surge Active!', '+5 Twists + 50 Exposure');
-      },
-    });
-  };
+  const handleDailyBonus = () => toast('info', 'Daily spins paused', 'The daily spin reward will return after its server-side claim is ready.');
+  const handleDailyBoost = () => toast('info', 'Rewarded ads unavailable', 'No verified advert provider is connected yet.');
   return (
     <div className="space-y-4">
       {/* Logo panel */}
@@ -75,22 +49,21 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={handleDailyBonus}
-          disabled={state.freeSpinsClaimed}
+          disabled
           className="yellow-btn p-3 text-left h-full disabled:opacity-30"
         >
           <Gift size={20} className="mb-1" />
           <div className="text-xs">Daily Contagion</div>
-          <div className="text-[10px] opacity-80 font-normal">+5 Toxic Twists</div>
+          <div className="text-[10px] opacity-80 font-normal">Temporarily paused</div>
         </button>
         <button
           onClick={handleDailyBoost}
-          disabled={state.dailyBoostClaimed}
+          disabled
           className="yellow-btn p-3 text-left h-full disabled:opacity-30"
         >
           <Tv size={20} className="mb-1" />
           <div className="text-xs">Radiation Surge</div>
-          <div className="text-[10px] opacity-80 font-normal">+5 Twists + 50 Exposure</div>
-          <div className="ad-badge mt-1.5"><Tv size={8} /> Contagion Feed</div>
+          <div className="text-[10px] opacity-80 font-normal">Rewarded ads not connected</div>
         </button>
       </div>
       {/* Quick links */}
@@ -100,14 +73,6 @@ export function HomeScreen({ state, actions, onNavigate }: Props) {
         <QuickLink icon={<Users />} label="Spread Infection" sub="+30 Twists + 100 Exposure each" onClick={() => onNavigate('profile', 'referral-box')} />
         <QuickLink icon={<Zap />} label="Fallout Forecast" sub="See what's contaminating the app next!" onClick={() => onNavigate('roadmap')} />
       </div>
-      <AdModal
-        open={!!adModal}
-        onClose={() => setAdModal(null)}
-        onComplete={() => adModal?.onComplete()}
-        title={adModal?.title ?? ''}
-        subtitle={adModal?.subtitle}
-        reward={adModal?.reward ?? ''}
-      />
     </div>
   );
 }
