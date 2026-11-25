@@ -4,7 +4,6 @@ import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 interface Props {
-  onNavigate: (s: Screen) => void;
   actions: GameActions;
 }
 const roadmapData = [
@@ -125,7 +124,7 @@ const roadmapData = [
     ],
   },
 ];
-export function RoadmapScreen({ onNavigate, actions }: Props) {
+export function RoadmapScreen({ actions }: Props) {
   const toast = useToast();
   const [localClaimed, setLocalClaimed] = useState(false);
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
