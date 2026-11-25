@@ -3,7 +3,6 @@ import { Lock, Zap, Coins, Flame, X, Tv } from 'lucide-react';
 import type { CacheBoxTier, GameState } from '../types';
 import type { GameActions } from '../useGameState';
 import { CACHE_BOXES, JACKPOT_FRAGMENTS_TO_UNLOCK, CACHE_ASSET_PATH } from '../constants';
-import { AdModal } from '../components/AdModal';
 import { useToast } from '../components/Toast';
 interface Props {
   state: GameState;
@@ -13,49 +12,17 @@ interface Props {
 export function ContagionCacheScreen({ state, actions, onBack }: Props) {
   const toast = useToast();
   const [opening, setOpening] = useState<CacheBoxTier | null>(null);
-  const [adModalData, setAdModalData] = useState<{
-    title: string;
-    subtitle?: string;
-    onComplete: () => void;
-  } | null>(null);
   const [result, setResult] = useState<{
     tier: CacheBoxTier;
     label: string;
     reward: ReturnType<typeof actions.openCacheBox>['reward'];
   } | null>(null);
-  const doOpenBox = (tier: CacheBoxTier, viaAd: boolean) => {
-    if (opening) return;
-    setOpening(tier);
-    
-    const { ok, reward } = actions.openCacheBox(tier, viaAd);
-    
-    if (!ok) {
-      setOpening(null);
-      if (toast) toast.show('Claim failed — try again later', 'error');
-      return;
-    }
-    
-    const box = CACHE_BOXES[tier];
-    setResult({ tier, label: box.label, reward });
-    
-    setTimeout(() => {
-      setOpening(null);
-    }, 500);
+  const doOpenBox = (_tier: CacheBoxTier, _viaAd: boolean) => {
+    toast('info', 'Cache rewards paused', 'Cache rewards are being moved to server-side settlement before they can be claimed.');
   };
-  const handleFreeClaim = (tier: CacheBoxTier) => {
-    doOpenBox(tier, false);
-  };
-  const handleAdClaim = (tier: CacheBoxTier) => {
-    if (opening || adModalData) return;
-    
-    setAdModalData({
-      title: 'Watch Ad to Open Box',
-      subtitle: 'Watch a short video to unlock your Contagion Cache',
-      onComplete: () => {
-        setAdModalData(null);
-        doOpenBox(tier, true);
-      },
-    });
+  const handleFreeClaim = (tier: CacheBoxTier) => doOpenBox(tier, false);
+  const handleAdClaim = (_tier: CacheBoxTier) => {
+    toast('info', 'Rewarded ads unavailable', 'No verified advert provider is connected yet.');
   };
   const closeResult = () => {
     setResult(null);
@@ -132,7 +99,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                     {isFreeClaimAvailable ? (
                       <button
                         onClick={() => handleFreeClaim(tier)}
-                        disabled={!!opening || !!adModalData}
+                        disabled={!!opening}
                         className="w-full py-2 bg-lime-500 text-black font-bold rounded-lg hover:bg-lime-400 transition-colors disabled:opacity-50"
                       >
                         FREE DAILY
@@ -162,7 +129,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                   <div className="space-y-2">
                     <button
                       onClick={() => doOpenBox(tier, false)}
-                      disabled={!canOpen || !!opening || !!adModalData}
+                      disabled={!canOpen || !!opening}
                       className={`w-full py-2 font-bold rounded-lg transition-colors ${
                         canOpen
                           ? 'bg-yellow-500 text-black hover:bg-yellow-400'
@@ -199,16 +166,6 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
           );
         })}
       </div>
-      {adModalData && (
-        <AdModal
-          open={!!adModalData}
-          title={adModalData.title}
-          subtitle={adModalData.subtitle}
-          reward="Mystery Cache Box"
-          onClose={() => setAdModalData(null)}
-          onComplete={adModalData.onComplete}
-        />
-      )}
       {result && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm">
           <div className="bg-gray-900 border-2 border-lime-500/50 rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
