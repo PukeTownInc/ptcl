@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Layers, History } from 'lucide-react';
-import type { GameState, SpinResult, SymbolId } from '../types';
+import type { GameState, SpinResult, SymbolId, SlotHistoryRecord } from '../types';
 import { SYMBOLS, formatPP } from '../constants';
 import * as engine from '../slotEngine';
 import type { GameActions } from '../useGameState';
@@ -63,7 +63,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     return init;
   });
   const [spinning, setSpinning] = useState(false);
-  const [lastResult, setLastResult] = useState<SpinResult | null>(null);
   const [winPositions, setWinPositions] = useState<Set<string>>(new Set());
   const [winPP, setWinPP] = useState(0);
   const [showJackpot, setShowJackpot] = useState<string | null>(null);
@@ -114,7 +113,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     setSpinning(true);
     setWinPositions(new Set());
     setWinPP(0);
-    setLastResult(null);
     setReelPhases(['spinning', 'spinning', 'spinning', 'spinning', 'spinning']);
 
     try {
@@ -154,7 +152,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             const finishTimer = setTimeout(() => {
               setSpinning(false);
               setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
-              setLastResult(result);
               setWinPP(result.payoutPP);
               const posSet = new Set<string>();
               result.wins.forEach((w) => w.positions.forEach(([reel, row]) => posSet.add(`${reel}-${row}`)));
@@ -192,7 +189,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       const message = error instanceof Error ? error.message : 'The server could not complete this spin.';
       toast('error', 'Spin not completed', message);
     }
-  }, [spinning, state.spinsRemaining, state.lockedPotPP, state.slotBet, state.slotAutoCount, actions, toast, turbo]);
+  }, [spinning, state.slotBet, state.slotAutoCount, actions, toast, turbo]);
 
   const canSpin = true; // Server validates balance and applies the daily reset atomically.
 
@@ -323,7 +320,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   );
 }
 
-function SpinHistory({ entries }: { entries: any[] }) {
+function SpinHistory({ entries }: { entries: SlotHistoryRecord[] }) {
   const [open, setOpen] = useState(true);
   return (
     <div className="grunge-panel overflow-hidden">
