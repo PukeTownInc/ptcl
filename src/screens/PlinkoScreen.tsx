@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Info, Trophy, X } from 'lucide-react';
 import type { GameState } from '../types';
-import type { GameActions } from '../useGameState';
 import { PLINKO_MULTIPLIERS } from '../constants';
 
 const FIXED_BET_PP = 100;
