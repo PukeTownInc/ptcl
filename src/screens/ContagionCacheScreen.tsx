@@ -113,7 +113,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                     {isAdClaimAvailable ? (
                       <button
                         onClick={() => handleAdClaim(tier)}
-                        disabled={!!opening || !!adModalData}
+                        disabled={!!opening}
                         className="w-full py-2 bg-sky-600 text-white font-bold rounded-lg hover:bg-sky-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <Tv size={16} />
@@ -142,7 +142,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                     {isPurpleBox && isPurpleAdAvailable ? (
                       <button
                         onClick={() => handleAdClaim(tier)}
-                        disabled={!!opening || !!adModalData}
+                        disabled={!!opening}
                         className="w-full py-2 bg-fuchsia-600 text-white font-bold rounded-lg hover:bg-fuchsia-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <Tv size={16} />
