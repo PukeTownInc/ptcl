@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Info, Trophy, X } from 'lucide-react';
 import type { GameState } from '../types';
 import type { GameActions } from '../useGameState';
@@ -8,12 +8,11 @@ const FIXED_BET_PP = 100;
 
 interface PlinkoScreenProps {
   state: GameState;
-  actions: GameActions;
 }
 
-export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [ballPosition, setBallPosition] = useState<{ x: number; y: number } | null>(null);
+export function PlinkoScreen({ state }: PlinkoScreenProps) {
+  const [isPlaying] = useState(false);
+  const [ballPosition] = useState<{ x: number; y: number } | null>(null);
   const [lastResult, setLastResult] = useState<{
     visible: boolean;
     pocketIndex: number;
@@ -22,17 +21,8 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
     win: boolean;
   } | null>(null);
 
-  const animationRef = useRef<number | null>(null);
 
   const handlePlay = () => undefined;
-
-  useEffect(() => {
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-950 via-green-900 to-emerald-950 text-white p-4">
