@@ -129,7 +129,7 @@ export function spin(): SpinResult {
   }
 
   // Hazard mystery symbol: all hazard symbols on grid reveal same random regular symbol
-  let hazardPositions: [number, number][] = [];
+  const hazardPositions: [number, number][] = [];
   for (let r = 0; r < REEL_COUNT; r++) for (let row = 0; row < ROW_COUNT; row++) if (grid[r][row] === 'hazard') hazardPositions.push([r, row]);
   if (hazardPositions.length > 0) {
     const reveal = REGULAR_IDS[Math.floor(Math.random() * REGULAR_IDS.length)];
