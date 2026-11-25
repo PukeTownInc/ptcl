@@ -97,6 +97,7 @@ export function spin(): SpinResult {
   let totalPP = wins.reduce((s, w) => s + w.pp, 0);
   let freeSpinsAwarded = 0;
   let bonusAwarded: number | null = null;
+  let bonusIsMultiplier = false;
   let jackpot: SpinResult['jackpot'] = null;
 
   // Scatter free spins: 3=6, 4=10, 5=15
@@ -121,6 +122,7 @@ export function spin(): SpinResult {
       const mult = 1.5 + Math.random() * 1;
       const bonus = Math.round(totalPP * mult);
       bonusAwarded = bonus;
+      bonusIsMultiplier = true;
       totalPP += bonus;
     }
   }
@@ -129,7 +131,7 @@ export function spin(): SpinResult {
   let hazardPositions: [number, number][] = [];
   for (let r = 0; r < REEL_COUNT; r++) for (let row = 0; row < ROW_COUNT; row++) if (grid[r][row] === 'hazard') hazardPositions.push([r, row]);
   if (hazardPositions.length > 0) {
-    const reveal = REGULAR_IDS[Math.floor(Math.random() * 6)]; // reveal a low-mid symbol
+    const reveal = REGULAR_IDS[Math.floor(Math.random() * REGULAR_IDS.length)];
     for (const [r, row] of hazardPositions) grid[r][row] = reveal;
     // re-evaluate after reveal, replacing the original wins
     const revealedWins = evaluateWays(grid);
@@ -159,6 +161,7 @@ export function spin(): SpinResult {
     jackpot,
     freeSpinsAwarded,
     bonusAwarded,
+    bonusIsMultiplier,
     scatterCount,
     potFull: false,
   };
