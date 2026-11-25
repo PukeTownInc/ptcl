@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, RefreshCw, Zap } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import type { Screen } from '../types';
 import { formatPP } from '../constants';
 import { useToast } from './Toast';
@@ -77,7 +77,7 @@ export function VialMixerScreen({ onNavigate, balancePP, onEarnPP, onWatchAd }: 
           setDailyUsed(data.dailyUsed ?? 0);
         }
       }
-    } catch {}
+    } catch { /* Ignore invalid local save data and initialise fresh vials. */ }
     setVials(generateVials());
   }, [TODAY]);
 
