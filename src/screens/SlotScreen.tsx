@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Lock, Tv, Zap, Package, RefreshCw, Layers, Play, X, Coins, Flame, Square, History, Timer } from 'lucide-react';
-import type { GameState, SpinResult, SymbolId, WinLine } from '../types';
+import type { GameState, Screen, SpinResult, SymbolId, WinLine } from '../types';
 import { MIN_UNLOCK_PP, SYMBOLS, formatPP } from '../constants';
 import * as engine from '../slotEngine';
 import type { GameActions } from '../useGameState';
@@ -52,7 +52,7 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
   );
 }
 
-export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
+export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions; onNavigate?: (screen: Screen) => void }) {
   const toast = useToast();
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
     const init: SymbolId[][] = [];
@@ -135,6 +135,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       return;
     }
     currentSpinUsesFreeSpinRef.current = useFreeSpin;
+    stopTimers.current.forEach(clearTimeout);
+    stopTimers.current = [];
     setSpinning(true);
     setWinPositions(new Set());
     setWinPP(0);
@@ -165,7 +167,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
             clearInterval(cycleInterval.current);
             cycleInterval.current = null;
           }
-          setTimeout(() => finishSpin(result), 500);
+          const finishTimer = setTimeout(() => finishSpin(result), 500);
+          stopTimers.current.push(finishTimer);
         }
       }, baseDelay + r * stagger);
       stopTimers.current.push(t);
@@ -447,9 +450,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
       <div className="max-w-lg mx-auto px-2 grid grid-cols-2 gap-2">
         <div className="ghost-btn p-2.5 flex items-center justify-between gap-2">
-          <button type="button" aria-label="Decrease bet" onClick={() => actions.setSlotPreferences(Math.max(1, state.slotBet - 5), state.slotAutoCount)} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">−</button>
+          <button type="button" aria-label="Decrease bet" disabled={spinning} onClick={() => actions.setSlotPreferences(Math.max(1, state.slotBet - 5), state.slotAutoCount)} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">−</button>
           <span className="font-mono text-xs text-toxic-200">BET <b className="text-white">{state.slotBet}</b></span>
-          <button type="button" aria-label="Increase bet" onClick={() => actions.setSlotPreferences(Math.min(1000, state.slotBet + 5), state.slotAutoCount)} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">+</button>
+          <button type="button" aria-label="Increase bet" disabled={spinning} onClick={() => actions.setSlotPreferences(Math.min(1000, state.slotBet + 5), state.slotAutoCount)} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">+</button>
         </div>
         <div className="ghost-btn p-2.5 flex items-center justify-between gap-2">
           <button type="button" aria-label="Decrease auto spins" onClick={() => actions.setSlotPreferences(state.slotBet, Math.max(1, state.slotAutoCount - 1))} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">−</button>
