@@ -26,7 +26,8 @@ export function getLevel(xp: number): number {
 export function getLevelProgress(xp: number): number {
   return xp % XP_PER_LEVEL;
 }
-export function getNextLevelXp(_xp: number): number {
+export function getNextLevelXp(xp: number): number {
+  void xp;
   return XP_PER_LEVEL;
 }
 export function getLevelPercent(xp: number): number {
