@@ -56,9 +56,6 @@ export function MissionsScreen({ state, actions }: Props) {
   const countdown = useResetCountdown();
   const completedCount = MISSIONS.filter((m) => isMissionComplete(state, m.id)).length;
   const allComplete = completedCount === MISSIONS.length;
-  const allMissionsClaimed = MISSIONS.every((m) => 
-    state.dailyMissionClaims.includes(m.id) || state.dailyMissionClaims.includes(`${m.id}:ad`)
-  );
   const claimedDays = state.streakDay;
   const nextDay = claimedDays >= 7 ? 1 : claimedDays + 1;
   const streakReward = STREAK_REWARDS[nextDay - 1];
@@ -87,7 +84,8 @@ export function MissionsScreen({ state, actions }: Props) {
     actions.addXP(mission.baseXp, false, true);
     toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure`);
   };
-  const handleClaimAdBonus = (_id: string) => {
+  const handleClaimAdBonus = (id: string) => {
+    void id;
     toast('info', 'Rewarded ads unavailable', 'No verified advert provider is connected yet.');
   };
   const handleAllBase = () => {
