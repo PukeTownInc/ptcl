@@ -88,6 +88,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [potAccelCountdown, setPotAccelCountdown] = useState('');
   const [showPaytable, setShowPaytable] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [turbo, setTurbo] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -148,8 +149,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
       setCyclingSymbols(next);
     }, 70);
-    const baseDelay = 1000;
-    const stagger = 320;
+    const baseDelay = turbo ? 420 : 1000;
+    const stagger = turbo ? 150 : 320;
     for (let r = 0; r < 5; r++) {
       const t = setTimeout(() => {
         setGrid((prev) => {
@@ -237,7 +238,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         }
       }
     }
-  }, [spinning, state.spinsRemaining, state.lockedPotPP, state.slotBet, state.slotAutoCount, actions, toast]);
+  }, [spinning, state.spinsRemaining, state.lockedPotPP, state.slotBet, state.slotAutoCount, actions, toast, turbo]);
 
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
@@ -342,204 +343,47 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, state.lockedPotPP, state.slotBet, state.slotAutoCount, doSpin, toast]);
 
   return (
-    <div className="space-y-4">
-      {/* Bonus Buttons */}
-      <div className="grid grid-cols-2 gap-2">
-        <BonusBtn
-          icon={<Package size={16} />}
-          label="Watch Ad for Spins"
-          sub="15–25 spins • timed placeholder"
-          ad
-          onClick={handleMysteryPack}
-          disabled={spinning}
-        />
-        <BonusBtn
-          icon={<Zap size={16} />}
-          label="Sludge Accelerator"
-          sub={`${2 - state.dailyPotAccel} left • x2 flow for 5 min`}
-          ad
-          onClick={handlePotAccel}
-          disabled={state.dailyPotAccel >= 2 || spinning}
-        />
-      </div>
-
-      {(isHotStreakActive(state) || isPotAccelActive(state)) && (
-        <div className="flex flex-wrap gap-2">
-          {isHotStreakActive(state) && (
-            <span className="px-2 py-1 rounded-full bg-hazard-amber/15 border border-hazard-amber/40 text-hazard-amber text-[10px] font-display font-bold flex items-center gap-1">
-              <Flame size={10} /> FEVER PITCH x1.5
-            </span>
-          )}
-          {isPotAccelActive(state) && potAccelCountdown && (
-            <span className="px-2 py-1 rounded-full bg-radioactive-500/15 border border-radioactive-600/30 text-radioactive-400 text-[10px] font-display font-bold flex items-center gap-1">
-              <Timer size={10} /> VAT FLOW x2 • {potAccelCountdown}
-            </span>
-          )}
+    <div className="w-full px-1">
+      <div className="relative mx-auto w-full overflow-hidden bg-[#020503] shadow-[0_0_40px_#000]" style={{ maxWidth: '941px', aspectRatio: '941 / 1672', lineHeight: 0 }} aria-label="Puke Town Cash Lab slot machine">
+        <img src="/slots/cash-lab-final-art.png" alt="Puke Town Cash Lab final toxic neon slot machine artwork" className="absolute inset-0 h-full w-full select-none" style={{ objectFit: 'fill', pointerEvents: 'none' }} draggable={false} />
+        <div className="absolute z-[3] grid h-[19.8%] grid-cols-5 gap-[1.15%] rounded-lg p-[0.65%]" style={{ left: '10.2%', top: '42.8%', width: '79.7%', pointerEvents: 'none' }} aria-hidden="true">
+          {grid.map((reel, ri) => {
+            const phase = reelPhases[ri];
+            const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
+            return <div key={ri} className={`grid min-w-0 grid-rows-3 gap-[3.5%] overflow-hidden rounded-md border border-[#a6ff3b88] bg-gradient-to-r from-[#071006d9] via-[#071006ad] to-[#071006d9] p-[2%] shadow-[inset_0_0_13px_#8cff2633,0_0_7px_#8cff2620] ${phase === 'spinning' ? 'animate-pulse' : ''}`}>
+              {displayReel.map((symId, row) => {
+                const sym = SYMBOLS[symId];
+                const isWin = winPositions.has(`${ri}-${row}`);
+                return <div key={row} className={`flex min-h-0 items-center justify-center overflow-hidden rounded border bg-gradient-to-br from-[#1a2b10d9] via-[#020603e8] to-[#17270cdd] ${isWin ? 'border-[#f5ff68] shadow-[inset_0_0_16px_#91ff4b,0_0_14px_#d7ff37]' : 'border-[#b6ff4350]'}`}>
+                  {sym.image ? <img src={sym.image} alt="" className="h-full w-full object-contain" /> : <span className="text-2xl">{sym.emoji}</span>}
+                </div>;
+              })}
+            </div>;
+          })}
         </div>
-      )}
-
-      {/* REEL BOX */}
-      <div
-        className="relative w-full mx-auto"
-        style={{
-          maxWidth: '480px',
-          aspectRatio: '433 / 577',
-        }}
-      >
-        <div
-          className="absolute z-10"
-          style={{
-            top: '40%',
-            bottom: '8%',
-            left: '10.5%',
-            right: '10.5%',
-          }}
-        >
-          <div ref={reelsRef} className="grid grid-cols-5 gap-0 h-full">
-            {grid.map((reel, ri) => {
-              const phase = reelPhases[ri];
-              const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
-              return (
-                <div
-                  key={ri}
-                  className={`relative overflow-hidden rounded-sm ${
-                    phase === 'spinning' ? 'reel-spinning' : ''
-                  } ${phase === 'stopped' ? 'reel-stopped' : ''}`}
-                  style={{ backgroundColor: 'transparent' }}
-                >
-                  {displayReel.map((symId, row) => {
-                    const isWin = winPositions.has(`${ri}-${row}`);
-                    const sym = SYMBOLS[symId];
-                    return (
-                      <div key={row} className="aspect-square flex items-center justify-center p-2">
-                        <span
-                          className={isWin ? 'win-symbol-pop' : ''}
-                          style={{
-                            filter: isWin ? 'drop-shadow(0 0 8px #39ff14)' : 'none',
-                            display: 'block',
-                            width: '100%',
-                            height: '100%'
-                          }}
-                        >
-                          {sym.image ? (
-                            <img
-                              src={sym.image}
-                              alt={sym.label}
-                              className="w-full h-full object-contain"
-                              style={{ background: 'transparent', display: 'block' }}
-                            />
-                          ) : (
-                            <span className="text-xl">{sym.emoji}</span>
-                          )}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <img
-          src="/reel-box.png"
-          alt="Puke Town Cash Lab"
-          className="absolute inset-0 w-full h-full z-20"
-          style={{ pointerEvents: 'none' }}
-        />
+        <div className="absolute z-[7] flex items-center justify-center rounded-md border border-[#a6ff3b] bg-gradient-to-r from-[#061006ee] via-[#183600ee] to-[#061006ee] font-black text-[#efff70] shadow-[0_0_12px_#8cff3b88,inset_0_0_9px_#9dff3744] [text-shadow:0_0_9px_#eaff43]" style={{ left: '34%', top: '31%', width: '32%', height: '5.3%', fontSize: 'clamp(13px,3.1vw,27px)' }}>{formatPP(state.lockedPotPP)} PP</div>
+        <div className="absolute z-[7] flex items-center justify-center font-black text-white [text-shadow:0_0_8px_#fff]" style={{ left: '17%', top: '66.6%', width: '12%', height: '2.5%', fontSize: 'clamp(12px,2.3vw,22px)' }}>{state.slotBet}</div>
+        <div className="absolute z-[7] flex items-center justify-center font-black text-white [text-shadow:0_0_8px_#fff]" style={{ left: '72%', top: '66.6%', width: '9%', height: '2.5%', fontSize: 'clamp(12px,2.3vw,22px)' }}>{state.slotAutoCount}</div>
+        <div className="absolute z-[9] flex items-center justify-center bg-[#020503f7] font-black text-white [text-shadow:0_0_7px_#fff]" style={{ left: '64.2%', top: '83.35%', width: '8%', height: '2.55%', fontSize: 'clamp(14px,2.5vw,24px)' }}>{state.spinsRemaining}</div>
+        <button type="button" aria-label="Watch a rewarded advert for free spins" onClick={() => toast('info', 'Rewarded ads not connected', 'Free spins will be enabled when a verified advert provider is integrated.')} disabled={spinning} className="absolute z-[8] rounded-lg border border-[#d14cff] bg-gradient-to-br from-[#260044] via-[#6500a5] to-[#1b0032] p-1 text-center font-black leading-tight text-white shadow-[inset_0_0_10px_#a900ff,0_0_8px_#c100ff65] disabled:opacity-50" style={{ left: '5.1%', top: '65.05%', width: '28.1%', height: '7.9%', fontSize: 'clamp(10px,2.2vw,17px)' }}>▶ WATCH AD<br/>GET 15–25 SPINS</button>
+        <button type="button" aria-pressed={autoSpin} onClick={toggleAutoSpin} disabled={spinning} className={`absolute z-[8] rounded-lg border p-1 text-center font-black leading-tight disabled:opacity-50 ${autoSpin ? 'border-[#eaffcf] bg-[#396f08] text-white' : 'border-[#8bff2d] bg-gradient-to-br from-[#102500] via-[#2b6500] to-[#0a1900] text-[#eaffcf]'}`} style={{ left: '66%', top: '65.05%', width: '28.1%', height: '7.9%', fontSize: 'clamp(10px,2.2vw,17px)' }}>AUTO SPIN: {autoSpin ? 'ON' : 'OFF'}</button>
+        <button type="button" aria-label="Decrease bet" disabled={spinning || state.slotBet <= 1} onClick={() => actions.setSlotPreferences(Math.max(1, state.slotBet - 5), state.slotAutoCount)} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20" style={{ left: '11.7%', top: '65.7%', width: '6.4%', height: '3.4%' }} />
+        <button type="button" aria-label="Increase bet" disabled={spinning || state.slotBet >= 1000} onClick={() => actions.setSlotPreferences(Math.min(1000, state.slotBet + 5), state.slotAutoCount)} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20" style={{ left: '26.9%', top: '65.7%', width: '6.4%', height: '3.4%' }} />
+        <button type="button" aria-label={spinning ? 'Reels spinning' : 'Spin reels'} disabled={!canSpin || spinning} onClick={doSpin} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20 disabled:cursor-not-allowed" style={{ left: '36%', top: '64.5%', width: '28%', height: '10.8%' }} />
+        <button type="button" aria-label="Decrease auto spins" disabled={spinning || state.slotAutoCount <= 0} onClick={() => actions.setSlotPreferences(state.slotBet, Math.max(0, state.slotAutoCount - 1))} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20" style={{ left: '67.5%', top: '65.7%', width: '6.4%', height: '3.4%' }} />
+        <button type="button" aria-label="Increase auto spins" disabled={spinning || state.slotAutoCount >= 100} onClick={() => actions.setSlotPreferences(state.slotBet, Math.min(100, state.slotAutoCount + 1))} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20" style={{ left: '83.2%', top: '65.7%', width: '6.4%', height: '3.4%' }} />
+        <button type="button" aria-label={turbo ? 'Disable turbo mode' : 'Enable turbo mode'} aria-pressed={turbo} onClick={() => setTurbo(v => !v)} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20" style={{ left: '70.3%', top: '69.3%', width: '19%', height: '3.2%' }} />
+        <button type="button" aria-label="Use a free spin" disabled={!canSpin || spinning} onClick={doSpin} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20 disabled:cursor-not-allowed" style={{ left: '57%', top: '90.8%', width: '17%', height: '3.2%' }} />
+        <button type="button" aria-label="Claim daily spin reward" disabled={state.freeSpinsClaimed} onClick={actions.claimDailyBonusSpins} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20 disabled:cursor-not-allowed" style={{ left: '29.4%', top: '91.3%', width: '20%', height: '3.2%' }} />
+        <button type="button" onClick={() => setShowHistory(true)} aria-label="View spin history" className="absolute z-[9] flex flex-col items-center justify-center gap-[10%] rounded-lg border border-[#8bff2d] bg-gradient-to-br from-[#061006f5] via-[#102900f5] to-[#020603f5] px-1 py-2 text-center font-black text-[#caff83] shadow-[inset_0_0_18px_#79ff2830,0_0_10px_#80ff3045]" style={{ left: '5.1%', top: '78.2%', width: '18.5%', height: '16.1%', fontSize: 'clamp(9px,2.1vw,17px)' }}><span>SPIN HISTORY</span><strong className="w-[94%] rounded-md border border-[#8bff2d] bg-gradient-to-br from-[#102500] via-[#2b6500] to-[#0a1900] px-1 py-2 text-[#eaffcf]">VIEW HISTORY</strong></button>
+        <button type="button" onClick={() => setShowPaytable(true)} aria-label="View paytable" className="absolute z-[9] flex flex-col items-center justify-center gap-[10%] rounded-lg border border-[#d14cff] bg-gradient-to-br from-[#10051bf5] via-[#260044f5] to-[#08030df5] px-1 py-2 text-center font-black text-[#efbaff] shadow-[inset_0_0_18px_#a900ff35,0_0_10px_#c000ff55]" style={{ left: '76.4%', top: '78.2%', width: '18.5%', height: '16.1%', fontSize: 'clamp(9px,2.1vw,17px)' }}><span>TOXIC PAY TABLE</span><strong className="w-[94%] rounded-md border border-[#d14cff] bg-gradient-to-br from-[#260044] via-[#6500a5] to-[#1b0032] px-1 py-2 text-white">VIEW PAY TABLE</strong></button>
+        {spinning && <div className="absolute inset-x-0 top-[74%] z-20 text-center text-xs font-black tracking-widest text-lime-200">CONTAMINATING…</div>}
+        {!spinning && winPP > 0 && <div className="absolute inset-x-0 top-[74%] z-20 text-center text-sm font-black text-lime-200 [text-shadow:0_0_10px_#9dff37]">+{formatPP(winPP)} PUKE POINTS</div>}
       </div>
-
-      <div className="max-w-lg mx-auto px-2 grid grid-cols-2 gap-2">
-        <div className="ghost-btn p-2.5 flex items-center justify-between gap-2">
-          <button type="button" aria-label="Decrease bet" disabled={spinning} onClick={() => actions.setSlotPreferences(Math.max(1, state.slotBet - 5), state.slotAutoCount)} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">−</button>
-          <span className="font-mono text-xs text-toxic-200">BET <b className="text-white">{state.slotBet}</b></span>
-          <button type="button" aria-label="Increase bet" disabled={spinning} onClick={() => actions.setSlotPreferences(Math.min(1000, state.slotBet + 5), state.slotAutoCount)} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">+</button>
-        </div>
-        <div className="ghost-btn p-2.5 flex items-center justify-between gap-2">
-          <button type="button" aria-label="Decrease auto spins" onClick={() => actions.setSlotPreferences(state.slotBet, Math.max(1, state.slotAutoCount - 1))} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">−</button>
-          <span className="font-mono text-xs text-toxic-200">AUTO <b className="text-white">{state.slotAutoCount}</b></span>
-          <button type="button" aria-label="Increase auto spins" onClick={() => actions.setSlotPreferences(state.slotBet, Math.min(100, state.slotAutoCount + 1))} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">+</button>
-        </div>
-      </div>
-      <div className="max-w-lg mx-auto px-2 grid grid-cols-1 gap-2">
-        <button type="button" onClick={actions.claimDailyBonusSpins} disabled={state.freeSpinsClaimed}
-          className="ghost-btn p-2.5 text-xs font-display font-bold text-toxic-300 disabled:opacity-40">
-          {state.freeSpinsClaimed ? 'DAILY SPINS CLAIMED' : 'CLAIM DAILY SPINS'}
-        </button>
-
-      </div>
-
-      <div className="max-w-lg mx-auto space-y-3 px-2">
-        <div className="min-h-[50px] flex items-center justify-center text-center">
-          {spinning ? (
-            <div>
-              <RefreshCw size={22} className="text-toxic-400/70 animate-spin mx-auto" />
-              <div className="font-display text-xs text-toxic-300/50 mt-1.5 tracking-[0.3em] animate-pulse">CONTAMINATING</div>
-            </div>
-          ) : winPP > 0 ? (
-            <div className="animate-pop">
-              <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{formatPP(winPP)} Puke Points</div>
-              {lastResult && lastResult.wins.length > 0 && (
-                <div className="text-[10px] text-toxic-100/50 font-mono mt-1">
-                  {lastResult.wins.length} way{lastResult.wins.length > 1 ? 's' : ''} • {lastResult.wins.map((w) => SYMBOLS[w.symbols[0]].label).join(', ')}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-toxic-100/30">
-              <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
-              <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-center">
-          <span className="font-display font-bold text-sm text-toxic-300">
-            Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining}</span>
-          </span>
-        </div>
-
-        <button
-          onClick={doSpin}
-          disabled={!canSpin || spinning}
-          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2"
-        >
-          {spinning ? (
-            <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
-          ) : (
-            <><Play size={22} /> CONTAMINATE</>
-          )}
-        </button>
-
-        <button
-          onClick={toggleAutoSpin}
-          className={`w-full py-2.5 rounded-lg font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 transition-all ${
-            autoSpin
-              ? 'bg-toxic-500/20 border border-toxic-400 text-toxic-400'
-              : 'bg-ink-700/50 border border-toxic-900/40 text-toxic-100/40'
-          }`}
-          style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
-        >
-          {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
-        </button>
-      </div>
-
-      <div className="max-w-lg mx-auto grid grid-cols-2 gap-3">
-        <button type="button" onClick={() => setShowHistory(true)}
-          className="min-h-[88px] rounded-xl border border-toxic-400/90 bg-gradient-to-b from-toxic-800 via-toxic-900 to-ink-900 text-toxic-100 font-display font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
-          style={{ boxShadow: '0 0 14px #39ff1455, inset 0 1px 0 #baff9a55' }}>
-          <History size={20} className="text-toxic-300" />
-          <span className="text-sm">Spin History</span>
-          <span className="text-[9px] text-toxic-100/70 tracking-wide">VIEW RECENT SPINS</span>
-        </button>
-        <button type="button" onClick={() => setShowPaytable(true)}
-          className="min-h-[88px] rounded-xl border border-toxic-400/90 bg-gradient-to-b from-toxic-800 via-toxic-900 to-ink-900 text-toxic-100 font-display font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
-          style={{ boxShadow: '0 0 14px #39ff1455, inset 0 1px 0 #baff9a55' }}>
-          <Layers size={20} className="text-toxic-300" />
-          <span className="text-sm">Paytable</span>
-          <span className="text-[9px] text-toxic-100/70 tracking-wide">SYMBOLS &amp; PAYOUTS</span>
-        </button>
-      </div>
-
+      {(isHotStreakActive(state) || isPotAccelActive(state)) && <div className="mx-auto mt-3 flex max-w-[941px] flex-wrap justify-center gap-2">
+        {isHotStreakActive(state) && <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-1 text-[10px] font-bold text-amber-300">FEVER PITCH x1.5</span>}
+        {isPotAccelActive(state) && potAccelCountdown && <span className="rounded-full border border-lime-500/30 bg-lime-500/10 px-2 py-1 text-[10px] font-bold text-lime-300">VAT FLOW x2 • {potAccelCountdown}</span>}
+      </div>}
       {showHistory && (
         <div className="fixed inset-0 z-[80] bg-black/90 backdrop-blur-sm flex items-center justify-center p-3" onClick={() => setShowHistory(false)}>
           <section role="dialog" aria-modal="true" aria-labelledby="spin-history-title" className="w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-xl border border-toxic-400 bg-ink-900 p-3" style={{ boxShadow: '0 0 28px #39ff1466' }} onClick={(event) => event.stopPropagation()}>
