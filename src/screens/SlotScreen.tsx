@@ -109,10 +109,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
   const doSpin = useCallback(async () => {
     if (spinning) return;
-    if (state.spinsRemaining <= 0 && state.lockedPotPP < state.slotBet) {
-      toast('error', 'Insufficient Puke Points', 'You need more locked Puke Points or a free spin.');
-      return;
-    }
     stopTimers.current.forEach(clearTimeout);
     stopTimers.current = [];
     setSpinning(true);
@@ -198,7 +194,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     }
   }, [spinning, state.spinsRemaining, state.lockedPotPP, state.slotBet, state.slotAutoCount, actions, toast, turbo]);
 
-  const canSpin = state.spinsRemaining > 0 || state.lockedPotPP >= state.slotBet;
+  const canSpin = true; // Server validates balance and applies the daily reset atomically.
 
   const toggleAutoSpin = useCallback(() => {
     if (autoSpin) {
