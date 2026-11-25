@@ -1,7 +1,6 @@
-import { getTier, ppToUsd, formatPP } from '../constants';
+import { ppToUsd, formatPP } from '../constants';
 import type { GameState } from '../types';
 export function StatsGrid({ state }: { state: GameState }) {
-  const tier = getTier(state.xp);
   const stats = [
     { label: 'Total Spins', value: state.totalSpins.toLocaleString(), color: 'text-toxic-300' },
     { label: 'Total XP', value: state.xp.toLocaleString(), color: 'text-toxic-300' },
