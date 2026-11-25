@@ -3,7 +3,6 @@ import { Trophy, Star, Coins, Tv, Lock, Clock, Crown, ChevronRight, CheckCircle2
 import type { GameState, LeaderboardCategory, LeaderboardPeriod, LeaderboardEntry } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
-import { AdModal } from '../components/AdModal';
 import {
   generateLeaderboard,
   getTimeUntilReset,
@@ -47,7 +46,6 @@ export function LeaderboardsScreen({ state, actions }: Props) {
   const toast = useToast();
   const [category, setCategory] = useState<LeaderboardCategory>('xp');
   const [now, setNow] = useState(Date.now());
-  const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -362,14 +360,7 @@ export function LeaderboardsScreen({ state, actions }: Props) {
         </div>
       </div>
 
-      <AdModal
-        open={!!adModal}
-        onClose={() => setAdModal(null)}
-        onComplete={() => adModal?.onComplete()}
-        title={adModal?.title ?? ''}
-        subtitle={adModal?.subtitle}
-        reward={adModal?.reward ?? ''}
-      />
+
     </div>
   );
 }
