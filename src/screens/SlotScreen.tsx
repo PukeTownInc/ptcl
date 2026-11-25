@@ -51,7 +51,7 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
   );
 }
 
-export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions; onNavigate?: (screen: Screen) => void }) {
+export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
     const init: SymbolId[][] = [];
