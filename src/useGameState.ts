@@ -119,8 +119,6 @@ function dailyResetIfNeeded(state: GameState): GameState {
     dailyPotAccel: 0,
     dailyXpBoosts: 0,
     xpBoostUntil: null,
-    hotStreakUntil: null,
-    potAccelUntil: null,
     doubleUpPending: null,
     extraLuckyPending: false,
     missions: emptyMissions(),
