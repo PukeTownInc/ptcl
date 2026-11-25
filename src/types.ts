@@ -61,6 +61,16 @@ export interface MissionState {
   roadmapDailyGiftClaimed: boolean;
   allClaimed: boolean;
 }
+export interface SlotHistoryRecord {
+  id: string;
+  timestamp: number;
+  kind: 'spin' | 'double' | 'half' | 'safe' | 'lose' | 'forfeit';
+  pp: number;
+  symbols?: string[];
+  multiplied?: boolean;
+  multiplier?: string | null;
+}
+
 export interface GameState {
   xp: number;
   lockedPotPP: number;
@@ -115,6 +125,9 @@ export interface GameState {
   blueCacheClaimedToday: boolean;
   purpleCacheAdClaimedDate: string | null;
   jackpotFragments: number;
+  slotBet: number;
+  slotAutoCount: number;
+  slotHistory: SlotHistoryRecord[];
 }
 export interface WithdrawalRecord {
   id: string;
