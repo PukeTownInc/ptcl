@@ -339,9 +339,9 @@ function SpinHistory({ entries }: { entries: SlotHistoryRecord[] }) {
                   <div key={i} className={`flex items-center justify-between px-2 py-1.5 rounded ${entry.multiplied ? 'bg-radioactive-500/10 border border-radioactive-600/30' : 'bg-ink-700/40'}`}>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="text-[10px] font-mono text-toxic-100/30 shrink-0">#{entries.length - i}</span>
-                      {entry.pp > 0 && entry.symbols.length > 0 ? (
+                      {entry.pp > 0 && (entry.symbols?.length ?? 0) > 0 ? (
                         <span className="flex items-center gap-1">
-                          {entry.symbols.map((symId: string, idx: number) => (
+                          {(entry.symbols ?? []).map((symId: string, idx: number) => (
                             <HistorySymbolIcon key={idx} symId={symId as SymbolId} />
                           ))}
                           {entry.multiplied && entry.multiplier && (
