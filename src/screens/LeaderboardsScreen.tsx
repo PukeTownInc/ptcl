@@ -98,7 +98,6 @@ export function LeaderboardsScreen({ state, actions }: Props) {
 
   const claimWindow = getClaimWindowState(PERIOD, nowDate);
   const isRanked = playerRank > 0 && playerRank <= 100;
-  const canClaim = false;
 
   const handleClaim = () => {
     toast('info', 'Leaderboard prizes paused', 'Leaderboard rewards will return after server-side reward settlement is connected.');
