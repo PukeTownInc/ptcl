@@ -39,8 +39,6 @@ function defaultState(): GameState {
     lockedPotPP: 0,
     withdrawablePP: 0,
     totalEarnedPP: 0,
-    spinsRemaining: FREE_SPINS_BASE,
-    freeSpinsClaimed: false,
     dailyBoostClaimed: false,
     dailyAdVideosWatched: 0,
     dailyUnlocksUsed: 0,
@@ -135,7 +133,6 @@ function dailyResetIfNeeded(state: GameState): GameState {
     streakClaimedToday: false,
     streakAdWatchedToday: false,
     streakDay: computeStreakReset(state, today) === null ? 0 : state.streakDay,
-    lastReset: today,
     spinsToday: 0,
     loginStreak,
     lastLogin,
@@ -145,6 +142,12 @@ function dailyResetIfNeeded(state: GameState): GameState {
     purpleCacheAdClaimedDate: null,
   };
 }
+
+const CLIENT_PROTECTED_ECONOMY_KEYS = [
+  'lockedPotPP','withdrawablePP','totalEarnedPP','ppEarnedToday',
+  'spinsRemaining','freeSpinsClaimed','withdrawalHistory','lastWithdraw',
+  'slotHistory','totalSpins','spinsToday','jackpotWins',
+] as const;
 
 export function useGameState(userId: string | null) {
   const [state, setState] = useState<GameState | null>(null);
@@ -271,7 +274,11 @@ export function useGameState(userId: string | null) {
   const updateState = useCallback((updater: (prev: GameState) => GameState) => {
     setState((prev) => {
       if (!prev) return prev;
-      const next = updater(prev);
+      const next = { ...updater(prev) } as GameState;
+      // Only server-authoritative actions may change balances, redeemable history or spins.
+      const writable = next as unknown as Record<string, unknown>;
+      const previous = prev as unknown as Record<string, unknown>;
+      for (const key of CLIENT_PROTECTED_ECONOMY_KEYS) writable[key] = previous[key];
       stateRef.current = next;
       return next;
     });
