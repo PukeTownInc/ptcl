@@ -10,7 +10,6 @@ import {
   ppToUsd,
   formatPP,
 } from '../constants';
-import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 const VAULT_CAP = 50000;
 interface Props {
