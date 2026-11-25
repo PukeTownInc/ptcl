@@ -39,6 +39,8 @@ function defaultState(): GameState {
     lockedPotPP: 0,
     withdrawablePP: 0,
     totalEarnedPP: 0,
+    spinsRemaining: FREE_SPINS_BASE,
+    freeSpinsClaimed: false,
     dailyBoostClaimed: false,
     dailyAdVideosWatched: 0,
     dailyUnlocksUsed: 0,
