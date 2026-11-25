@@ -16,7 +16,11 @@ import { RoadmapScreen } from './screens/RoadmapScreen';
 import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
 import { PlinkoScreen } from './screens/PlinkoScreen';
 import { LoginScreen } from './components/LoginScreen';
-import { DAILY_XP_FREE_CAP } from './constants';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 function AppContent() {
   const { user, loading: authLoading, signInAnonymously } = useAuth();
@@ -25,7 +29,7 @@ function AppContent() {
   const { state, cloudLoading } = game;
   const actions = game;
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -34,7 +38,7 @@ function AppContent() {
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => {
