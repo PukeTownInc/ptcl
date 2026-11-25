@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Tv, CheckCircle2, Gift, Trophy, Calendar, Target, Lock, Flame, Zap } from 'lucide-react';
 import type { GameState } from '../types';
 import { MISSIONS, ALL_MISSIONS_BONUS, STREAK_REWARDS, MAX_STREAK_DAY } from '../constants';
@@ -36,7 +36,7 @@ function missionProgress(state: GameState, id: string): number {
 }
 function useResetCountdown() {
   const [remaining, setRemaining] = useState('');
-  useState(() => {
+  useEffect(() => {
     const update = () => {
       const now = new Date();
       const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
