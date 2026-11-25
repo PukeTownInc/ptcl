@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Tv, Gift, Users, ChevronRight, Sparkles, Play, Target, Zap } from 'lucide-react';
 import type { GameState, Screen } from '../types';
 import type { GameActions } from '../useGameState';
@@ -8,7 +7,7 @@ interface Props {
   actions: GameActions;
   onNavigate: (s: Screen, target?: string) => void;
 }
-export function HomeScreen({ state, actions, onNavigate }: Props) {
+export function HomeScreen({ state, onNavigate }: Props) {
   const toast = useToast();
   const handleDailyBonus = () => toast('info', 'Daily spins paused', 'The daily spin reward will return after its server-side claim is ready.');
   const handleDailyBoost = () => toast('info', 'Rewarded ads unavailable', 'No verified advert provider is connected yet.');
