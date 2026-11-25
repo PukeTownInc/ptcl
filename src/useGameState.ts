@@ -703,6 +703,22 @@ export function useGameState(userId: string | null) {
 
   const resetAll = useCallback(() => {
     const fresh = dailyResetIfNeeded(defaultState());
+    const current = stateRef.current;
+    if (current) {
+      fresh.lockedPotPP = current.lockedPotPP;
+      fresh.withdrawablePP = current.withdrawablePP;
+      fresh.totalEarnedPP = current.totalEarnedPP;
+      fresh.ppEarnedToday = current.ppEarnedToday;
+      fresh.spinsRemaining = current.spinsRemaining;
+      fresh.freeSpinsClaimed = current.freeSpinsClaimed;
+      fresh.withdrawalHistory = current.withdrawalHistory;
+      fresh.lastWithdraw = current.lastWithdraw;
+      fresh.slotHistory = current.slotHistory;
+      fresh.totalSpins = current.totalSpins;
+      fresh.spinsToday = current.spinsToday;
+      fresh.jackpotWins = current.jackpotWins;
+      fresh.lastReset = current.lastReset;
+    }
     fresh.lastLogin = todayUTC();
     fresh.loginStreak = 1;
     fresh.streakDay = 0;
