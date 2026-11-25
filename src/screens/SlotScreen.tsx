@@ -174,7 +174,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       setSpinning(false);
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
       setLastResult(res);
-      let finalPP = res.totalPP * state.slotBet;
+      let finalPP = res.wins.reduce((sum, win) => sum + win.pp, 0) * state.slotBet;
+      if (res.bonusAwarded !== null) finalPP += res.bonusIsMultiplier ? res.bonusAwarded * state.slotBet : res.bonusAwarded;
+      if (res.jackpot) finalPP += res.jackpot.amount;
       const hadPotAccel = isPotAccelActive(state);
       const hadHotStreak = isHotStreakActive(state);
       if (hadPotAccel) finalPP *= 2;
