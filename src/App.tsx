@@ -51,11 +51,12 @@ function AppContent() {
     }
   }, [deferredPrompt]);
 
-  const handleNavigate = (screen: Screen) => {
-    setActiveScreen(screen);
+  const handleNavigate = (screen: string) => {
+    setActiveScreen(screen as Screen);
   };
 
   const renderScreen = () => {
+    if (!state) return null;
     switch (activeScreen) {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
       case 'slots': return <SlotScreen state={state} actions={actions} onNavigate={handleNavigate} />;
