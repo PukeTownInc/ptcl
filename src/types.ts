@@ -23,7 +23,7 @@ export interface LeaderboardClaimState {
 }
 export type SymbolId =
   | 'cashlab'
-  | 'puke' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
+  | 'puke' | 'beetle' | 'wastepit' | 'toxiccloud' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
   | 'beaker' | 'vomit' | 'toxic' | 'barrel' | 'warn' | 'rich'
   | 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
 // ✅ Contagion Cache — Box definitions
