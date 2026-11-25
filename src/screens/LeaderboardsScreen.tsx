@@ -100,23 +100,10 @@ export function LeaderboardsScreen({ state, actions }: Props) {
 
   const claimWindow = getClaimWindowState(PERIOD, nowDate);
   const isRanked = playerRank > 0 && playerRank <= 100;
-  const canClaim = claimWindow.claimWindowOpen && isRanked && !claimed && !!playerPrize;
+  const canClaim = false;
 
   const handleClaim = () => {
-    if (!playerPrize || claimed || !canClaim) return;
-    const rewardLabel = rewardType === 'xp'
-      ? `+${playerPrize.xp} Exposure`
-      : `+${formatPP(playerPrize.pp)} Goops`;
-    setAdModal({
-      title: `☢️ Claim ${PERIOD_LABELS[PERIOD]} Contamination Supply`,
-      subtitle: `Rank #${playerRank} • ${CATEGORY_LABELS[category]} Infection Tier`,
-      reward: rewardLabel,
-      onComplete: () => {
-        actions.claimLeaderboardPrize(cKey, playerPrize.xp, playerPrize.pp, rewardType);
-        actions.watchAd();
-        toast('success', '☢️ SUPPLY ABSORBED!', `${rewardLabel} added to your contamination!`);
-      },
-    });
+    toast('info', 'Leaderboard prizes paused', 'Leaderboard rewards will return after server-side reward settlement is connected.');
   };
 
   const prizeTable = getPrizeTable(PERIOD, category);
