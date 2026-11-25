@@ -107,6 +107,9 @@ function AppContent() {
         withdrawablePP={state.withdrawablePP}
         xp={state.xp}
       />
+      <div className="mx-4 mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-[11px] text-amber-200">
+        Secure rollout: Cash Lab spins are server-settled. Other reward claims, advert rewards, vault releases and withdrawals remain paused until their server-side integrations are complete.
+      </div>
       <main className="p-4 flex-1">
         <ErrorBoundary>{renderScreen()}</ErrorBoundary>
       </main>
