@@ -78,13 +78,13 @@ function evaluateWays(grid: SymbolId[][]) {
   return wins.filter(w => w.pp > 0);
 }
 function makeSpin(bet: number) {
-  let grid: SymbolId[][] = Array.from({length:5}, () => Array.from({length:3}, () => weightedPick()));
+  const grid: SymbolId[][] = Array.from({length:5}, () => Array.from({length:3}, () => weightedPick()));
   let wins = evaluateWays(grid);
   const scatterCount = grid.flat().filter(s => s === "scatter").length;
   let freeSpinsAwarded = scatterCount >= 5 ? 15 : scatterCount === 4 ? 10 : scatterCount === 3 ? 6 : 0;
   let bonusAwarded: number | null = null;
   let bonusIsMultiplier = false;
-  let baseWins = wins.reduce((n,w) => n+w.pp,0);
+  const baseWins = wins.reduce((n,w) => n+w.pp,0);
   const bonusReels = grid.filter(col => col.includes("bonus")).length;
   if (bonusReels >= 3) {
     const roll = randomUnit();
