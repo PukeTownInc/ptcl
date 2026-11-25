@@ -69,7 +69,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
       <div className="grid grid-cols-2 gap-4">
         {(Object.entries(CACHE_BOXES) as [CacheBoxTier, typeof CACHE_BOXES[CacheBoxTier]][]).map(([tier, box]) => {
           const canOpen = canOpenBox(tier);
-          const isOpening = opening === tier;
+          const isOpening = false;
           const isPurpleBox = tier === 'purple';
           const isOrangeBox = tier === 'orange';
           const isYellowBox = tier === 'yellow';
@@ -129,7 +129,7 @@ export function ContagionCacheScreen({ state, actions, onBack }: Props) {
                 ) : (
                   <div className="space-y-2">
                     <button
-                      onClick={() => doOpenBox(tier, false)}
+                      onClick={() => doOpenBox()}
                       disabled={!canOpen || !!opening}
                       className={`w-full py-2 font-bold rounded-lg transition-colors ${
                         canOpen
