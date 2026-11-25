@@ -12,7 +12,6 @@ interface PlinkoScreenProps {
 }
 
 export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
-  const { playPlinko } = actions;
   const [isPlaying, setIsPlaying] = useState(false);
   const [ballPosition, setBallPosition] = useState<{ x: number; y: number } | null>(null);
   const [lastResult, setLastResult] = useState<{
@@ -25,63 +24,7 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
 
   const animationRef = useRef<number | null>(null);
 
-  const handlePlay = () => {
-    if (isPlaying || state.lockedPotPP < FIXED_BET_PP) return;
-
-    setIsPlaying(true);
-    setLastResult(null);
-
-    const chosenPocketIndex = Math.floor(Math.random() * PLINKO_MULTIPLIERS.length);
-
-    const startX = 50;
-    const startY = 0;
-
-    const pocketCount = PLINKO_MULTIPLIERS.length;
-    const endX = (chosenPocketIndex / (pocketCount - 1)) * 100;
-    const endY = 100;
-
-    setBallPosition({ x: startX, y: startY });
-
-    let startTime: number | null = null;
-    const duration = 1400;
-
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      const easeProgress = progress < 0.5
-        ? 4 * progress * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-
-      const wobble = Math.sin(progress * Math.PI * 6) * 8 * (1 - progress);
-      const currentX = startX + (endX - startX) * easeProgress + wobble;
-      const currentY = startY + (endY - startY) * easeProgress;
-
-      setBallPosition({ x: currentX, y: currentY });
-
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        const result = playPlinko(FIXED_BET_PP, chosenPocketIndex);
-
-        if (result.ok) {
-          setLastResult({
-            visible: true,
-            pocketIndex: chosenPocketIndex,
-            multiplier: PLINKO_MULTIPLIERS[chosenPocketIndex],
-            payoutPP: result.payoutPP,
-            win: result.payoutPP > FIXED_BET_PP,
-          });
-        }
-
-        setBallPosition(null);
-        setIsPlaying(false);
-      }
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-  };
+  const handlePlay = () => undefined;
 
   useEffect(() => {
     return () => {
@@ -97,6 +40,7 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-lime-400">☢️ Radioactive Plinko</h1>
           <p className="text-sm text-green-300 mt-1">Drop the ball — multiply your Puke Points!</p>
+          <p className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200">Temporarily paused while this game is moved to server-side settlement.</p>
         </div>
 
         <div className="bg-black/40 rounded-xl p-4 mb-6 relative overflow-hidden">
@@ -159,7 +103,7 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
 
           <button
             onClick={handlePlay}
-            disabled={isPlaying || state.lockedPotPP < FIXED_BET_PP}
+            disabled
             className={`
               w-full py-3 rounded-xl font-bold text-lg transition-all
               ${isPlaying || state.lockedPotPP < FIXED_BET_PP
@@ -174,7 +118,7 @@ export function PlinkoScreen({ state, actions }: PlinkoScreenProps) {
                 Dropping...
               </span>
             ) : (
-              `DROP BALL — 100 Puke Points`
+              `PLINKO TEMPORARILY PAUSED`
             )}
           </button>
 
