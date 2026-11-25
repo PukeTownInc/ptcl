@@ -11,17 +11,18 @@ interface Props {
 }
 export function ContagionCacheScreen({ state, actions, onBack }: Props) {
   const toast = useToast();
-  const [opening, setOpening] = useState<CacheBoxTier | null>(null);
+  const opening = false;
   const [result, setResult] = useState<{
     tier: CacheBoxTier;
     label: string;
     reward: ReturnType<typeof actions.openCacheBox>['reward'];
   } | null>(null);
-  const doOpenBox = (_tier: CacheBoxTier, _viaAd: boolean) => {
+  const doOpenBox = () => {
     toast('info', 'Cache rewards paused', 'Cache rewards are being moved to server-side settlement before they can be claimed.');
   };
-  const handleFreeClaim = (tier: CacheBoxTier) => doOpenBox(tier, false);
-  const handleAdClaim = (_tier: CacheBoxTier) => {
+  const handleFreeClaim = (tier: CacheBoxTier) => { void tier; doOpenBox(); };
+  const handleAdClaim = (tier: CacheBoxTier) => {
+    void tier;
     toast('info', 'Rewarded ads unavailable', 'No verified advert provider is connected yet.');
   };
   const closeResult = () => {
