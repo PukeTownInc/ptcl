@@ -19,9 +19,11 @@ import { LoginScreen } from './components/LoginScreen';
 import { DAILY_XP_FREE_CAP } from './constants';
 
 function AppContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signInAnonymously } = useAuth();
   const userId = user?.id ?? null;
-  const { state, cloudLoading, ...actions } = useGameState(userId);
+  const game = useGameState(userId);
+  const { state, cloudLoading } = game;
+  const actions = game;
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -58,7 +60,7 @@ function AppContent() {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
       case 'slots': return <SlotScreen state={state} actions={actions} onNavigate={handleNavigate} />;
       case 'missions': return <MissionsScreen state={state} actions={actions} />;
-      case 'withdraw': return <WithdrawScreen state={state} actions={actions} />;
+      case 'withdraw': return <WithdrawScreen state={state} actions={actions} isLoggedIn={!!user} />;
       case 'settings': return <SettingsScreen state={state} actions={actions} />;
       case 'leaderboards': return <LeaderboardsScreen state={state} actions={actions} />;
       case 'profile': return <ProfileScreen state={state} actions={actions} />;
@@ -82,7 +84,7 @@ function AppContent() {
   }
 
   if (!user) {
-    return <LoginScreen />;
+    return <LoginScreen onSkip={() => { void signInAnonymously(); }} />;
   }
 
   if (cloudLoading || !state) {
