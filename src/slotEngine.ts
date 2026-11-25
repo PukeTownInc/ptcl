@@ -58,6 +58,7 @@ function evaluateWays(grid: SymbolId[][]): WinLine[] {
       wins.push({
         symbols: [symId],
         pp: basePay,
+        xp: 0,
         count,
         positions,
       });
