@@ -147,6 +147,7 @@ export interface SpinResult {
   jackpot: { type: 'mini' | 'minor' | 'major' | 'grand'; amount: number } | null;
   freeSpinsAwarded: number;
   bonusAwarded: number | null;
+  bonusIsMultiplier: boolean;
   scatterCount: number;
   potFull: boolean;
 }
