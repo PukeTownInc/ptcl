@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Lock, Tv, Zap, Package, RefreshCw, Layers, Play, X, Coins, Flame, Square, History, Timer } from 'lucide-react';
+import { Layers, History } from 'lucide-react';
 import type { GameState, Screen, SpinResult, SymbolId, WinLine } from '../types';
 import { MIN_UNLOCK_PP, SYMBOLS, formatPP } from '../constants';
 import * as engine from '../slotEngine';
@@ -72,8 +72,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
   const currentSpinUsesFreeSpinRef = useRef(false);
   const spinHistory = state.slotHistory ?? [];
-  const [activeWinIndex, setActiveWinIndex] = useState(0);
-  const reelsRef = useRef<HTMLDivElement>(null);
   const [reelPhases, setReelPhases] = useState<ReelPhase[]>(['idle', 'idle', 'idle', 'idle', 'idle']);
   const [cyclingSymbols, setCyclingSymbols] = useState<SymbolId[][]>(() => {
     const init: SymbolId[][] = [];
@@ -117,16 +115,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [state.potAccelUntil]);
-
-  useEffect(() => {
-    if (!spinning || !lastResult || lastResult.wins.length === 0) return;
-    setActiveWinIndex(0);
-    if (lastResult.wins.length <= 1) return;
-    const interval = setInterval(() => {
-      setActiveWinIndex((i) => (i + 1) % lastResult!.wins.length);
-    }, 900);
-    return () => clearInterval(interval);
-  }, [spinning, lastResult]);
 
   const doSpin = useCallback(() => {
     if (spinning) return;
@@ -275,38 +263,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     toast('info', '☣️ FORFEITED', 'Stake lost — nothing returned');
     actions.recordSlotHistory({ id: `slot-${Date.now()}-forfeit`, timestamp: Date.now(), kind: 'forfeit', pp: 0 });
   }, [actions, toast]);
-
-  const handleMysteryPack = () => {
-    setAdModal({
-      title: 'Watch Ad for Spins',
-      subtitle: 'Temporary timed ad placeholder — receive 15 to 25 free spins',
-      reward: '+15 to +25 Toxic Twists',
-      onComplete: () => {
-        const got = actions.openMysteryPack();
-        toast('success', 'FREE SPINS ADDED!', `+${got} Toxic Twists added to your account.`);
-      },
-    });
-  };
-
-  const handlePotAccel = () => {
-    if (state.dailyPotAccel >= 2) {
-      toast('info', 'ACCELERATOR OVERHEATED', 'Return after radiation cools');
-      return;
-    }
-    if (isPotAccelActive(state)) {
-      toast('info', '☢️ ALREADY ACTIVE', 'Sludge fill rate doubled right now!');
-      return;
-    }
-    setAdModal({
-      title: 'Sludge Accelerator',
-      subtitle: 'Absorb radiation — fill vat TWICE as fast for 5 minutes',
-      reward: 'x2 Flow • 5 Minutes',
-      onComplete: () => {
-        actions.activatePotAccel();
-        toast('success', '☢️ ACCELERATOR ACTIVE', 'Sludge flowing at x2 speed!');
-      },
-    });
-  };
 
   const canSpin = state.spinsRemaining > 0 || state.lockedPotPP >= state.slotBet;
 
@@ -459,26 +415,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         reward={adModal?.reward ?? ''}
       />
     </div>
-  );
-}
-
-function BonusBtn({ icon, label, sub, ad, onClick, disabled }: {
-  icon: React.ReactNode;
-  label: string;
-  sub: string;
-  ad?: boolean;
-  onClick: () => void;
-  disabled?: boolean
-}) {
-  return (
-    <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
-      <div className="flex items-center gap-1.5 mb-0.5">
-        <span className="text-toxic-400">{icon}</span>
-        <span className="font-display font-bold text-xs text-toxic-200">{label}</span>
-      </div>
-      <div className="text-[10px] text-toxic-100/40 font-mono">{sub}</div>
-      {ad && <div className="ad-badge mt-1.5"><Tv size={8} /> Absorb Radiation</div>}
-    </button>
   );
 }
 
