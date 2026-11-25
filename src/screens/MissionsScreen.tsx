@@ -296,14 +296,7 @@ export function MissionsScreen({ state, actions }: Props) {
           </button>
         </div>
       </div>
-      <AdModal
-        open={!!adModal}
-        onClose={() => setAdModal(null)}
-        onComplete={() => adModal?.onComplete()}
-        title={adModal?.title ?? ''}
-        subtitle={adModal?.subtitle}
-        reward={adModal?.reward ?? ''}
-      />
+
     </div>
   );
 }
