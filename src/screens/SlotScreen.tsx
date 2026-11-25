@@ -305,17 +305,25 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const canSpin = state.spinsRemaining > 0 || state.lockedPotPP >= state.slotBet;
 
   const toggleAutoSpin = useCallback(() => {
-    setAutoSpin((prev) => {
-      const next = !prev;
-      autoSpinRef.current = next;
-      if (next && state.slotAutoCount <= 0) actions.setSlotPreferences(state.slotBet, 10);
-      return next;
-    });
-  }, [state.slotAutoCount, state.slotBet, actions]);
+    if (autoSpin) {
+      autoSpinRef.current = false;
+      setAutoSpin(false);
+      return;
+    }
+    if (state.slotAutoCount <= 0) actions.setSlotPreferences(state.slotBet, 10);
+    autoSpinRef.current = true;
+    setAutoSpin(true);
+  }, [autoSpin, state.slotAutoCount, state.slotBet, actions]);
 
   useEffect(() => {
     if (!autoSpin) return;
     if (spinning || showDoubleUp || showJackpot || adModal) return;
+    if (state.slotAutoCount <= 0) {
+      setAutoSpin(false);
+      autoSpinRef.current = false;
+      toast('info', 'Auto-spin complete', 'Your queued spins have finished.');
+      return;
+    }
     if (state.spinsRemaining <= 0 && state.lockedPotPP < state.slotBet) {
       setAutoSpin(false);
       autoSpinRef.current = false;
