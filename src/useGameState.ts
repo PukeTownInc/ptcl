@@ -102,7 +102,7 @@ function dailyResetIfNeeded(state: GameState): GameState {
   if (state.lastReset === today) return state;
 
   let loginStreak = state.loginStreak;
-  let lastLogin = state.lastLogin;
+  const lastLogin = state.lastLogin;
   if (state.lastLogin) {
     const gap = daysBetween(state.lastLogin, today);
     if (gap > 1) loginStreak = 0;
@@ -447,7 +447,7 @@ export function useGameState(userId: string | null) {
 
       const reward = rollCacheReward(tier);
       result = { ok: true, reward };
-      let next = { ...prev };
+      const next = { ...prev };
 
       if (tier === 'blue') {
         if (viaAd) next.blueCacheAdClaims = prev.blueCacheAdClaims + 1;
