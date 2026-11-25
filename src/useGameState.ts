@@ -205,6 +205,7 @@ export function useGameState(userId: string | null) {
 
   useEffect(() => {
     if (!userId || !state || cloudLoading) return;
+    if (JSON.stringify(state) === lastSyncedJsonRef.current) return;
 
     const saveToCloud = async () => {
       if (isSavingRef.current) {
