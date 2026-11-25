@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Users, Share2, Copy, Check } from 'lucide-react';
 import type { GameState } from '../types';
-import { getTier } from '../constants';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 import { Logo } from '../components/Logo';
@@ -24,7 +23,6 @@ export function ProfileScreen({ state, actions }: Props) {
       return 'PUKE-XXXXXX';
     }
   });
-  const tier = getTier(state.xp);
   const referralLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://puketown.app'}/?ref=${referralCode}`;
   const handleCopyLink = () => {
     try {

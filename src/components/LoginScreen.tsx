@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tv, LogOut, Zap, UserPlus, LogIn } from 'lucide-react';
+import { LogOut, Zap, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 interface Props {
   onSkip: () => void;

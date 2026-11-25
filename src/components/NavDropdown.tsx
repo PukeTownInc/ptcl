@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, ChevronDown, ChevronRight, Users, AlertTriangle, Globe, Box } from 'lucide-react';
+import { Home, Gamepad2, Target, Trophy, Wallet, Settings, User, Check, Zap, ChevronDown, ChevronRight, Box } from 'lucide-react';
 import type { Screen } from '../types';
 
 const SUBMENU_ALLIES_LABEL = 'TOXIC ALLIES';

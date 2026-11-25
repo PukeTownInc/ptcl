@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'info';
@@ -9,7 +9,9 @@ interface Toast {
   message?: string;
 }
 
-const ToastContext = createContext<(type: ToastType, title: string, message?: string) => void>(() => {});
+type ToastApi = ((type: ToastType, title: string, message?: string) => void) & { show: (message: string, type?: string) => void };
+const noopToast = Object.assign(() => {}, { show: () => {} }) as ToastApi;
+const ToastContext = createContext<ToastApi>(noopToast);
 
 export function useToast() {
   return useContext(ToastContext);
@@ -26,10 +28,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }, 3500);
   }, []);
 
+  const toast = useMemo(() => Object.assign(push, { show: (message: string, type?: string) => push(type === 'error' ? 'error' : type === 'success' ? 'success' : 'info', message) }), [push]);
+
   const remove = (id: string) => setToasts((t) => t.filter((x) => x.id !== id));
 
   return (
-    <ToastContext.Provider value={push}>
+    <ToastContext.Provider value={toast}>
       {children}
       <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-[92%] max-w-sm safe-top">
         {toasts.map((t) => (

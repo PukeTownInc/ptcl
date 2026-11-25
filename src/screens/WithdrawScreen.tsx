@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wallet, AlertTriangle, CheckCircle2, Clock, ArrowRight, Lock, History, LogIn, Tv } from 'lucide-react';
+import { Wallet, AlertTriangle, CheckCircle2, Clock, Lock, History, LogIn } from 'lucide-react';
 import type { GameState, WithdrawalRecord } from '../types';
 import {
   CRYPTO_OPTIONS,
@@ -7,26 +7,20 @@ import {
   MAX_WITHDRAW_PP,
   PLATFORM_FEE,
   WITHDRAW_COOLDOWN_MS,
-  MIN_UNLOCK_PP,
   ppToUsd,
   formatPP,
 } from '../constants';
-import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
-import { AdModal } from '../components/AdModal';
 const VAULT_CAP = 50000;
 interface Props {
   state: GameState;
-  actions: GameActions;
   isLoggedIn: boolean;
 }
-export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
+export function WithdrawScreen({ state, isLoggedIn }: Props) {
   const toast = useToast();
   const [email, setEmail] = useState(state.faucetpayEmail);
   const [crypto, setCrypto] = useState(CRYPTO_OPTIONS[0].id);
   const [amountStr, setAmountStr] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
   const cooldownActive = state.lastWithdraw && Date.now() - state.lastWithdraw < WITHDRAW_COOLDOWN_MS;
   const cooldownMs = cooldownActive ? (WITHDRAW_COOLDOWN_MS - (Date.now() - (state.lastWithdraw as number))) : 0;
   const cooldownHrs = Math.ceil(cooldownMs / 3600000);
@@ -35,89 +29,9 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
   const totalDeducted = amount + fee;
   const payoutPP = amount - fee;
   const payoutUsd = ppToUsd(payoutPP);
-  const canPrepareWithdraw =
-    isLoggedIn &&
-    email.trim().length > 0 &&
-    amount >= MIN_WITHDRAW_PP &&
-    amount <= MAX_WITHDRAW_PP &&
-    totalDeducted <= state.withdrawablePP &&
-    !cooldownActive &&
-    !submitting;
   const vaultFull = state.lockedPotPP >= VAULT_CAP;
   const vaultPercent = Math.min(100, (state.lockedPotPP / VAULT_CAP) * 100);
   const remainingToFull = VAULT_CAP - state.lockedPotPP;
-  const handleUnlockVault = () => {
-    if (!vaultFull) {
-      toast('info', 'Still Contaminating', `Need ${formatPP(remainingToFull)} more PP to fill the vault`);
-      return;
-    }
-    setAdModal({
-      title: '☢️ RELEASE THE CONTAGION',
-      subtitle: 'Watch video — absorb radiation to unlock the vault',
-      reward: `Unlock ${formatPP(state.lockedPotPP)} Puke Points`,
-      onComplete: () => {
-        const amountToUnlock = state.lockedPotPP;
-        actions.unlockPot();
-        actions.watchAd();
-        toast('success', '☢️ VAULT UNLEASHED!', `+${formatPP(amountToUnlock)} PP released to Unlocked Contagion Vault!`);
-      },
-    });
-  };
-  const handlePrepareWithdraw = () => {
-    if (!isLoggedIn) {
-      toast('error', 'QUARANTINED', 'Sign in to release your Puke Points');
-      return;
-    }
-    if (amount < MIN_WITHDRAW_PP) {
-      toast('error', 'DOSE TOO LOW', `Minimum release: ${formatPP(MIN_WITHDRAW_PP)} Puke Points`);
-      return;
-    }
-    if (amount > MAX_WITHDRAW_PP) {
-      toast('error', 'DOSE TOO HIGH', `Maximum release: ${formatPP(MAX_WITHDRAW_PP)} Puke Points`);
-      return;
-    }
-    if (totalDeducted > state.withdrawablePP) {
-      toast('error', 'INSUFFICIENT BALANCE', `Need ${formatPP(totalDeducted)} total (incl. fee). Only ${formatPP(state.withdrawablePP)} PP available`);
-      return;
-    }
-    if (cooldownActive) {
-      toast('error', 'RADIATION COOLDOWN', `Wait ${cooldownHrs}h before next release`);
-      return;
-    }
-    if (!email.trim()) {
-      toast('error', 'EMAIL REQUIRED', 'Enter your FaucetPay email');
-      return;
-    }
-    setAdModal({
-      title: '☢️ ACTIVATE RELEASE PERMIT',
-      subtitle: 'Watch one quick video to authorise your withdrawal',
-      reward: `Release ${formatPP(amount)} PP + ${formatPP(fee)} PP fee = ${formatPP(totalDeducted)} PP total`,
-      onComplete: () => {
-        executeWithdrawal(amount, fee, payoutUsd);
-      },
-    });
-  };
-  const executeWithdrawal = (amountVal: number, feeVal: number, usdVal: number) => {
-    setSubmitting(true);
-    actions.setFaucetpayEmail(email.trim());
-    actions.watchAd();
-    setTimeout(() => {
-      const rec: WithdrawalRecord = {
-        id: Math.random().toString(36).slice(2),
-        date: Date.now(),
-        username: email.trim(),
-        crypto,
-        amountPP: amountVal,
-        feePP: feeVal,
-        usd: usdVal,
-        status: Math.random() > 0.1 ? 'sent' : 'pending',
-      };
-      actions.recordWithdrawal(rec);
-      setSubmitting(false);
-      setAmountStr('');
-      toast('success', '☢️ SUPPLY RELEASED!', `-${formatPP(amountVal + feeVal)} PP total (incl. fee) • $${usdVal.toFixed(2)} USD sent to ${email}`);
-    }, 1800);
-  };
   const showInsufficientToast = () => {
     toast('info', 'NOT ENOUGH PP', `Need ${formatPP(MIN_WITHDRAW_PP)} PP to release + fee — keep earning!`);
   };
@@ -167,7 +81,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
                 ? 'bg-toxic-500/15 border-toxic-500/50 cursor-pointer hover:bg-toxic-500/25'
                 : 'bg-ink-800/70 border-ink-600/40 opacity-60'
             }`}
-            onClick={vaultFull ? handleUnlockVault : undefined}
+            
           >
             <div className="text-[10px] uppercase mb-0.5" style={{ color: vaultFull ? '#9aff9a' : '#6b7280' }}>
               🔒 LOCKED CONTAGION VAULT
@@ -188,7 +102,7 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             </div>
             {vaultFull ? (
               <button className="mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-toxic-500/20 border border-toxic-500/40 text-toxic-300 text-[10px] font-bold">
-                <Tv size={12} /> WATCH VIDEO TO UNLOCK
+                <Lock size={12} /> UNLOCK TEMPORARILY PAUSED
               </button>
             ) : (
               <div className="mt-2 text-[9px] font-mono text-ink-500">
@@ -203,6 +117,10 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
             <div className="text-[10px] text-radioactive-300/40 font-mono mt-1">${ppToUsd(state.withdrawablePP).toFixed(2)} USD</div>
           </div>
         </div>
+      </div>
+      <div className="grunge-panel p-3 border-l-4 border-l-hazard-amber/70 flex items-start gap-2">
+        <AlertTriangle size={16} className="text-hazard-amber shrink-0 mt-0.5" />
+        <div className="text-[11px] text-hazard-amber">Withdrawals and vault releases are paused. No verified FaucetPay payout integration is connected, so this screen will not deduct points or mark payments as sent.</div>
       </div>
       <div className="grunge-panel p-3 border-l-4 border-l-radioactive-500/50 flex items-start gap-2">
         <AlertTriangle size={16} className="text-radioactive-400 shrink-0 mt-0.5" />
@@ -289,15 +207,11 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
           </div>
         )}
         <button
-          onClick={handlePrepareWithdraw}
-          disabled={!canPrepareWithdraw || submitting}
+          onClick={() => toast("info", "Withdrawals paused", "A verified FaucetPay payout integration is not connected.")}
+          disabled
           className="yellow-btn w-full py-3.5 flex items-center justify-center gap-2"
         >
-          {submitting ? (
-            <><span className="animate-spin inline-block w-4 h-4 border-2 border-ink-900 border-t-transparent rounded-full" /> Processing Release...</>
-          ) : (
-            <><Tv size={18} /> Watch Ad & Release <ArrowRight size={16} /></>
-          )}
+          <><Lock size={18} /> Withdrawals temporarily unavailable</>
         </button>
       </div>
 
@@ -332,24 +246,10 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
       <div className="grunge-panel p-3 flex items-start gap-2">
         <Lock size={14} className="text-toxic-400 shrink-0 mt-0.5" />
         <p className="text-[10px] text-toxic-100/40">
-          Total deducted from your balance = release amount + platform fee. Payout sent via FaucetPay.
+          No payments are sent from this screen. Withdrawals will only be enabled after a verified payout provider and server-side payment reconciliation are implemented.
         </p>
       </div>
-      {adModal && (
-        <AdModal
-          open={!!adModal}
-          onClose={() => {
-            setAdModal(null);
-          }}
-          onComplete={() => {
-            adModal.onComplete();
-            setAdModal(null);
-          }}
-          title={adModal.title}
-          subtitle={adModal.subtitle}
-          reward={adModal.reward}
-        />
-      )}
+
     </div>
   );
 }

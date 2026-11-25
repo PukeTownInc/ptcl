@@ -20,7 +20,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
     </button>
   );
 }
-export function SettingsScreen({ state, actions }: Props) {
+export function SettingsScreen({ actions }: Props) {
   const toast = useToast();
   const [confirmReset, setConfirmReset] = useState(false);
   const [showTerms, setShowTerms] = useState(false);

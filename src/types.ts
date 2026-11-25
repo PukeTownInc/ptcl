@@ -1,4 +1,5 @@
-export type Screen = 'home' | 'slots' | 'missions' | 'leaderboards' | 'withdraw' | 'roadmap' | 'settings' | 'profile' | 'contagioncache' | 'plinko';
+export type Screen = 'home' | 'slots' | 'missions' | 'leaderboards' | 'withdraw' | 'roadmap' | 'settings' | 'profile' | 'contagion-cache' | 'plinko';
+export type Tier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type LeaderboardCategory = 'xp' | 'pp' | 'spins' | 'referrals';
 export type LeaderboardPeriod = 'monthly';
 export interface PrizeTier {
@@ -23,7 +24,7 @@ export interface LeaderboardClaimState {
 }
 export type SymbolId =
   | 'cashlab'
-  | 'puke' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
+  | 'puke' | 'beetle' | 'wastepit' | 'toxiccloud' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
   | 'beaker' | 'vomit' | 'toxic' | 'barrel' | 'warn' | 'rich'
   | 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
 // ✅ Contagion Cache — Box definitions
@@ -61,6 +62,16 @@ export interface MissionState {
   roadmapDailyGiftClaimed: boolean;
   allClaimed: boolean;
 }
+export interface SlotHistoryRecord {
+  id: string;
+  timestamp: number;
+  kind: 'spin' | 'double' | 'half' | 'safe' | 'lose' | 'forfeit';
+  pp: number;
+  symbols?: string[];
+  multiplied?: boolean;
+  multiplier?: string | null;
+}
+
 export interface GameState {
   xp: number;
   lockedPotPP: number;
@@ -74,7 +85,7 @@ export interface GameState {
   dailyXpFree: number;
   dailyXpBonus: number;
   dailyDoubleUps: number;
-  dailyExtraLucky: boolean;
+  dailyExtraLucky: number;
   dailyHotStreak: number;
   dailyMysteryPacks: number;
   dailyPotAccel: number;
@@ -115,6 +126,9 @@ export interface GameState {
   blueCacheClaimedToday: boolean;
   purpleCacheAdClaimedDate: string | null;
   jackpotFragments: number;
+  slotBet: number;
+  slotAutoCount: number;
+  slotHistory: SlotHistoryRecord[];
 }
 export interface WithdrawalRecord {
   id: string;
@@ -134,6 +148,7 @@ export interface SpinResult {
   jackpot: { type: 'mini' | 'minor' | 'major' | 'grand'; amount: number } | null;
   freeSpinsAwarded: number;
   bonusAwarded: number | null;
+  bonusIsMultiplier: boolean;
   scatterCount: number;
   potFull: boolean;
 }

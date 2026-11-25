@@ -16,14 +16,20 @@ import { RoadmapScreen } from './screens/RoadmapScreen';
 import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
 import { PlinkoScreen } from './screens/PlinkoScreen';
 import { LoginScreen } from './components/LoginScreen';
-import { DAILY_XP_FREE_CAP } from './constants';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 function AppContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signInAnonymously } = useAuth();
   const userId = user?.id ?? null;
-  const { state, cloudLoading, ...actions } = useGameState(userId);
+  const game = useGameState(userId);
+  const { state, cloudLoading } = game;
+  const actions = game;
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -32,7 +38,7 @@ function AppContent() {
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => {
@@ -49,24 +55,25 @@ function AppContent() {
     }
   }, [deferredPrompt]);
 
-  const handleNavigate = (screen: Screen) => {
-    setActiveScreen(screen);
+  const handleNavigate = (screen: string) => {
+    setActiveScreen(screen as Screen);
   };
 
   const renderScreen = () => {
+    if (!state) return null;
     switch (activeScreen) {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
-      case 'slots': return <SlotScreen state={state} actions={actions} onNavigate={handleNavigate} />;
+      case 'slots': return <SlotScreen state={state} actions={actions} />;
       case 'missions': return <MissionsScreen state={state} actions={actions} />;
-      case 'withdraw': return <WithdrawScreen state={state} actions={actions} />;
+      case 'withdraw': return <WithdrawScreen state={state} isLoggedIn={!!user} />;
       case 'settings': return <SettingsScreen state={state} actions={actions} />;
       case 'leaderboards': return <LeaderboardsScreen state={state} actions={actions} />;
       case 'profile': return <ProfileScreen state={state} actions={actions} />;
-      case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
+      case 'roadmap': return <RoadmapScreen actions={actions} />;
       case 'contagion-cache':
         return <ContagionCacheScreen state={state} actions={actions} onBack={() => handleNavigate('home')} />;
       case 'plinko':
-        return <PlinkoScreen state={state} actions={actions} />;
+        return <PlinkoScreen state={state} />;
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
   };
@@ -82,7 +89,7 @@ function AppContent() {
   }
 
   if (!user) {
-    return <LoginScreen />;
+    return <LoginScreen onSkip={() => { void signInAnonymously(); }} />;
   }
 
   if (cloudLoading || !state) {
@@ -104,6 +111,9 @@ function AppContent() {
         withdrawablePP={state.withdrawablePP}
         xp={state.xp}
       />
+      <div className="mx-4 mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-[11px] text-amber-200">
+        Secure rollout: Cash Lab spins are server-settled. Other reward claims, advert rewards, vault releases and withdrawals remain paused until their server-side integrations are complete.
+      </div>
       <main className="p-4 flex-1">
         <ErrorBoundary>{renderScreen()}</ErrorBoundary>
       </main>

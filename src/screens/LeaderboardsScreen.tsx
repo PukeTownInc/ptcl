@@ -3,7 +3,6 @@ import { Trophy, Star, Coins, Tv, Lock, Clock, Crown, ChevronRight, CheckCircle2
 import type { GameState, LeaderboardCategory, LeaderboardPeriod, LeaderboardEntry } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
-import { AdModal } from '../components/AdModal';
 import {
   generateLeaderboard,
   getTimeUntilReset,
@@ -47,7 +46,6 @@ export function LeaderboardsScreen({ state, actions }: Props) {
   const toast = useToast();
   const [category, setCategory] = useState<LeaderboardCategory>('xp');
   const [now, setNow] = useState(Date.now());
-  const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -93,36 +91,16 @@ export function LeaderboardsScreen({ state, actions }: Props) {
     }
     if (storedStart !== periodStart) {
       const key = periodStartKey(category);
-      actions.update((s) => ({
-        ...s,
-        leaderboardPeriodStarts: {
-          ...s.leaderboardPeriodStarts,
-          [key]: periodStart,
-        },
-      }));
+      actions.setLeaderboardPeriodStart(key, periodStart);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periodChanged, periodStart, storedStart, category]);
 
   const claimWindow = getClaimWindowState(PERIOD, nowDate);
   const isRanked = playerRank > 0 && playerRank <= 100;
-  const canClaim = claimWindow.claimWindowOpen && isRanked && !claimed && !!playerPrize;
 
   const handleClaim = () => {
-    if (!playerPrize || claimed || !canClaim) return;
-    const rewardLabel = rewardType === 'xp'
-      ? `+${playerPrize.xp} Exposure`
-      : `+${formatPP(playerPrize.pp)} Goops`;
-    setAdModal({
-      title: `☢️ Claim ${PERIOD_LABELS[PERIOD]} Contamination Supply`,
-      subtitle: `Rank #${playerRank} • ${CATEGORY_LABELS[category]} Infection Tier`,
-      reward: rewardLabel,
-      onComplete: () => {
-        actions.claimLeaderboardPrize(cKey, playerPrize.xp, playerPrize.pp, rewardType);
-        actions.watchAd();
-        toast('success', '☢️ SUPPLY ABSORBED!', `${rewardLabel} added to your contamination!`);
-      },
-    });
+    toast('info', 'Leaderboard prizes paused', 'Leaderboard rewards will return after server-side reward settlement is connected.');
   };
 
   const prizeTable = getPrizeTable(PERIOD, category);
@@ -381,14 +359,7 @@ export function LeaderboardsScreen({ state, actions }: Props) {
         </div>
       </div>
 
-      <AdModal
-        open={!!adModal}
-        onClose={() => setAdModal(null)}
-        onComplete={() => adModal?.onComplete()}
-        title={adModal?.title ?? ''}
-        subtitle={adModal?.subtitle}
-        reward={adModal?.reward ?? ''}
-      />
+
     </div>
   );
 }

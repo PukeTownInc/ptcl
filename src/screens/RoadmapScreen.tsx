@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Gift, Lock } from 'lucide-react';
-import type { Screen } from '../types';
 import type { GameActions } from '../useGameState';
 import { useToast } from '../components/Toast';
 interface Props {
-  onNavigate: (s: Screen) => void;
   actions: GameActions;
 }
 const roadmapData = [
@@ -125,7 +123,7 @@ const roadmapData = [
     ],
   },
 ];
-export function RoadmapScreen({ onNavigate, actions }: Props) {
+export function RoadmapScreen({ actions }: Props) {
   const toast = useToast();
   const [localClaimed, setLocalClaimed] = useState(false);
   const [openSections, setOpenSections] = useState<Record<number, boolean>>({
@@ -160,8 +158,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     }
     // Give rewards
     actions.addXP(10, false, true);
-    actions.addSpins(3);
-    toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
+    toast('success', 'Roadmap gift claimed', '+10 Exposure added. Spin rewards are paused during the secure rollout.');
   };
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">

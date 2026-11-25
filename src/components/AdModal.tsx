@@ -56,7 +56,7 @@ export function AdModal({ open, onClose, onComplete, title, subtitle, reward, du
         <div className="flex items-center justify-between px-4 py-3 bg-radioactive-500/10 border-b border-radioactive-600/30">
           <div className="flex items-center gap-2">
             <Tv size={18} className="text-radioactive-400" />
-            <span className="font-display font-bold text-radioactive-400 uppercase text-sm">Rewarded Ad</span>
+            <span className="font-display font-bold text-radioactive-400 uppercase text-sm">Ad Placeholder</span>
           </div>
           <span className="font-mono text-xs text-radioactive-300">{secondsLeft}s</span>
         </div>
@@ -75,6 +75,7 @@ export function AdModal({ open, onClose, onComplete, title, subtitle, reward, du
             </div>
           </div>
 
+          <div className="mb-2 rounded-md border border-radioactive-600/30 bg-radioactive-500/5 px-2 py-1 text-[10px] font-mono text-radioactive-300">Temporary timer only · no real advert is being served</div>
           <h3 className="font-display font-bold text-lg text-toxic-300 neon-text">{title}</h3>
           {subtitle && <p className="text-sm text-toxic-100/60 mt-1">{subtitle}</p>}
 
@@ -92,7 +93,7 @@ export function AdModal({ open, onClose, onComplete, title, subtitle, reward, du
             </div>
           ) : (
             <p className="mt-4 text-xs text-radioactive-300/70 font-mono">
-              {phase === 'playing' ? 'Ad playing... do not close' : 'Loading ad...'}
+              {phase === 'playing' ? 'Placeholder timer running — no supplier connected' : 'Preparing placeholder timer...'}
             </p>
           )}
         </div>

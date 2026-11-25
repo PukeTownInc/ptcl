@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { GameState, MissionState, WithdrawalRecord, CacheBoxTier } from './types';
+import type { GameState, MissionState, WithdrawalRecord, CacheBoxTier, SlotHistoryRecord } from './types';
 import {
   ALL_MISSIONS_BONUS,
   CACHE_BOXES,
@@ -87,6 +87,9 @@ function defaultState(): GameState {
     blueCacheClaimedToday: false,
     purpleCacheAdClaimedDate: null,
     jackpotFragments: 0,
+    slotBet: 10,
+    slotAutoCount: 10,
+    slotHistory: [],
   };
 }
 
@@ -99,7 +102,7 @@ function dailyResetIfNeeded(state: GameState): GameState {
   if (state.lastReset === today) return state;
 
   let loginStreak = state.loginStreak;
-  let lastLogin = state.lastLogin;
+  const lastLogin = state.lastLogin;
   if (state.lastLogin) {
     const gap = daysBetween(state.lastLogin, today);
     if (gap > 1) loginStreak = 0;
@@ -107,8 +110,6 @@ function dailyResetIfNeeded(state: GameState): GameState {
 
   return {
     ...state,
-    spinsRemaining: FREE_SPINS_BASE,
-    freeSpinsClaimed: false,
     dailyBoostClaimed: false,
     dailyAdVideosWatched: 0,
     dailyUnlocksUsed: 0,
@@ -120,20 +121,15 @@ function dailyResetIfNeeded(state: GameState): GameState {
     dailyPotAccel: 0,
     dailyXpBoosts: 0,
     xpBoostUntil: null,
-    hotStreakUntil: null,
-    potAccelUntil: null,
     doubleUpPending: null,
     extraLuckyPending: false,
     missions: emptyMissions(),
     dailyMissionClaims: [],
     allMissionsBonusClaimed: false,
     allMissionsAdBonusClaimed: false,
-    ppEarnedToday: 0,
     streakClaimedToday: false,
     streakAdWatchedToday: false,
     streakDay: computeStreakReset(state, today) === null ? 0 : state.streakDay,
-    lastReset: today,
-    spinsToday: 0,
     loginStreak,
     lastLogin,
     lastStreakClaimDate: computeStreakReset(state, today),
@@ -143,17 +139,25 @@ function dailyResetIfNeeded(state: GameState): GameState {
   };
 }
 
+const CLIENT_PROTECTED_ECONOMY_KEYS = [
+  'lockedPotPP','withdrawablePP','totalEarnedPP','ppEarnedToday',
+  'spinsRemaining','freeSpinsClaimed','withdrawalHistory','lastWithdraw',
+  'slotHistory','totalSpins','spinsToday','jackpotWins','potAccelUntil','hotStreakUntil',
+] as const;
+
 export function useGameState(userId: string | null) {
   const [state, setState] = useState<GameState | null>(null);
   const [cloudLoading, setCloudLoading] = useState(true);
   const stateRef = useRef<GameState | null>(null);
   const isSavingRef = useRef(false);
   const pendingUpdateRef = useRef<GameState | null>(null);
+  const lastSyncedJsonRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!userId) {
       setState(null);
       stateRef.current = null;
+      lastSyncedJsonRef.current = null;
       setCloudLoading(false);
       return;
     }
@@ -176,14 +180,14 @@ export function useGameState(userId: string | null) {
           const reset = dailyResetIfNeeded(merged);
           setState(reset);
           stateRef.current = reset;
+          lastSyncedJsonRef.current = JSON.stringify(reset);
         } else {
           const fresh = dailyResetIfNeeded(defaultState());
           setState(fresh);
           stateRef.current = fresh;
-          await supabase.from('user_profiles').upsert({
-            id: userId,
-            data: fresh,
-          });
+          const { error: createError } = await supabase.from('user_profiles').upsert({ id: userId, data: fresh });
+          if (createError) throw createError;
+          lastSyncedJsonRef.current = JSON.stringify(fresh);
         }
       } catch (err) {
         console.error('Cloud load failed:', err);
@@ -200,6 +204,7 @@ export function useGameState(userId: string | null) {
 
   useEffect(() => {
     if (!userId || !state || cloudLoading) return;
+    if (JSON.stringify(state) === lastSyncedJsonRef.current) return;
 
     const saveToCloud = async () => {
       if (isSavingRef.current) {
@@ -209,11 +214,14 @@ export function useGameState(userId: string | null) {
 
       isSavingRef.current = true;
       try {
-        await supabase.from('user_profiles').upsert({
+        const snapshot = JSON.stringify(state);
+        const { error } = await supabase.from('user_profiles').upsert({
           id: userId,
           data: state,
           last_synced: new Date().toISOString(),
         });
+        if (error) throw error;
+        lastSyncedJsonRef.current = snapshot;
       } catch (err) {
         console.error('Cloud save failed:', err);
       } finally {
@@ -233,10 +241,40 @@ export function useGameState(userId: string | null) {
     return () => clearTimeout(timer);
   }, [state, userId, cloudLoading]);
 
+  useEffect(() => {
+    if (!userId || cloudLoading) return;
+    const channel = supabase
+      .channel(`user-profile-sync-${userId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'user_profiles',
+        filter: `id=eq.${userId}`,
+      }, (payload) => {
+        const data = payload.new?.data as Partial<GameState> | undefined;
+        if (!data) return;
+        const remote = { ...defaultState(), ...data };
+        const remoteJson = JSON.stringify(remote);
+        if (remoteJson === lastSyncedJsonRef.current) return;
+        const localJson = stateRef.current ? JSON.stringify(stateRef.current) : null;
+        // Do not overwrite local unsaved actions; the next cloud save wins.
+        if (localJson !== lastSyncedJsonRef.current) return;
+        stateRef.current = remote;
+        lastSyncedJsonRef.current = remoteJson;
+        setState(remote);
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [userId, cloudLoading]);
+
   const updateState = useCallback((updater: (prev: GameState) => GameState) => {
     setState((prev) => {
       if (!prev) return prev;
-      const next = updater(prev);
+      const next = { ...updater(prev) } as GameState;
+      // Only server-authoritative actions may change balances, redeemable history or spins.
+      const writable = next as unknown as Record<string, unknown>;
+      const previous = prev as unknown as Record<string, unknown>;
+      for (const key of CLIENT_PROTECTED_ECONOMY_KEYS) writable[key] = previous[key];
       stateRef.current = next;
       return next;
     });
@@ -285,6 +323,53 @@ export function useGameState(userId: string | null) {
       const moved = prev.lockedPotPP;
       return { ...prev, lockedPotPP: 0, withdrawablePP: prev.withdrawablePP + moved, dailyUnlocksUsed: prev.dailyUnlocksUsed + 1 };
     });
+  }, [updateState]);
+
+  const setSlotPreferences = useCallback((betPP: number, autoCount: number) => {
+    updateState((prev) => ({
+      ...prev,
+      slotBet: Math.max(1, Math.min(1000, Math.floor(betPP))),
+      slotAutoCount: Math.max(0, Math.min(100, Math.floor(autoCount))),
+    }));
+  }, [updateState]);
+
+  const recordSlotHistory = useCallback((entry: SlotHistoryRecord) => {
+    updateState((prev) => ({
+      ...prev,
+      slotHistory: [entry, ...(prev.slotHistory ?? [])].slice(0, 20),
+    }));
+  }, [updateState]);
+
+  const settleSlotSpin = useCallback((
+    betPP: number,
+    payoutPP: number,
+    useFreeSpin: boolean,
+    historyEntry: SlotHistoryRecord,
+    jackpotWon = false,
+  ): boolean => {
+    let accepted = false;
+    const safeBet = Math.max(1, Math.min(1000, Math.floor(betPP)));
+    const safePayout = Math.max(0, Math.floor(payoutPP));
+    updateState((prev) => {
+      if (useFreeSpin ? prev.spinsRemaining <= 0 : prev.lockedPotPP < safeBet) return prev;
+      accepted = true;
+      const afterStake = prev.lockedPotPP - (useFreeSpin ? 0 : safeBet);
+      return {
+        ...prev,
+        lockedPotPP: Math.min(afterStake + safePayout, 500000),
+        totalEarnedPP: prev.totalEarnedPP + safePayout,
+        ppEarnedToday: prev.ppEarnedToday + safePayout,
+        spinsRemaining: useFreeSpin ? prev.spinsRemaining - 1 : prev.spinsRemaining,
+        spinsToday: prev.spinsToday + 1,
+        totalSpins: prev.totalSpins + 1,
+        missions: { ...prev.missions, spins: prev.missions.spins + 1 },
+        xp: prev.xp + 1,
+        dailyXpFree: prev.dailyXpFree + 1,
+        jackpotWins: prev.jackpotWins + (jackpotWon ? 1 : 0),
+        slotHistory: [historyEntry, ...(prev.slotHistory ?? [])].slice(0, 20),
+      };
+    });
+    return accepted;
   }, [updateState]);
 
   const recordSpin = useCallback(() => {
@@ -362,7 +447,7 @@ export function useGameState(userId: string | null) {
 
       const reward = rollCacheReward(tier);
       result = { ok: true, reward };
-      let next = { ...prev };
+      const next = { ...prev };
 
       if (tier === 'blue') {
         if (viaAd) next.blueCacheAdClaims = prev.blueCacheAdClaims + 1;
@@ -597,6 +682,13 @@ export function useGameState(userId: string | null) {
     });
   }, [updateState]);
 
+  const setLeaderboardPeriodStart = useCallback((key: string, start: number) => {
+    updateState((prev) => ({
+      ...prev,
+      leaderboardPeriodStarts: { ...prev.leaderboardPeriodStarts, [key]: start },
+    }));
+  }, [updateState]);
+
   const resetLeaderboardClaims = useCallback((keys: string[]) => {
     updateState((prev) => {
       const claims = { ...prev.leaderboardClaims };
@@ -607,6 +699,22 @@ export function useGameState(userId: string | null) {
 
   const resetAll = useCallback(() => {
     const fresh = dailyResetIfNeeded(defaultState());
+    const current = stateRef.current;
+    if (current) {
+      fresh.lockedPotPP = current.lockedPotPP;
+      fresh.withdrawablePP = current.withdrawablePP;
+      fresh.totalEarnedPP = current.totalEarnedPP;
+      fresh.ppEarnedToday = current.ppEarnedToday;
+      fresh.spinsRemaining = current.spinsRemaining;
+      fresh.freeSpinsClaimed = current.freeSpinsClaimed;
+      fresh.withdrawalHistory = current.withdrawalHistory;
+      fresh.lastWithdraw = current.lastWithdraw;
+      fresh.slotHistory = current.slotHistory;
+      fresh.totalSpins = current.totalSpins;
+      fresh.spinsToday = current.spinsToday;
+      fresh.jackpotWins = current.jackpotWins;
+      fresh.lastReset = current.lastReset;
+    }
     fresh.lastLogin = todayUTC();
     fresh.loginStreak = 1;
     fresh.streakDay = 0;
@@ -620,24 +728,26 @@ export function useGameState(userId: string | null) {
     cloudLoading,
     addXP, addPP, isPotFull, unlockPot,
     recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
+    setSlotPreferences, recordSlotHistory, settleSlotSpin,
     claimRoadmapDailyGift, loginCheck, setFaucetpayEmail, adjustWithdrawablePP, recordWithdrawal,
     activateXPBoost, activateHotStreak, activatePotAccel, useDoubleUp,
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll,
+    resetLeaderboardClaims, setLeaderboardPeriodStart, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
     playPlinko,
   }), [
     state, cloudLoading,
     addXP, addPP, isPotFull, unlockPot,
     recordSpin, addSpins, watchAd, claimDailyBonusSpins, claimDailyBoost,
+    setSlotPreferences, recordSlotHistory, settleSlotSpin,
     claimRoadmapDailyGift, loginCheck, setFaucetpayEmail, adjustWithdrawablePP, recordWithdrawal,
     activateXPBoost, activateHotStreak, activatePotAccel, useDoubleUp,
     useExtraLucky, openMysteryPack, setDoubleUpPending, setExtraLuckyPending,
     claimMissionReward, claimAllMissionsBonus, claimAllMissionsAdBonus,
     claimStreakRewardViaAd, recordReferral, recordJackpot, claimLeaderboardPrize,
-    resetLeaderboardClaims, resetAll,
+    resetLeaderboardClaims, setLeaderboardPeriodStart, resetAll,
     canClaimFreeCache, canClaimBlueCacheViaAd, canClaimPurpleCacheViaAd, openCacheBox,
     playPlinko,
   ]);

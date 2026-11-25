@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Tv, CheckCircle2, Gift, Trophy, Calendar, Target, Lock, Flame, Zap } from 'lucide-react';
 import type { GameState } from '../types';
 import { MISSIONS, ALL_MISSIONS_BONUS, STREAK_REWARDS, MAX_STREAK_DAY } from '../constants';
 import type { GameActions } from '../useGameState';
 import { isStreakPPBoostActive } from '../useGameState';
 import { useToast } from '../components/Toast';
-import { AdModal } from '../components/AdModal';
 interface Props {
   state: GameState;
   actions: GameActions;
@@ -36,7 +35,7 @@ function missionProgress(state: GameState, id: string): number {
 }
 function useResetCountdown() {
   const [remaining, setRemaining] = useState('');
-  useState(() => {
+  useEffect(() => {
     const update = () => {
       const now = new Date();
       const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
@@ -54,37 +53,16 @@ function useResetCountdown() {
 }
 export function MissionsScreen({ state, actions }: Props) {
   const toast = useToast();
-  const [adModal, setAdModal] = useState<null | { 
-    title: string; 
-    subtitle?: string; 
-    reward: string; 
-    onComplete: () => void 
-  }>(null);
   const countdown = useResetCountdown();
   const completedCount = MISSIONS.filter((m) => isMissionComplete(state, m.id)).length;
   const allComplete = completedCount === MISSIONS.length;
-  const allMissionsClaimed = MISSIONS.every((m) => 
-    state.dailyMissionClaims.includes(m.id) || state.dailyMissionClaims.includes(`${m.id}:ad`)
-  );
   const claimedDays = state.streakDay;
   const nextDay = claimedDays >= 7 ? 1 : claimedDays + 1;
   const streakReward = STREAK_REWARDS[nextDay - 1];
   const isDay7 = nextDay === MAX_STREAK_DAY;
   const streakBoostActive = isStreakPPBoostActive(state);
   const handleStreakClaim = () => {
-    if (state.streakClaimedToday) {
-      toast('info', 'Already Contaminated', 'Return tomorrow for your next dose');
-      return;
-    }
-    setAdModal({
-      title: `☢️ Daily Contamination — Dose ${nextDay}/7`,
-      subtitle: 'Absorb radiation to receive your supply',
-      reward: `+${streakReward.spins} Twists + ${streakReward.xp} Exposure${streakReward.ppBoost ? ' + ×1.2 Goops for 24h' : ''}`,
-      onComplete: () => {
-        actions.claimStreakRewardViaAd(streakReward);
-        toast('success', `Dose ${nextDay} Absorbed!`, `+${streakReward.spins} Twists + ${streakReward.xp} Exposure${streakReward.ppBoost ? ' + ×1.2 Goops' : ''}`);
-      },
-    });
+    toast('info', 'Daily streak reward paused', 'This reward needs a verified server-side advert claim.');
   };
   const handleClaimBase = (id: string) => {
     if (state.dailyMissionClaims.includes(id)) {
@@ -107,30 +85,8 @@ export function MissionsScreen({ state, actions }: Props) {
     toast('success', 'Contamination Secured!', `+${mission.baseXp} Exposure`);
   };
   const handleClaimAdBonus = (id: string) => {
-    const adClaimId = `${id}:ad`;
-    if (state.dailyMissionClaims.includes(adClaimId)) {
-      toast('info', 'Bonus Contaminated', 'Already absorbed today');
-      return;
-    }
-    if (!state.dailyMissionClaims.includes(id)) {
-      toast('error', 'Base First', 'Claim primary supply before bonus');
-      return;
-    }
-    const mission = MISSIONS.find(m => m.id === id);
-    if (!mission) return;
-    setAdModal({
-      title: '☢️ Radiation Bonus',
-      subtitle: 'Absorb broadcast for extra contamination',
-      reward: `+${mission.adXp} Exposure + ${mission.adSpins} Twists`,
-      onComplete: () => {
-        const accepted = actions.claimMissionReward(adClaimId, true);
-        if (!accepted) return;
-        actions.addXP(mission.adXp, true, true);
-        actions.addSpins(mission.adSpins);
-        actions.watchAd();
-        toast('success', 'Radiation Absorbed!', `+${mission.adXp} Exposure + ${mission.adSpins} Twists`);
-      },
-    });
+    void id;
+    toast('info', 'Rewarded ads unavailable', 'No verified advert provider is connected yet.');
   };
   const handleAllBase = () => {
     if (state.allMissionsBonusClaimed) return;
@@ -141,28 +97,10 @@ export function MissionsScreen({ state, actions }: Props) {
     const accepted = actions.claimAllMissionsBonus();
     if (!accepted) return;
     actions.addXP(ALL_MISSIONS_BONUS.baseXp, false, true);
-    if (ALL_MISSIONS_BONUS.baseSpins) actions.addSpins(ALL_MISSIONS_BONUS.baseSpins);
-    toast('success', '☢️ FULL CONTAMINATION!', `+${ALL_MISSIONS_BONUS.baseXp} Exposure Bonus`);
+    toast('success', '☢️ FULL CONTAMINATION!', `+${ALL_MISSIONS_BONUS.baseXp} Exposure Bonus. Spin rewards are paused.`);
   };
   const handleAllAdBonus = () => {
-    if (state.allMissionsAdBonusClaimed) return;
-    if (!state.allMissionsBonusClaimed) {
-      toast('error', 'Base First', 'Claim full contamination supply first');
-      return;
-    }
-    setAdModal({
-      title: '☢️ MAXIMUM DOSE BONUS',
-      subtitle: 'Absorb final broadcast for ultimate contamination',
-      reward: `+${ALL_MISSIONS_BONUS.adXp} Exposure + ${ALL_MISSIONS_BONUS.adSpins} Twists`,
-      onComplete: () => {
-        const accepted = actions.claimAllMissionsAdBonus();
-        if (!accepted) return;
-        actions.addXP(ALL_MISSIONS_BONUS.adXp, true, true);
-        if (ALL_MISSIONS_BONUS.adSpins) actions.addSpins(ALL_MISSIONS_BONUS.adSpins);
-        actions.watchAd();
-        toast('success', '☢️ CRITICAL EXPOSURE!', `+${ALL_MISSIONS_BONUS.adXp} Exposure + ${ALL_MISSIONS_BONUS.adSpins} Twists`);
-      },
-    });
+    toast('info', 'Rewarded ads unavailable', 'No verified advert provider is connected yet.');
   };
   return (
     <div className="space-y-4">
@@ -356,14 +294,7 @@ export function MissionsScreen({ state, actions }: Props) {
           </button>
         </div>
       </div>
-      <AdModal
-        open={!!adModal}
-        onClose={() => setAdModal(null)}
-        onComplete={() => adModal?.onComplete()}
-        title={adModal?.title ?? ''}
-        subtitle={adModal?.subtitle}
-        reward={adModal?.reward ?? ''}
-      />
+
     </div>
   );
 }
