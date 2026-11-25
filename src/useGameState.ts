@@ -108,8 +108,6 @@ function dailyResetIfNeeded(state: GameState): GameState {
 
   return {
     ...state,
-    spinsRemaining: FREE_SPINS_BASE,
-    freeSpinsClaimed: false,
     dailyBoostClaimed: false,
     dailyAdVideosWatched: 0,
     dailyUnlocksUsed: 0,
@@ -129,11 +127,9 @@ function dailyResetIfNeeded(state: GameState): GameState {
     dailyMissionClaims: [],
     allMissionsBonusClaimed: false,
     allMissionsAdBonusClaimed: false,
-    ppEarnedToday: 0,
     streakClaimedToday: false,
     streakAdWatchedToday: false,
     streakDay: computeStreakReset(state, today) === null ? 0 : state.streakDay,
-    spinsToday: 0,
     loginStreak,
     lastLogin,
     lastStreakClaimDate: computeStreakReset(state, today),
