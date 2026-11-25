@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wallet, AlertTriangle, CheckCircle2, Clock, ArrowRight, Lock, History, LogIn, Tv } from 'lucide-react';
+import { Wallet, AlertTriangle, CheckCircle2, Clock, Lock, History, LogIn } from 'lucide-react';
 import type { GameState, WithdrawalRecord } from '../types';
 import {
   CRYPTO_OPTIONS,
@@ -7,7 +7,6 @@ import {
   MAX_WITHDRAW_PP,
   PLATFORM_FEE,
   WITHDRAW_COOLDOWN_MS,
-  MIN_UNLOCK_PP,
   ppToUsd,
   formatPP,
 } from '../constants';
@@ -16,10 +15,9 @@ import { useToast } from '../components/Toast';
 const VAULT_CAP = 50000;
 interface Props {
   state: GameState;
-  actions: GameActions;
   isLoggedIn: boolean;
 }
-export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
+export function WithdrawScreen({ state, isLoggedIn }: Props) {
   const toast = useToast();
   const [email, setEmail] = useState(state.faucetpayEmail);
   const [crypto, setCrypto] = useState(CRYPTO_OPTIONS[0].id);
@@ -32,7 +30,6 @@ export function WithdrawScreen({ state, actions, isLoggedIn }: Props) {
   const totalDeducted = amount + fee;
   const payoutPP = amount - fee;
   const payoutUsd = ppToUsd(payoutPP);
-  const canPrepareWithdraw = false;
   const vaultFull = state.lockedPotPP >= VAULT_CAP;
   const vaultPercent = Math.min(100, (state.lockedPotPP / VAULT_CAP) * 100);
   const remainingToFull = VAULT_CAP - state.lockedPotPP;
