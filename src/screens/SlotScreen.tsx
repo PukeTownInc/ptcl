@@ -6,8 +6,7 @@ import * as engine from '../slotEngine';
 import type { GameActions } from '../useGameState';
 import { isHotStreakActive, isPotAccelActive } from '../useGameState';
 import { useToast } from '../components/Toast';
-import { AdModal } from '../components/AdModal';
-import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
+import { supabase } from '../lib/supabase';
 
 const REEL_DISPLAY = 3;
 type ReelPhase = 'idle' | 'spinning' | 'stopped';
@@ -68,9 +67,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [winPositions, setWinPositions] = useState<Set<string>>(new Set());
   const [winPP, setWinPP] = useState(0);
   const [showJackpot, setShowJackpot] = useState<string | null>(null);
-  const [showDoubleUp, setShowDoubleUp] = useState(false);
-  const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
-  const currentSpinUsesFreeSpinRef = useRef(false);
   const spinHistory = state.slotHistory ?? [];
   const [reelPhases, setReelPhases] = useState<ReelPhase[]>(['idle', 'idle', 'idle', 'idle', 'idle']);
   const [cyclingSymbols, setCyclingSymbols] = useState<SymbolId[][]>(() => {
@@ -82,7 +78,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const stopTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [autoSpin, setAutoSpin] = useState(false);
   const autoSpinRef = useRef(false);
-  const doubleUpResolvedRef = useRef(false);
   const [potAccelCountdown, setPotAccelCountdown] = useState('');
   const [showPaytable, setShowPaytable] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -94,10 +89,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       stopTimers.current.forEach(clearTimeout);
     };
   }, []);
-
-  useEffect(() => {
-    if (state.doubleUpPending && !doubleUpResolvedRef.current) setShowDoubleUp(true);
-  }, [state.doubleUpPending]);
 
   useEffect(() => {
     if (!state.potAccelUntil) return;
@@ -116,14 +107,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     return () => clearInterval(interval);
   }, [state.potAccelUntil]);
 
-  const doSpin = useCallback(() => {
+  const doSpin = useCallback(async () => {
     if (spinning) return;
-    const useFreeSpin = state.spinsRemaining > 0;
-    if (!useFreeSpin && state.lockedPotPP < state.slotBet) {
+    if (state.spinsRemaining <= 0 && state.lockedPotPP < state.slotBet) {
       toast('error', 'Insufficient Puke Points', 'You need more locked Puke Points or a free spin.');
       return;
     }
-    currentSpinUsesFreeSpinRef.current = useFreeSpin;
     stopTimers.current.forEach(clearTimeout);
     stopTimers.current = [];
     setSpinning(true);
@@ -131,138 +120,83 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     setWinPP(0);
     setLastResult(null);
     setReelPhases(['spinning', 'spinning', 'spinning', 'spinning', 'spinning']);
-    const result = engine.spin();
-    cycleInterval.current = setInterval(() => {
-      const next: SymbolId[][] = [];
-      for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
-      setCyclingSymbols(next);
-    }, 70);
-    const baseDelay = turbo ? 420 : 1000;
-    const stagger = turbo ? 150 : 320;
-    for (let r = 0; r < 5; r++) {
-      const t = setTimeout(() => {
-        setGrid((prev) => {
-          const next = [...prev];
-          next[r] = result.grid[r].slice(0, REEL_DISPLAY);
-          return next;
-        });
-        setReelPhases((prev) => {
-          const next = [...prev];
-          next[r] = 'stopped';
-          return next;
-        });
-        if (r === 4) {
-          if (cycleInterval.current) {
-            clearInterval(cycleInterval.current);
-            cycleInterval.current = null;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('cash-lab-spin', {
+        body: { betPP: state.slotBet, requestId: crypto.randomUUID() },
+      });
+      if (error) throw error;
+      const result = data as SpinResult & { payoutPP: number; usedFreeSpin: boolean };
+      if (!result || !Array.isArray(result.grid) || result.grid.length !== 5 || typeof result.payoutPP !== 'number') {
+        throw new Error('The server returned an invalid spin result.');
+      }
+
+      cycleInterval.current = setInterval(() => {
+        const next: SymbolId[][] = [];
+        for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
+        setCyclingSymbols(next);
+      }, 70);
+      const baseDelay = turbo ? 420 : 1000;
+      const stagger = turbo ? 150 : 320;
+      for (let r = 0; r < 5; r++) {
+        const t = setTimeout(() => {
+          setGrid((prev) => {
+            const next = [...prev];
+            next[r] = result.grid[r].slice(0, REEL_DISPLAY);
+            return next;
+          });
+          setReelPhases((prev) => {
+            const next = [...prev];
+            next[r] = 'stopped';
+            return next;
+          });
+          if (r === 4) {
+            if (cycleInterval.current) {
+              clearInterval(cycleInterval.current);
+              cycleInterval.current = null;
+            }
+            const finishTimer = setTimeout(() => {
+              setSpinning(false);
+              setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
+              setLastResult(result);
+              setWinPP(result.payoutPP);
+              const posSet = new Set<string>();
+              result.wins.forEach((w) => w.positions.forEach(([reel, row]) => posSet.add(`${reel}-${row}`)));
+              if (result.jackpot) result.grid.forEach((col, reel) => col.forEach((symbol, row) => symbol === 'jackpot' && posSet.add(`${reel}-${row}`)));
+              setWinPositions(posSet);
+              if (result.freeSpinsAwarded > 0) {
+                toast('success', `${result.freeSpinsAwarded} Toxic Twists!`, 'Contamination scatter triggered');
+              }
+              if (result.jackpot) {
+                setShowJackpot(result.jackpot.type);
+                setTimeout(() => setShowJackpot(null), 3000);
+              }
+              if (autoSpinRef.current) {
+                const remaining = Math.max(0, state.slotAutoCount - 1);
+                actions.setSlotPreferences(state.slotBet, remaining);
+                if (remaining === 0) {
+                  autoSpinRef.current = false;
+                  setAutoSpin(false);
+                  toast('info', 'Auto-spin complete', 'Your queued spins have finished.');
+                }
+              }
+            }, 500);
+            stopTimers.current.push(finishTimer);
           }
-          const finishTimer = setTimeout(() => finishSpin(result), 500);
-          stopTimers.current.push(finishTimer);
-        }
-      }, baseDelay + r * stagger);
-      stopTimers.current.push(t);
-    }
-    function finishSpin(res: SpinResult) {
+        }, baseDelay + r * stagger);
+        stopTimers.current.push(t);
+      }
+    } catch (error) {
+      if (cycleInterval.current) {
+        clearInterval(cycleInterval.current);
+        cycleInterval.current = null;
+      }
       setSpinning(false);
       setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
-      setLastResult(res);
-      let finalPP = res.wins.reduce((sum, win) => sum + win.pp, 0) * state.slotBet;
-      if (res.bonusAwarded !== null) finalPP += res.bonusIsMultiplier ? res.bonusAwarded * state.slotBet : res.bonusAwarded;
-      if (res.jackpot) finalPP += res.jackpot.amount;
-      const hadPotAccel = isPotAccelActive(state);
-      const hadHotStreak = isHotStreakActive(state);
-      if (hadPotAccel) finalPP *= 2;
-      if (hadHotStreak) finalPP = Math.floor(finalPP * 1.5);
-      finalPP = Math.floor(finalPP);
-      const posSet = new Set<string>();
-      res.wins.forEach((w) => w.positions.forEach(([r, row]) => posSet.add(`${r}-${row}`)));
-      res.jackpot && res.grid.forEach((col, r) => col.forEach((s, row) => s === 'jackpot' && posSet.add(`${r}-${row}`)));
-      setWinPositions(posSet);
-      setWinPP(finalPP);
-      const eligibleDoubleUp = finalPP >= 10;
-      const winSymbols = res.wins.length > 0
-        ? [...new Set(res.wins.map((w) => w.symbols[0]))]
-        : [];
-      const historyEntry = {
-        id: `slot-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        timestamp: Date.now(),
-        kind: 'spin' as const,
-        pp: finalPP,
-        symbols: winSymbols,
-        multiplied: hadPotAccel || hadHotStreak,
-        multiplier: hadPotAccel ? 'x2' : hadHotStreak ? 'x1.5' : null,
-      };
-      const accepted = actions.settleSlotSpin(
-        state.slotBet,
-        eligibleDoubleUp ? 0 : finalPP,
-        currentSpinUsesFreeSpinRef.current,
-        historyEntry,
-        !!res.jackpot,
-      );
-      if (!accepted) {
-        toast('error', 'Spin not completed', 'Your balance or free-spin count changed. Please try again.');
-        return;
-      }
-      if (eligibleDoubleUp) {
-        doubleUpResolvedRef.current = false;
-        actions.setDoubleUpPending(finalPP);
-        setShowDoubleUp(true);
-      }
-      if (res.freeSpinsAwarded > 0) {
-        actions.addSpins(res.freeSpinsAwarded);
-        toast('success', `${res.freeSpinsAwarded} Toxic Twists!`, 'Contamination scatter triggered ☢️');
-      }
-      if (res.jackpot) {
-        setShowJackpot(res.jackpot.type);
-        setTimeout(() => setShowJackpot(null), 3000);
-      }
-      if (autoSpinRef.current) {
-        const remaining = Math.max(0, state.slotAutoCount - 1);
-        actions.setSlotPreferences(state.slotBet, remaining);
-        if (remaining === 0) {
-          autoSpinRef.current = false;
-          setAutoSpin(false);
-          toast('info', 'Auto-spin complete', 'Your queued spins have finished.');
-        }
-      }
+      const message = error instanceof Error ? error.message : 'The server could not complete this spin.';
+      toast('error', 'Spin not completed', message);
     }
   }, [spinning, state.spinsRemaining, state.lockedPotPP, state.slotBet, state.slotAutoCount, actions, toast, turbo]);
-
-  const handleWheelResult = useCallback((result: WheelResult) => {
-    if (doubleUpResolvedRef.current) return;
-    doubleUpResolvedRef.current = true;
-    setShowDoubleUp(false);
-    actions.useDoubleUp();
-    if (result.outcome === 'double') {
-      actions.addPP(result.amount);
-      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} Puke Points (x2 stake)`);
-      actions.recordSlotHistory({ id: `slot-${Date.now()}-double`, timestamp: Date.now(), kind: 'double', pp: result.amount });
-    }
-    else if (result.outcome === 'safe') {
-      actions.addPP(result.amount);
-      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} Puke Points (x1 stake)`);
-      actions.recordSlotHistory({ id: `slot-${Date.now()}-safe`, timestamp: Date.now(), kind: 'safe', pp: result.amount });
-    }
-    else if (result.outcome === 'half') {
-      actions.addPP(result.amount);
-      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} Puke Points (0.5× stake)`);
-      actions.recordSlotHistory({ id: `slot-${Date.now()}-half`, timestamp: Date.now(), kind: 'half', pp: result.amount });
-    }
-    else if (result.outcome === 'lose') {
-      setWinPP(0);
-      toast('error', '☠️ SPILLED!', 'Stake lost — nothing returned');
-      actions.recordSlotHistory({ id: `slot-${Date.now()}-lose`, timestamp: Date.now(), kind: 'lose', pp: 0 });
-    }
-  }, [actions, toast]);
-
-  const handleForfeit = useCallback(() => {
-    if (doubleUpResolvedRef.current) return;
-    doubleUpResolvedRef.current = true;
-    setShowDoubleUp(false);
-    actions.useDoubleUp();
-    toast('info', '☣️ FORFEITED', 'Stake lost — nothing returned');
-    actions.recordSlotHistory({ id: `slot-${Date.now()}-forfeit`, timestamp: Date.now(), kind: 'forfeit', pp: 0 });
-  }, [actions, toast]);
 
   const canSpin = state.spinsRemaining > 0 || state.lockedPotPP >= state.slotBet;
 
@@ -279,7 +213,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
   useEffect(() => {
     if (!autoSpin) return;
-    if (spinning || showDoubleUp || showJackpot || adModal) return;
+    if (spinning || showJackpot) return;
     if (state.slotAutoCount <= 0) {
       setAutoSpin(false);
       autoSpinRef.current = false;
@@ -296,7 +230,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       if (autoSpinRef.current) doSpin();
     }, 600);
     return () => clearTimeout(t);
-  }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, state.lockedPotPP, state.slotBet, state.slotAutoCount, doSpin, toast]);
+  }, [autoSpin, spinning, showJackpot, state.spinsRemaining, state.lockedPotPP, state.slotBet, state.slotAutoCount, doSpin, toast]);
 
   return (
     <div className="w-full px-1">
@@ -323,7 +257,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <div className="absolute z-[11] flex items-center justify-center bg-[#020503e8] font-black text-white [text-shadow:0_0_8px_#fff]" style={{ left: '17%', top: '66.6%', width: '12%', height: '2.5%', fontSize: 'clamp(12px,2.3vw,22px)' }}>{state.slotBet}</div>
         <div className="absolute z-[11] flex items-center justify-center bg-[#020503e8] font-black text-white [text-shadow:0_0_8px_#fff]" style={{ left: '72%', top: '66.6%', width: '9%', height: '2.5%', fontSize: 'clamp(12px,2.3vw,22px)' }}>{state.slotAutoCount}</div>
         <div className="absolute z-[9] flex items-center justify-center bg-[#020503f7] font-black text-white [text-shadow:0_0_7px_#fff]" style={{ left: '64.2%', top: '83.35%', width: '8%', height: '2.55%', fontSize: 'clamp(14px,2.5vw,24px)' }}>{state.spinsRemaining}</div>
-        <button type="button" aria-label="Watch a rewarded advert for free spins" onClick={() => toast('info', 'Rewarded ads not connected', 'Free spins will be enabled when a verified advert provider is integrated.')} disabled={spinning} className="absolute z-[8] rounded-lg border border-[#d14cff] bg-gradient-to-br from-[#260044] via-[#6500a5] to-[#1b0032] p-1 text-center font-black leading-tight text-white shadow-[inset_0_0_10px_#a900ff,0_0_8px_#c100ff65] disabled:opacity-50" style={{ left: '5.1%', top: '65.05%', width: '28.1%', height: '7.9%', fontSize: 'clamp(10px,2.2vw,17px)' }}>▶ WATCH AD<br/>GET 15–25 SPINS</button>
+        <button type="button" aria-label="Rewarded adverts unavailable" onClick={() => toast('info', 'Rewarded ads not connected', 'No advert reward can be issued until verified server callbacks are integrated.')} disabled={spinning} className="absolute z-[8] rounded-lg border border-[#d14cff] bg-gradient-to-br from-[#260044] via-[#6500a5] to-[#1b0032] p-1 text-center font-black leading-tight text-white shadow-[inset_0_0_10px_#a900ff,0_0_8px_#c100ff65] disabled:opacity-50" style={{ left: '5.1%', top: '65.05%', width: '28.1%', height: '7.9%', fontSize: 'clamp(10px,2.2vw,17px)' }}>▶ WATCH AD<br/>GET 15–25 SPINS</button>
         <button type="button" aria-pressed={autoSpin} onClick={toggleAutoSpin} disabled={spinning} className={`absolute z-[8] rounded-lg border p-1 text-center font-black leading-tight disabled:opacity-50 ${autoSpin ? 'border-[#eaffcf] bg-[#396f08] text-white' : 'border-[#8bff2d] bg-gradient-to-br from-[#102500] via-[#2b6500] to-[#0a1900] text-[#eaffcf]'}`} style={{ left: '66%', top: '65.05%', width: '28.1%', height: '7.9%', fontSize: 'clamp(10px,2.2vw,17px)' }}>AUTO SPIN: {autoSpin ? 'ON' : 'OFF'}</button>
         <button type="button" aria-label="Decrease bet" disabled={spinning || state.slotBet <= 1} onClick={() => actions.setSlotPreferences(Math.max(1, state.slotBet - 5), state.slotAutoCount)} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20" style={{ left: '11.7%', top: '65.7%', width: '6.4%', height: '3.4%' }} />
         <button type="button" aria-label="Increase bet" disabled={spinning || state.slotBet >= 1000} onClick={() => actions.setSlotPreferences(Math.min(1000, state.slotBet + 5), state.slotAutoCount)} className="absolute z-10 rounded-lg bg-transparent active:bg-lime-300/20" style={{ left: '26.9%', top: '65.7%', width: '6.4%', height: '3.4%' }} />
