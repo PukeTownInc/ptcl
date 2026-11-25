@@ -142,7 +142,7 @@ function dailyResetIfNeeded(state: GameState): GameState {
 const CLIENT_PROTECTED_ECONOMY_KEYS = [
   'lockedPotPP','withdrawablePP','totalEarnedPP','ppEarnedToday',
   'spinsRemaining','freeSpinsClaimed','withdrawalHistory','lastWithdraw',
-  'slotHistory','totalSpins','spinsToday','jackpotWins',
+  'slotHistory','totalSpins','spinsToday','jackpotWins','potAccelUntil','hotStreakUntil',
 ] as const;
 
 export function useGameState(userId: string | null) {
