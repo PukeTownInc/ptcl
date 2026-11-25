@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Layers, History } from 'lucide-react';
-import type { GameState, Screen, SpinResult, SymbolId, WinLine } from '../types';
+import type { GameState, Screen, SpinResult, SymbolId } from '../types';
 import { MIN_UNLOCK_PP, SYMBOLS, formatPP } from '../constants';
 import * as engine from '../slotEngine';
 import type { GameActions } from '../useGameState';
