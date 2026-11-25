@@ -160,8 +160,7 @@ export function RoadmapScreen({ onNavigate, actions }: Props) {
     }
     // Give rewards
     actions.addXP(10, false, true);
-    actions.addSpins(3);
-    toast.show('🎉 Thanks! +10 Exposure • +3 Twists added!');
+    toast('success', 'Roadmap gift claimed', '+10 Exposure added. Spin rewards are paused during the secure rollout.');
   };
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-8">
