@@ -97,6 +97,10 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   }, []);
 
   useEffect(() => {
+    if (state.doubleUpPending && !doubleUpResolvedRef.current) setShowDoubleUp(true);
+  }, [state.doubleUpPending]);
+
+  useEffect(() => {
     if (!state.potAccelUntil) return;
     const update = () => {
       const remaining = state.potAccelUntil! - Date.now();
@@ -268,12 +272,12 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
   const handleMysteryPack = () => {
     setAdModal({
-      title: 'Mystery Goop Vat',
-      subtitle: 'Absorb radiation to crack open a random sludge barrel',
+      title: 'Watch Ad for Spins',
+      subtitle: 'Temporary timed ad placeholder — receive 15 to 25 free spins',
       reward: '+15 to +25 Toxic Twists',
       onComplete: () => {
         const got = actions.openMysteryPack();
-        toast('success', '🧪 BARREL OPENED!', `+${got} Toxic Twists contaminated!`);
+        toast('success', 'FREE SPINS ADDED!', `+${got} Toxic Twists added to your account.`);
       },
     });
   };
@@ -443,7 +447,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           <button type="button" aria-label="Increase auto spins" onClick={() => actions.setSlotPreferences(state.slotBet, Math.min(100, state.slotAutoCount + 1))} className="rounded border border-toxic-500/50 px-2 py-1 text-toxic-300">+</button>
         </div>
       </div>
-      <div className="max-w-lg mx-auto px-2 grid grid-cols-2 gap-2">
+      <div className="max-w-lg mx-auto px-2 grid grid-cols-1 gap-2">
         <button type="button" onClick={actions.claimDailyBonusSpins} disabled={state.freeSpinsClaimed}
           className="ghost-btn p-2.5 text-xs font-display font-bold text-toxic-300 disabled:opacity-40">
           {state.freeSpinsClaimed ? 'DAILY SPINS CLAIMED' : 'CLAIM DAILY SPINS'}
