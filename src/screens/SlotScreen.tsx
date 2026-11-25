@@ -293,7 +293,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       reward: 'x2 Flow • 5 Minutes',
       onComplete: () => {
         actions.activatePotAccel();
-        actions.watchAd();
         toast('success', '☢️ ACCELERATOR ACTIVE', 'Sludge flowing at x2 speed!');
       },
     });
@@ -331,11 +330,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       <div className="grid grid-cols-2 gap-2">
         <BonusBtn
           icon={<Package size={16} />}
-          label="Mystery Goop Vat"
-          sub="15-25 Twists • only when empty"
+          label="Watch Ad for Spins"
+          sub="15–25 spins • timed placeholder"
           ad
           onClick={handleMysteryPack}
-          disabled={state.spinsRemaining > 0 || spinning}
+          disabled={spinning}
         />
         <BonusBtn
           icon={<Zap size={16} />}
@@ -449,9 +448,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           className="ghost-btn p-2.5 text-xs font-display font-bold text-toxic-300 disabled:opacity-40">
           {state.freeSpinsClaimed ? 'DAILY SPINS CLAIMED' : 'CLAIM DAILY SPINS'}
         </button>
-        <button type="button" onClick={handleMysteryPack} className="ghost-btn p-2.5 text-xs font-display font-bold text-radioactive-300">
-          WATCH AD • GET 15–25 SPINS
-        </button>
+
       </div>
 
       <div className="max-w-lg mx-auto space-y-3 px-2">
