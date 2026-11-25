@@ -59,7 +59,7 @@ function AppContent() {
     if (!state) return null;
     switch (activeScreen) {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
-      case 'slots': return <SlotScreen state={state} actions={actions} onNavigate={handleNavigate} />;
+      case 'slots': return <SlotScreen state={state} actions={actions} />;
       case 'missions': return <MissionsScreen state={state} actions={actions} />;
       case 'withdraw': return <WithdrawScreen state={state} actions={actions} isLoggedIn={!!user} />;
       case 'settings': return <SettingsScreen state={state} actions={actions} />;
