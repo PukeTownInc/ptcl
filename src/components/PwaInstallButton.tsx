@@ -32,7 +32,6 @@ export function PwaInstallButton() {
 
     const ua = navigator.userAgent;
     const isIOS = /iPad|iPhone|iPod/.test(ua);
-    const isAndroid = /Android/.test(ua);
 
     if (isIOS) {
       alert(
