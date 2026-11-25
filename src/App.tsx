@@ -65,15 +65,15 @@ function AppContent() {
       case 'home': return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
       case 'slots': return <SlotScreen state={state} actions={actions} />;
       case 'missions': return <MissionsScreen state={state} actions={actions} />;
-      case 'withdraw': return <WithdrawScreen state={state} actions={actions} isLoggedIn={!!user} />;
+      case 'withdraw': return <WithdrawScreen state={state} isLoggedIn={!!user} />;
       case 'settings': return <SettingsScreen state={state} actions={actions} />;
       case 'leaderboards': return <LeaderboardsScreen state={state} actions={actions} />;
       case 'profile': return <ProfileScreen state={state} actions={actions} />;
-      case 'roadmap': return <RoadmapScreen onNavigate={handleNavigate} actions={actions} />;
+      case 'roadmap': return <RoadmapScreen actions={actions} />;
       case 'contagion-cache':
         return <ContagionCacheScreen state={state} actions={actions} onBack={() => handleNavigate('home')} />;
       case 'plinko':
-        return <PlinkoScreen state={state} actions={actions} />;
+        return <PlinkoScreen state={state} />;
       default: return <HomeScreen state={state} actions={actions} onNavigate={handleNavigate} />;
     }
   };
