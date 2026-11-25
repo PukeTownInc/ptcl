@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Layers, History } from 'lucide-react';
-import type { GameState, Screen, SpinResult, SymbolId } from '../types';
-import { MIN_UNLOCK_PP, SYMBOLS, formatPP } from '../constants';
+import type { GameState, SpinResult, SymbolId } from '../types';
+import { SYMBOLS, formatPP } from '../constants';
 import * as engine from '../slotEngine';
 import type { GameActions } from '../useGameState';
 import { isHotStreakActive, isPotAccelActive } from '../useGameState';
@@ -323,34 +323,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         </div>
       )}
 
-      {showDoubleUp && state.doubleUpPending && (
-        <SpinWheelModal
-          stake={state.doubleUpPending}
-          onWatchAd={() => {
-            setAdModal({
-              title: 'Absorb Radiation',
-              subtitle: 'Watch ad to claim your Risk Wheel reward',
-              reward: 'Claim Puke Points',
-              onComplete: () => setAdModal(null),
-            });
-          }}
-          onClaim={handleWheelResult}
-          onLose={() => { setShowDoubleUp(false); handleWheelResult({ outcome: 'lose', amount: 0 }); }}
-          onForfeit={handleForfeit}
-        />
-      )}
-
-      <AdModal
-        open={!!adModal}
-        onClose={() => setAdModal(null)}
-        onComplete={() => {
-          adModal?.onComplete();
-          setAdModal(null);
-        }}
-        title={adModal?.title ?? ''}
-        subtitle={adModal?.subtitle}
-        reward={adModal?.reward ?? ''}
-      />
     </div>
   );
 }
