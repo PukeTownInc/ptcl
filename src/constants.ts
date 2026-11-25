@@ -64,6 +64,9 @@ export function getNextTier(xp: number): TierInfo | null {
 // ==============================================
 export const SYMBOLS: Record<SymbolId, SlotSymbol & { image?: string }> = {
   cashlab:  { id: 'cashlab',  emoji: '🤑', label: 'Cash Lab',        pays: [30, 90, 300], weight: 2.5, image: `${SYMBOL_IMAGE_PATH}symbol-cash-lab.png?v=11` },
+  beetle:   { id: 'beetle',   emoji: '🪲', label: 'Mutant Beetle',   pays: [8, 24, 75], weight: 3, image: `${SYMBOL_IMAGE_PATH}symbol-mutant-beetle.png?v=11` },
+  wastepit: { id: 'wastepit', emoji: '🕳️', label: 'Waste Pit',       pays: [10, 30, 100], weight: 2.2, image: `${SYMBOL_IMAGE_PATH}symbol-waste-pit.png?v=11` },
+  toxiccloud:{ id: 'toxiccloud',emoji:'☁️', label: 'Toxic Cloud',    pays: [15, 45, 160], weight: 1.8, image: `${SYMBOL_IMAGE_PATH}toxic-cloud.png?v=11` },
   puke:     { id: 'puke',     emoji: '🤢', label: 'Puke Town',       pays: [50, 150, 500],     weight: 26,  image: `${SYMBOL_IMAGE_PATH}symbol-puke-town.png?v=11` },
   slime:    { id: 'slime',    emoji: '🟡', label: 'Slime Blob',      pays: [2, 4, 11],    weight: 24,  image: `${SYMBOL_IMAGE_PATH}symbol-slime-blob.png?v=11` },
   sneeze:   { id: 'sneeze',   emoji: '😷', label: 'Gas Mask',        pays: [40, 120, 400],    weight: 21,  image: `${SYMBOL_IMAGE_PATH}symbol-gas-mask.png?v=11` },
