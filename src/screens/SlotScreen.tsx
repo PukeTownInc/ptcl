@@ -287,9 +287,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         timerMaskStyle.textContent = `
           #bakedTimerMask {
             position:absolute; z-index:8; left:34.1%; top:89.45%;
-            width:11.8%; height:3.0%; pointer-events:none;
+            width:11.8%; height:1.15%; pointer-events:none;
             background:radial-gradient(ellipse at center,
-              #031b08 0%, #031b08 54%, rgba(3,27,8,.94) 72%,
+              #031b08 0%, #031b08 42%, rgba(3,27,8,.76) 66%,
               rgba(3,27,8,0) 100%);
           }`;
         doc.head.appendChild(timerMaskStyle);
