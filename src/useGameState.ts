@@ -16,7 +16,11 @@ import {
 import { supabase } from './lib/supabase';
 
 function todayUTC(): string {
-  return new Date().toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function daysBetween(a: string, b: string): number {
@@ -197,6 +201,19 @@ export function useGameState(userId: string | null) {
 
     return () => { cancelled = true; };
   }, [userId]);
+
+  // Re-evaluate daily state while the app remains open so rewards unlock at UK midnight.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setState((prev) => {
+        if (!prev) return prev;
+        const next = dailyResetIfNeeded(prev);
+        if (next !== prev) stateRef.current = next;
+        return next;
+      });
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!userId || !state || cloudLoading) return;
