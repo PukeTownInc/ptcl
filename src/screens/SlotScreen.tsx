@@ -79,7 +79,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [showJackpot, setShowJackpot] = useState<string | null>(null);
   const [showDoubleUp, setShowDoubleUp] = useState(false);
   const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
-  const [freeSpinsLeft, setFreeSpinsLeft] = useState(0);
   const [activeWinIndex, setActiveWinIndex] = useState(0);
   const reelsRef = useRef<HTMLDivElement>(null);
   const [reelPhases, setReelPhases] = useState<ReelPhase[]>(['idle', 'idle', 'idle', 'idle', 'idle']);
@@ -133,11 +132,10 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
   const doSpin = useCallback(() => {
     if (spinning) return;
-    if (state.spinsRemaining <= 0 && freeSpinsLeft <= 0) {
+    if (state.spinsRemaining <= 0) {
       toast('error', 'No Toxic Twists Left', 'Absorb radiation or wait for daily dose');
       return;
     }
-    const usesFreeSpin = freeSpinsLeft > 0;
     setSpinning(true);
     setWinPositions(new Set());
     setWinPP(0);
@@ -198,12 +196,9 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         }
       }
       actions.addXP(1, false);
-      actions.recordSpin(!usesFreeSpin);
-      if (freeSpinsLeft > 0) {
-        setFreeSpinsLeft((n) => n - 1);
-      }
+      actions.recordSpin();
       if (res.freeSpinsAwarded > 0) {
-        setFreeSpinsLeft((n) => n + res.freeSpinsAwarded);
+        actions.addSpins(res.freeSpinsAwarded);
         toast('success', `${res.freeSpinsAwarded} Toxic Twists!`, 'Contamination scatter triggered ☢️');
       }
       if (res.jackpot) {
@@ -222,7 +217,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         multiplier: hadPotAccel ? 'x2' : hadHotStreak ? 'x1.5' : null,
       }, ...prev].slice(0, MAX_HISTORY));
     }
-  }, [spinning, state.spinsRemaining, freeSpinsLeft, actions, toast]);
+  }, [spinning, state.spinsRemaining, actions, toast]);
 
   const handleWheelResult = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
@@ -295,7 +290,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     });
   };
 
-  const canSpin = state.spinsRemaining > 0 || freeSpinsLeft > 0;
+  const canSpin = state.spinsRemaining > 0;
 
   const toggleAutoSpin = useCallback(() => {
     setAutoSpin((prev) => {
@@ -308,7 +303,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   useEffect(() => {
     if (!autoSpin) return;
     if (spinning || showDoubleUp || showJackpot || adModal) return;
-    if (state.spinsRemaining <= 0 && freeSpinsLeft <= 0) {
+    if (state.spinsRemaining <= 0) {
       setAutoSpin(false);
       autoSpinRef.current = false;
       toast('info', 'OUT OF GOOPS', 'Auto-contamination halted — get more Twists to continue');
@@ -318,7 +313,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       if (autoSpinRef.current) doSpin();
     }, 600);
     return () => clearTimeout(t);
-  }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, freeSpinsLeft, doSpin, toast]);
+  }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, doSpin, toast]);
 
   return (
     <div className="space-y-4">
@@ -327,7 +322,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <button
           onClick={handleMysteryPack}
           disabled={spinning}
-          className="min-h-[64px] p-2.5 text-center font-display font-black text-sm leading-tight text-white rounded-lg border border-fuchsia-400 bg-gradient-to-br from-purple-950 via-purple-800 to-purple-950 shadow-[inset_0_0_10px_rgba(169,0,255,.65),0_0_8px_rgba(193,0,255,.35)] text-shadow disabled:opacity-40 active:translate-y-1 active:scale-[0.985] transition-transform"
+          className="ghost-btn min-h-[64px] p-2.5 text-center font-display font-black text-sm leading-tight text-toxic-300 disabled:opacity-40"
         >
           <span className="block">▶ WATCH AD</span>
           <span className="block">GET 15–25 SPINS</span>
@@ -342,13 +337,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         />
       </div>
 
-      {(isHotStreakActive(state) || isPotAccelActive(state) || freeSpinsLeft > 0) && (
+      {(isHotStreakActive(state) || isPotAccelActive(state)) && (
         <div className="flex flex-wrap gap-2">
-          {freeSpinsLeft > 0 && (
-            <span className="px-2 py-1 rounded-full bg-toxic-500/15 border border-toxic-600/40 text-toxic-300 text-[10px] font-display font-bold flex items-center gap-1 animate-pulse">
-              <Play size={10} /> {freeSpinsLeft} TOXIC TWISTS
-            </span>
-          )}
           {isHotStreakActive(state) && (
             <span className="px-2 py-1 rounded-full bg-hazard-amber/15 border border-hazard-amber/40 text-hazard-amber text-[10px] font-display font-bold flex items-center gap-1">
               <Flame size={10} /> FEVER PITCH x1.5
@@ -458,7 +448,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
         <div className="flex items-center justify-center">
           <span className="font-display font-bold text-sm text-toxic-300">
-            Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining + freeSpinsLeft}</span>
+            Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining}</span>
           </span>
         </div>
 
