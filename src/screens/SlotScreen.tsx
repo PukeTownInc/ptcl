@@ -168,7 +168,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [html, setHtml] = useState('');
   const [spinning, setSpinning] = useState(false);
-  const [autoSpin, setAutoSpin] = useState(false);
   const [turbo, setTurbo] = useState(false);
   const [adModal, setAdModal] = useState(false);
   const [showDoubleUp, setShowDoubleUp] = useState(false);
@@ -234,7 +233,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       } else if (message.type === 'PT_AUTO') {
         const enabled = !!message.enabled;
         autoRef.current = enabled;
-        setAutoSpin(enabled);
       } else if (message.type === 'PT_DAILY_CLAIM') {
         if (latestState.current.freeSpinsClaimed) {
           toast('info', 'Daily spins already claimed', 'Return after the daily reset.');
@@ -290,7 +288,6 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
     if (spinning) return;
     if (latestState.current.spinsRemaining <= 0) {
       autoRef.current = false;
-      setAutoSpin(false);
       post({type:'PT_AUTO_STATE', enabled:false});
       toast('error', 'No spins remaining', 'Claim a reward to add spins to your shared balance.');
       post({type:'PT_SPIN_ERROR'});
