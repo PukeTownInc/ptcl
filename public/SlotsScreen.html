@@ -132,7 +132,20 @@ $('spin').addEventListener('click',()=>doSpin());
  $('autoSpinToggle').addEventListener('click',()=>{if(spinning){if(autoRunning){autoRunning=false;clearTimeout(autoTimer);autoTimer=null;render();status('Auto spin will stop after the current spin.')}else status('Wait for the current spin to finish.');return}autoRunning=!autoRunning;if(!autoRunning){clearTimeout(autoTimer);autoTimer=null}if(autoRunning&&autoCount<1)autoCount=1;render();if(autoRunning){status('Auto spin started: '+autoCount+' spins queued.');doSpin(true)}else status('Auto spin stopped.')});
 $('toggleTurbo').addEventListener('click',()=>{turbo=!turbo;render();status('Turbo mode '+(turbo?'enabled':'disabled')+'.')});
 $('freeSpin').addEventListener('click',()=>{if(spinning)return;if(freeSpins>0)doSpin();else status('No free spins available. Earn more from rewards or scatter symbols.')});
-$('claimReward').addEventListener('click',()=>{if(claimed)status('Daily demo reward already claimed.');else{claimed=true;freeSpins+=1;render();status('Daily demo reward claimed: +1 free spin.')}});
+const DAILY_REWARD_KEY='pt_cashlab_daily_reward_claimed_at';
+const DAILY_REWARD_INTERVAL=24*60*60*1000;
+function updateDailyRewardTimer(){
+ const timer=$('dailyRewardTimer');if(!timer)return;
+ const lastClaim=Number(localStorage.getItem(DAILY_REWARD_KEY)||0);
+ const remaining=Math.max(0,lastClaim+DAILY_REWARD_INTERVAL-Date.now());
+ claimed=remaining>0;
+ const totalSeconds=Math.ceil(remaining/1000);
+ const hours=String(Math.floor(totalSeconds/3600)).padStart(2,'0');
+ const minutes=String(Math.floor((totalSeconds%3600)/60)).padStart(2,'0');
+ const seconds=String(totalSeconds%60).padStart(2,'0');
+ timer.textContent=claimed?'NEXT SPIN IN '+hours+':'+minutes+':'+seconds:'DAILY SPIN READY';
+}
+$('claimReward').addEventListener('click',()=>{updateDailyRewardTimer();if(claimed){status('Daily demo reward already claimed.');return;}localStorage.setItem(DAILY_REWARD_KEY,String(Date.now()));claimed=true;freeSpins+=1;render();updateDailyRewardTimer();status('Daily demo reward claimed: +1 free spin.')});
 $('watchAdSpins').addEventListener('click',()=>$('adRewardModal').style.display='flex');
 function closeAd(){$('adRewardModal').style.display='none'}
 $('closeAdModal').addEventListener('click',closeAd);$('completeDemoAd').addEventListener('click',()=>{const earned=15+Math.floor(Math.random()*11);freeSpins+=earned;closeAd();render();status('Demo ad completed: +'+earned+' free spins added!')});
@@ -142,7 +155,7 @@ $('modalClose').addEventListener('click',()=>$('modalShade').classList.remove('o
 $('modalBody').addEventListener('click',e=>{if(e.target?.id==='simulateAd'){const earned=15+Math.floor(Math.random()*11);freeSpins+=earned;$('modalShade').classList.remove('open');render();status('Demo ad complete: +'+earned+' free spins added!')}});
 $('modalReset').addEventListener('click',()=>{if(spinTimer)clearInterval(spinTimer);clearTimeout(autoTimer);autoTimer=null;spinTimer=null;bet=10;autoCount=10;freeSpins=3;spinning=false;turbo=false;pool=1000000;history=[];spinNumber=0;claimed=false;autoRunning=false;currentSpinWasAuto=false;grid=makeGrid();draw();$('reelOverlay').classList.add('active');$('reelOverlay').classList.remove('spinning');$('modalShade').classList.remove('open');closeAd();render();status('Demo reset. Ready to spin.')});
 $('modalShade').addEventListener('click',e=>{if(e.target===$('modalShade'))$('modalShade').classList.remove('open')});$('adRewardModal').addEventListener('click',e=>{if(e.target===$('adRewardModal'))closeAd()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){ $('modalShade').classList.remove('open');closeAd() }});
-grid=makeGrid();draw();$('reelOverlay').classList.add('active');render();
+grid=makeGrid();draw();$('reelOverlay').classList.add('active');updateDailyRewardTimer();render();setInterval(updateDailyRewardTimer,1000);
 })();
 </script>
 <script>
