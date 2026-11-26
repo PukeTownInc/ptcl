@@ -287,12 +287,12 @@ export function useGameState(userId: string | null) {
     });
   }, [updateState]);
 
-  const recordSpin = useCallback(() => {
+  const recordSpin = useCallback((consumeSpin = true) => {
     updateState((prev) => {
       const xpToAdd = 1;
       return {
         ...prev,
-        spinsRemaining: Math.max(0, prev.spinsRemaining - 1),
+        spinsRemaining: consumeSpin ? Math.max(0, prev.spinsRemaining - 1) : prev.spinsRemaining,
         spinsToday: prev.spinsToday + 1,
         totalSpins: prev.totalSpins + 1,
         missions: { ...prev.missions, spins: prev.missions.spins + 1 },
