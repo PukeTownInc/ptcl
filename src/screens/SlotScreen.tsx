@@ -29,6 +29,14 @@ const BRIDGE = `
   let turbo = false;
   let balance = 0;
   let history = [];
+  const updateBalance = (value) => {
+    balance = Math.max(0, Number(value) || 0);
+    const readout = $('freeSpinsReadout');
+    if (readout) {
+      readout.textContent = balance.toLocaleString();
+      readout.setAttribute('aria-label', balance + ' spins available');
+    }
+  };
   const makeCell = (id, win) => {
     const meta = symbols[id] || {};
     const cell = document.createElement('div');
@@ -124,7 +132,6 @@ const BRIDGE = `
   $('completeDemoAd')?.addEventListener('click', () => $('adRewardModal').style.display='none');
   ['betDown','betUp','freeSpin','autoDown','autoUp'].forEach(id => $(id)?.remove());
   $('betReadout')?.remove();
-  $('freeSpinsReadout')?.remove();
   $('poolReadout')?.remove();
   $('modalReset')?.remove();
   document.querySelector('.bottomNote')?.remove();
@@ -133,13 +140,13 @@ const BRIDGE = `
     const m = event.data || {};
     if (m.type === 'PT_INIT') {
       symbols = m.symbols || {};
-      balance = m.balance || 0;
+      updateBalance(m.balance);
       if (m.initialGrid) draw(m.initialGrid, []);
       $('autoReadout').textContent = '—';
       $('claimReward').style.opacity = m.dailyClaimed ? '.35' : '1';
       $('claimReward').disabled = !!m.dailyClaimed;
     }
-    if (m.type === 'PT_BALANCE') balance = m.balance;
+    if (m.type === 'PT_BALANCE') updateBalance(m.balance);
     if (m.type === 'PT_SPIN_START') {
       spinButton.disabled = true;
       art?.classList.remove('is-pressed');
