@@ -260,10 +260,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   }, [actions, toast]);
 
   const handleMysteryPack = () => {
-    if (state.spinsRemaining > 0) {
-      toast('info', 'TWISTS STILL AVAILABLE', 'Mystery Goop Vat only empty when contaminated');
-      return;
-    }
+    if (spinning) return;
     setAdModal({
       title: 'Mystery Goop Vat',
       subtitle: 'Absorb radiation to crack open a random sludge barrel',
@@ -324,16 +321,16 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
   return (
     <div className="space-y-4">
-      {/* Bonus Buttons */}
+      {/* Ad spins and existing accelerator */}
       <div className="grid grid-cols-2 gap-2">
-        <BonusBtn
-          icon={<Package size={16} />}
-          label="Mystery Goop Vat"
-          sub="15-25 Twists • only when empty"
-          ad
+        <button
           onClick={handleMysteryPack}
-          disabled={state.spinsRemaining > 0 || spinning}
-        />
+          disabled={spinning}
+          className="ghost-btn min-h-[64px] p-2.5 text-center font-display font-black text-sm leading-tight text-toxic-300 disabled:opacity-40 active:translate-y-1 active:scale-[0.985] transition-transform"
+        >
+          <span className="block">▶ WATCH AD</span>
+          <span className="block">GET 15–25 SPINS</span>
+        </button>
         <BonusBtn
           icon={<Zap size={16} />}
           label="Sludge Accelerator"
@@ -467,7 +464,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <button
           onClick={doSpin}
           disabled={!canSpin || spinning}
-          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2"
+          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2 active:translate-y-1 active:scale-[.985] active:brightness-90 transition-transform"
         >
           {spinning ? (
             <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
