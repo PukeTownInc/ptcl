@@ -102,6 +102,7 @@ const BRIDGE = `
   function closeModal() { $('modalShade').classList.remove('open'); }
   spinButton?.addEventListener('click', () => send({type:'PT_SPIN'}));
   $('watchAdSpins')?.addEventListener('click', () => send({type:'PT_WATCH_AD'}));
+  $('freeSpin')?.addEventListener('click', () => send({type:'PT_SPIN'}));
   $('autoSpinToggle')?.addEventListener('click', () => {
     auto = !auto;
     $('autoSpinToggle').textContent = 'AUTO SPIN: ' + (auto ? 'ON' : 'OFF');
@@ -132,7 +133,7 @@ const BRIDGE = `
   $('modalShade')?.addEventListener('click', e => { if (e.target === $('modalShade')) closeModal(); });
   $('closeAdModal')?.addEventListener('click', () => $('adRewardModal').style.display='none');
   $('completeDemoAd')?.addEventListener('click', () => $('adRewardModal').style.display='none');
-  ['betDown','betUp','freeSpin','autoDown','autoUp'].forEach(id => $(id)?.remove());
+  ['betDown','betUp','autoDown','autoUp'].forEach(id => $(id)?.remove());
   $('betReadout')?.remove();
   $('poolReadout')?.remove();
   $('modalReset')?.remove();
