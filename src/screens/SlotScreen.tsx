@@ -74,8 +74,13 @@ const BRIDGE = `
       clearTimeout(readout._timer);
       readout._timer = setTimeout(() => readout.classList.remove('show'), 3000);
     }
-    history.unshift({ pp: result.totalPP, grid: result.grid });
-    history = history.slice(0, 20);
+    history.unshift({
+      number: (history[0]?.number || 0) + 1,
+      pp: result.totalPP,
+      grid: result.grid,
+      winCells: (result.wins || []).flatMap(w => w.positions || []),
+    });
+    history = history.slice(0, 12);
     $('spin').disabled = false;
   }
   function openModal(title, body) {
@@ -99,7 +104,17 @@ const BRIDGE = `
   });
   $('claimReward')?.addEventListener('click', () => send({type:'PT_DAILY_CLAIM'}));
   $('historyBtn')?.addEventListener('click', () => {
-    const rows = history.length ? history.map((h,i) => '<p>Spin ' + (i+1) + ': +' + h.pp.toLocaleString() + ' PP</p>').join('') : '<p>No spins recorded yet.</p>';
+    const rows = history.length ? '<div class="historyList">' + history.map(h =>
+      '<article class="historyEntry"><div class="historyMeta"><b>#' + h.number + '</b><strong>' +
+      (h.pp > 0 ? '+' + h.pp.toLocaleString() + ' PP' : 'NO WIN') +
+      '</strong></div><div class="historyGrid">' + h.grid.map((col,c) =>
+        '<div class="historyCol">' + col.map((id,r) => {
+          const meta = symbols[id] || {};
+          const won = (h.winCells || []).some(p => p[0] === c && p[1] === r);
+          return '<img class="' + (won ? 'historyWin' : '') + '" src="' + (meta.image || '') +
+            '" alt="' + (meta.label || id) + (won ? ' — winning symbol' : '') + '">';
+        }).join('') + '</div>').join('') + '</div></article>'
+    ).join('') + '</div>' : '<p>No spins recorded yet. Press SPIN to begin.</p>';
     openModal('SPIN HISTORY', rows);
   });
   $('paytable')?.addEventListener('click', () => send({type:'PT_PAYTABLE'}));
@@ -144,8 +159,29 @@ const BRIDGE = `
       $('claimReward').disabled = !!m.claimed;
     }
     if (m.type === 'PT_PAYTABLE') {
-      const rows = m.rows.map(s => '<div class="payRow"><b>' + s.label + '</b><span>' + s.pays[0] + '</span><span>' + s.pays[1] + '</span><span>' + s.pays[2] + '</span></div>').join('');
-      openModal('TOXIC PAY TABLE', '<div class="paytableList">' + rows + '</div><p>Match 3, 4 or 5 symbols across consecutive reels.</p>');
+      const regular = m.rows.filter(s => !s.special).sort((a,b) =>
+        b.pays[2] - a.pays[2] || b.pays[1] - a.pays[1] || b.pays[0] - a.pays[0]);
+      const specials = m.rows.filter(s => !!s.special);
+      const rows = regular.map(s =>
+        '<div class="payRow"><div class="paySymbol"><img src="' + s.image + '" alt="' + s.label +
+        '"><span>' + s.label + '</span></div><span>3: ' + s.pays[0] +
+        ' PP</span><span>4: ' + s.pays[1] + ' PP</span><b>5: ' + s.pays[2] + ' PP</b></div>'
+      ).join('');
+      const specialRows = specials.map(s => {
+        const descriptions = {
+          wild: 'Substitutes for regular symbols',
+          scatter: '3+ award free spins',
+          bonus: '3+ on separate reels trigger a bonus',
+          hazard: 'Reveals a regular symbol',
+          jackpot: '3+ award a jackpot',
+        };
+        return '<div class="specialRow"><img src="' + s.image + '" alt="' + s.label +
+          '"><span><b>' + s.label + '</b><small>' + (descriptions[s.special] || '') +
+          '</small></span></div>';
+      }).join('');
+      openModal('TOXIC PAYTABLE',
+        '<p>Three, four or five matching regular symbols from the left award the listed Puke Points. Wilds substitute for regular symbols.</p>' +
+        '<div class="paytableList">' + rows + '</div><div class="specialSymbols">' + specialRows + '</div>');
     }
     if (m.type === 'PT_AD_MODAL') $('adRewardModal').style.display = 'flex';
   });
@@ -179,7 +215,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   latestActions.current = actions;
 
   const symbolMeta = useMemo(() => Object.fromEntries(
-    Object.values(SYMBOLS).map(s => [s.id, { label: s.label, emoji: s.emoji, image: s.image }])
+    Object.values(SYMBOLS).map(s => [s.id, { label: s.label, emoji: s.emoji, image: s.image, special: s.special }])
   ), []);
 
   const post = useCallback((message: object) => {
@@ -242,7 +278,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           toast('success', 'Daily spins claimed', 'Your spins were added to the shared balance.');
         }
       } else if (message.type === 'PT_PAYTABLE') {
-        post({type:'PT_PAYTABLE', rows:Object.values(SYMBOLS).filter(s => !s.special).map(s => ({label:s.label,pays:s.pays}))});
+        post({type:'PT_PAYTABLE', rows:Object.values(SYMBOLS).map(s => ({label:s.label,pays:s.pays,image:s.image,special:s.special}))});
       }
     };
     window.addEventListener('message', onMessage);
