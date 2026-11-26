@@ -27,7 +27,6 @@ const BRIDGE = `
   let spinningTimer = null;
   let auto = false;
   let turbo = false;
-  let balance = 0;
   let history = [];
   const makeCell = (id, win) => {
     const meta = symbols[id] || {};
@@ -119,14 +118,13 @@ const BRIDGE = `
     const m = event.data || {};
     if (m.type === 'PT_INIT') {
       symbols = m.symbols || {};
-      balance = m.balance || 0;
       if ($('spinBalance')) $('spinBalance').textContent = String(balance);
       if (m.initialGrid) draw(m.initialGrid, []);
       $('autoReadout').textContent = '—';
       $('claimReward').style.opacity = m.dailyClaimed ? '.35' : '1';
       $('claimReward').disabled = !!m.dailyClaimed;
     }
-    if (m.type === 'PT_BALANCE') { balance = m.balance; if ($('spinBalance')) $('spinBalance').textContent = String(balance); }
+    if (m.type === 'PT_BALANCE') { if ($('spinBalance')) $('spinBalance').textContent = String(m.balance); }
     if (m.type === 'PT_SPIN_START') {
       spinButton.disabled = true;
       art?.classList.remove('is-pressed');
@@ -170,6 +168,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   const [spinning, setSpinning] = useState(false);
   const [turbo, setTurbo] = useState(false);
   const [adModal, setAdModal] = useState(false);
+  const [adPurpose, setAdPurpose] = useState<'spins' | 'wheel'>('spins');
   const [showDoubleUp, setShowDoubleUp] = useState(false);
   const doubleUpResolvedRef = useRef(false);
   const [pendingDoubleUp, setPendingDoubleUp] = useState(0);
@@ -229,6 +228,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       } else if (message.type === 'PT_SPIN') {
         doSpinRef.current();
       } else if (message.type === 'PT_WATCH_AD') {
+        setAdPurpose('spins');
         setAdModal(true);
       } else if (message.type === 'PT_AUTO') {
         const enabled = !!message.enabled;
@@ -301,11 +301,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   doSpinRef.current = doSpin;
 
   const completeAd = useCallback(() => {
-    const awarded = latestActions.current.openMysteryPack();
-    latestActions.current.watchAd();
+    if (adPurpose === 'spins') {
+      const awarded = latestActions.current.openMysteryPack();
+      latestActions.current.watchAd();
+      toast('success', 'SPINS AWARDED', `+${awarded} spins added to your shared balance.`);
+    }
     setAdModal(false);
-    toast('success', 'SPINS AWARDED', `+${awarded} spins added to your shared balance.`);
-  }, [toast]);
+  }, [adPurpose, toast]);
 
   const handleWheel = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
@@ -336,7 +338,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       {showDoubleUp && pendingDoubleUp > 0 && (
         <SpinWheelModal
           stake={pendingDoubleUp}
-          onWatchAd={() => setAdModal(true)}
+          onWatchAd={() => { setAdPurpose('wheel'); setAdModal(true); }}
           onClaim={handleWheel}
           onLose={() => handleWheel({outcome:'lose',amount:0})}
           onForfeit={() => { setShowDoubleUp(false); latestActions.current.useDoubleUp(); }}
