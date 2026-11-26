@@ -30,12 +30,14 @@ const BRIDGE = `
   let balance = 0;
   let history = [];
   const updateBalance = (value) => {
-    balance = Math.max(0, Number(value) || 0);
+    const parsed = Number(value);
+    balance = Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
     const readout = $('freeSpinsReadout');
-    if (readout) {
-      readout.textContent = balance.toLocaleString();
-      readout.setAttribute('aria-label', balance + ' spins available');
-    }
+    if (!readout) return;
+    const displayBalance = balance.toLocaleString();
+    readout.textContent = displayBalance;
+    readout.setAttribute('aria-label', displayBalance + ' spins available');
+    readout.setAttribute('data-balance', String(balance));
   };
   const makeCell = (id, win) => {
     const meta = symbols[id] || {};
