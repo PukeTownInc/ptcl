@@ -62,6 +62,20 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
 }
 
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
+  const [machineArt, setMachineArt] = useState('');
+  const [spinArt, setSpinArt] = useState('');
+  const [spinPressed, setSpinPressed] = useState(false);
+  useEffect(() => {
+    let active = true;
+    fetch('/SlotsScreen.html').then((response) => response.text()).then((html) => {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const machine = doc.querySelector<HTMLImageElement>('.art')?.getAttribute('src') ?? '';
+      const spin = doc.querySelector<HTMLImageElement>('#spinArtwork')?.getAttribute('src') ?? '';
+      if (active) { setMachineArt(machine); setSpinArt(spin); }
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
   const toast = useToast();
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
     const init: SymbolId[][] = [];
