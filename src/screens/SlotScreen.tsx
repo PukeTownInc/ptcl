@@ -415,8 +415,8 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <img
           src={machineArt || '/reel-box.png'}
           alt="Puke Town Cash Lab"
-          className="absolute inset-0 w-full h-full z-20" style={{ pointerEvents: 'none', objectFit: 'fill' }}
-          style={{ pointerEvents: 'none' }}
+          className="absolute inset-0 w-full h-full z-0"
+          style={{ pointerEvents: 'none', objectFit: 'fill' }}
         />
         <div style={{ position: 'absolute', left: '5.1%', top: '62.92107%', width: '28.1%', height: '8.38122%', zIndex: 29, background: '#020503', border: '1px solid rgba(88,255,30,.18)', borderRadius: 8, boxShadow: 'inset 0 0 8px rgba(0,0,0,.85)', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <button onClick={handleMysteryPack} disabled={spinning} style={{ width: '100%', height: '100%', border: '1px solid #d14cff', borderRadius: 7, background: 'linear-gradient(135deg,#260044,#6500a5 55%,#1b0032)', color: '#fff', fontWeight: 1000, fontSize: 'clamp(10px,2.2vw,19px)', lineHeight: 1.35, textShadow: '0 0 7px #e78aff', boxShadow: 'inset 0 0 10px #a900ff,0 0 8px #c100ff65' }}>▶ WATCH AD<br />GET 15–25 SPINS</button>
