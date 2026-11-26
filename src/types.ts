@@ -22,7 +22,7 @@ export interface LeaderboardClaimState {
   claimed: boolean;
 }
 export type SymbolId =
-  | 'cashlab'
+  | 'cashlab' | 'beetle' | 'wastepit' | 'toxiccloud'
   | 'puke' | 'slime' | 'sneeze' | 'tp' | 'pill' | 'germ'
   | 'beaker' | 'vomit' | 'toxic' | 'barrel' | 'warn' | 'rich'
   | 'wild' | 'scatter' | 'bonus' | 'hazard' | 'jackpot';
