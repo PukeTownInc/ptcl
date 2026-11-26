@@ -281,6 +281,22 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         if (cancelled) return;
         const doc = new DOMParser().parseFromString(source, 'text/html');
         doc.querySelectorAll('script').forEach(script => script.remove());
+        // Mask the timer digits baked into the background artwork. This is a clean,
+        // unobtrusive patch over the original digits, not a replacement timer.
+        const timerMaskStyle = doc.createElement('style');
+        timerMaskStyle.textContent = `
+          #bakedTimerMask {
+            position:absolute; z-index:8; left:34.1%; top:89.45%;
+            width:11.8%; height:3.0%; pointer-events:none;
+            background:radial-gradient(ellipse at center,
+              #031b08 0%, #031b08 54%, rgba(3,27,8,.94) 72%,
+              rgba(3,27,8,0) 100%);
+          }`;
+        doc.head.appendChild(timerMaskStyle);
+        const timerMask = doc.createElement('div');
+        timerMask.id = 'bakedTimerMask';
+        timerMask.setAttribute('aria-hidden', 'true');
+        doc.querySelector('.stage')?.appendChild(timerMask);
         doc.querySelector('base')?.remove();
         const base = doc.createElement('base');
         base.href = window.location.origin + '/';
