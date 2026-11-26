@@ -371,16 +371,16 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         className="relative w-full mx-auto"
         style={{
           maxWidth: '480px',
-          aspectRatio: '433 / 577',
+          aspectRatio: '941 / 1576',
         }}
       >
         <div
           className="absolute z-10"
           style={{
-            top: '40%',
-            bottom: '8%',
-            left: '10.5%',
-            right: '10.5%',
+            top: '39.31574%',
+            height: '21.00609%',
+            left: '10.2%',
+            width: '79.7%',
           }}
         >
           <div ref={reelsRef} className="grid grid-cols-5 gap-0 h-full">
@@ -429,11 +429,13 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         </div>
         <img
-          src="/reel-box.png"
+          src={machineArt || '/reel-box.png'}
           alt="Puke Town Cash Lab"
-          className="absolute inset-0 w-full h-full z-20"
+          className="absolute inset-0 w-full h-full z-20" style={{ pointerEvents: 'none', objectFit: 'fill' }}
           style={{ pointerEvents: 'none' }}
         />
+        {spinArt && <img src={spinArt} alt="" aria-hidden="true" draggable={false} onPointerDown={() => setSpinPressed(true)} style={{ position: 'absolute', left: '36.66%', top: '59.26%', width: '26.68%', aspectRatio: '1', objectFit: 'contain', zIndex: 30, pointerEvents: 'none', transform: spinPressed ? 'translateY(7px) scale(.985)' : 'translateY(0)', filter: spinPressed ? 'brightness(.88)' : 'none', transition: 'transform 100ms cubic-bezier(.2,.75,.25,1),filter 100ms ease' }} />}
+        <button aria-label="Spin reels" onClick={doSpin} onPointerDown={() => setSpinPressed(true)} onPointerUp={() => setSpinPressed(false)} onPointerCancel={() => setSpinPressed(false)} onPointerLeave={() => setSpinPressed(false)} onBlur={() => setSpinPressed(false)} disabled={!canSpin || spinning} style={{ position: 'absolute', left: '36%', top: '62.33756%', width: '28%', height: '11.45787%', zIndex: 31, border: 0, padding: 0, background: 'transparent', boxShadow: 'none', outline: 'none', touchAction: 'manipulation' }} />
       </div>
 
       <div className="max-w-lg mx-auto space-y-3 px-2">
@@ -466,17 +468,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </span>
         </div>
 
-        <button
-          onClick={doSpin}
-          disabled={!canSpin || spinning}
-          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2 active:translate-y-1 active:scale-[.985] active:brightness-90 transition-transform"
-        >
-          {spinning ? (
-            <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
-          ) : (
-            <><Play size={22} /> CONTAMINATE</>
-          )}
-        </button>
+
 
         <button
           onClick={toggleAutoSpin}
