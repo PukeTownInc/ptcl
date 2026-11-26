@@ -39,6 +39,47 @@ const BRIDGE = `
     readout.setAttribute('aria-label', displayBalance + ' spins available');
     readout.setAttribute('data-balance', String(balance));
   };
+  let dailyClaimed = false;
+  const ukParts = (date) => Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London', year: 'numeric', month: '2-digit',
+      day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(date).filter(part => part.type !== 'literal').map(part => [part.type, Number(part.value)])
+  );
+  const nextUkMidnight = () => {
+    const now = new Date();
+    const p = ukParts(now);
+    const targetWall = Date.UTC(p.year, p.month - 1, p.day + 1, 0, 0, 0);
+    let timestamp = targetWall;
+    for (let i = 0; i < 4; i++) {
+      const actual = ukParts(new Date(timestamp));
+      const actualWall = Date.UTC(actual.year, actual.month - 1, actual.day, actual.hour, actual.minute, actual.second);
+      timestamp += targetWall - actualWall;
+    }
+    return timestamp;
+  };
+  const updateDailyRewardTimer = () => {
+    const timer = $('dailyRewardTimer');
+    const button = $('claimReward');
+    if (!timer || !button) return;
+    if (dailyClaimed) {
+      timer.textContent = 'CLAIMED TODAY';
+      button.setAttribute('aria-label', 'Daily spin reward claimed today');
+      button.disabled = true;
+      button.style.cursor = 'default';
+      return;
+    }
+    const remaining = Math.max(0, Math.ceil((nextUkMidnight() - Date.now()) / 1000));
+    const hours = Math.floor(remaining / 3600);
+    const minutes = Math.floor((remaining % 3600) / 60);
+    const seconds = remaining % 60;
+    timer.textContent = 'NEXT SPIN IN ' + String(hours).padStart(2, '0') + ':' +
+      String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    button.setAttribute('aria-label', 'Claim daily spin reward');
+    button.disabled = false;
+    button.style.cursor = 'pointer';
+  };
   const makeCell = (id, win) => {
     const meta = symbols[id] || {};
     const cell = document.createElement('div');
@@ -146,8 +187,9 @@ const BRIDGE = `
       updateBalance(m.balance);
       if (m.initialGrid) draw(m.initialGrid, []);
       $('autoReadout').textContent = '—';
-      $('claimReward').style.opacity = m.dailyClaimed ? '.35' : '1';
-      $('claimReward').disabled = !!m.dailyClaimed;
+      dailyClaimed = !!m.dailyClaimed;
+      $('claimReward').style.opacity = dailyClaimed ? '.35' : '1';
+      updateDailyRewardTimer();
     }
     if (m.type === 'PT_BALANCE') updateBalance(m.balance);
     if (m.type === 'PT_SPIN_START') {
@@ -165,8 +207,9 @@ const BRIDGE = `
       $('autoSpinToggle').setAttribute('aria-pressed', String(auto));
     }
     if (m.type === 'PT_DAILY_STATE') {
-      $('claimReward').style.opacity = m.claimed ? '.35' : '1';
-      $('claimReward').disabled = !!m.claimed;
+      dailyClaimed = !!m.claimed;
+      $('claimReward').style.opacity = dailyClaimed ? '.35' : '1';
+      updateDailyRewardTimer();
     }
     if (m.type === 'PT_PAYTABLE') {
       const regular = m.rows.filter(s => !s.special).sort((a,b) =>
@@ -203,6 +246,9 @@ const BRIDGE = `
     spinButton.addEventListener('pointerdown', down);
     ['pointerup','pointercancel','pointerleave','blur'].forEach(e => spinButton.addEventListener(e, up));
   }
+  updateDailyRewardTimer();
+  const dailyRewardInterval = setInterval(updateDailyRewardTimer, 1000);
+  window.addEventListener('beforeunload', () => clearInterval(dailyRewardInterval));
   send({type:'PT_FRAME_READY'});
 })();
 `;
