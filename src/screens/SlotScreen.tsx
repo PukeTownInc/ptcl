@@ -8,14 +8,6 @@ import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
 import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
 
-type FrameMessage =
-  | { type: 'PT_SPIN' }
-  | { type: 'PT_WATCH_AD' }
-  | { type: 'PT_AUTO'; enabled: boolean }
-  | { type: 'PT_DAILY_CLAIM' }
-  | { type: 'PT_HISTORY' }
-  | { type: 'PT_PAYTABLE' };
-
 const BRIDGE = `
 (() => {
   const send = (message) => parent.postMessage(message, '*');
@@ -216,7 +208,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frameRef.current?.contentWindow) return;
-      const message = event.data as FrameMessage | { type: string; enabled?: boolean };
+      const message = event.data as { type: string; enabled?: boolean };
       if (message.type === 'PT_FRAME_READY') {
         post({
           type: 'PT_INIT',
