@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Lock, Tv, Zap, Package, RefreshCw, Layers, Play, X, Coins, Flame, Square, History, Timer } from 'lucide-react';
-import type { GameState, SpinResult, SymbolId, WinLine } from '../types';
-import { MIN_UNLOCK_PP, SYMBOLS, formatPP } from '../constants';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { GameState, SpinResult, SymbolId } from '../types';
+import { SYMBOLS, formatPP } from '../constants';
 import * as engine from '../slotEngine';
 import type { GameActions } from '../useGameState';
 import { isHotStreakActive, isPotAccelActive } from '../useGameState';
@@ -9,648 +8,349 @@ import { useToast } from '../components/Toast';
 import { AdModal } from '../components/AdModal';
 import { SpinWheelModal, type WheelResult } from '../components/SpinWheelModal';
 
-const REEL_DISPLAY = 3;
-type ReelPhase = 'idle' | 'spinning' | 'stopped';
-type SpinHistoryEntry =
-  | { kind: 'spin'; pp: number; symbols: string[]; multiplied?: boolean; multiplier?: string | null }
-  | { kind: 'double'; pp: number }
-  | { kind: 'half'; pp: number }
-  | { kind: 'safe'; pp: number }
-  | { kind: 'lose'; pp: number }
-  | { kind: 'forfeit'; pp: number };
+type FrameMessage =
+  | { type: 'PT_SPIN' }
+  | { type: 'PT_WATCH_AD' }
+  | { type: 'PT_AUTO'; enabled: boolean }
+  | { type: 'PT_DAILY_CLAIM' }
+  | { type: 'PT_HISTORY' }
+  | { type: 'PT_PAYTABLE' };
 
-const MAX_HISTORY = 20;
-const PAYTABLE = Object.values(SYMBOLS)
-  .filter(s => !s.special)
-  .sort((a, b) => b.pays[2] - a.pays[2]);
-
-function SpecialIcon({ symId, label }: { symId: SymbolId; label: string }) {
-  const sym = SYMBOLS[symId];
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      {sym.image ? (
-        <img
-          src={sym.image}
-          alt={label}
-          className="w-5 h-5 object-contain inline-block"
-          style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
-        />
-      ) : (
-        <span>{sym.emoji}</span>
-      )}
-      {label}
-    </span>
-  );
-}
-
-function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
-  const sym = SYMBOLS[symId];
-  return (
-    <span className="inline-flex items-center justify-center">
-      {sym.image ? (
-        <img
-          src={sym.image}
-          alt={symId}
-          className="w-5 h-5 object-contain"
-          style={{ background: 'transparent', boxShadow: 'none', border: 'none' }}
-        />
-      ) : (
-        <span className="text-lg">{sym.emoji}</span>
-      )}
-    </span>
-  );
-}
+const BRIDGE = `
+(() => {
+  const send = (message) => parent.postMessage(message, '*');
+  const overlay = document.getElementById('reelOverlay');
+  const spinButton = document.getElementById('spin');
+  const art = document.getElementById('spinArtwork');
+  const $ = (id) => document.getElementById(id);
+  let symbols = {};
+  let spinningTimer = null;
+  let auto = false;
+  let turbo = false;
+  let balance = 0;
+  let history = [];
+  const makeCell = (id, win) => {
+    const meta = symbols[id] || {};
+    const cell = document.createElement('div');
+    cell.className = 'symbol' + (win ? ' win' : '');
+    if (meta.image) {
+      const img = document.createElement('img');
+      img.className = 'symbolAsset';
+      img.alt = meta.label || id;
+      img.src = meta.image;
+      cell.appendChild(img);
+    } else {
+      cell.textContent = meta.emoji || '☣';
+    }
+    return cell;
+  };
+  function draw(grid, wins) {
+    if (!overlay) return;
+    overlay.innerHTML = '';
+    const won = new Set((wins || []).flatMap(w => w.positions || []).map(p => p[0] + '-' + p[1]));
+    for (let c = 0; c < 5; c++) {
+      const col = document.createElement('div');
+      col.className = 'reelCol';
+      for (let r = 0; r < 3; r++) col.appendChild(makeCell(grid[c][r], won.has(c + '-' + r)));
+      overlay.appendChild(col);
+    }
+    overlay.classList.add('active');
+  }
+  function cosmeticSpin() {
+    const ids = Object.keys(symbols);
+    const grid = Array.from({length:5}, () => Array.from({length:3}, () => ids[Math.floor(Math.random()*ids.length)]));
+    draw(grid, []);
+    overlay.classList.add('spinning');
+  }
+  function finish(result) {
+    if (spinningTimer) clearInterval(spinningTimer);
+    spinningTimer = null;
+    overlay.classList.remove('spinning');
+    draw(result.grid, result.wins);
+    const readout = $('status');
+    if (readout) {
+      readout.textContent = result.totalPP > 0 ? '+' + result.totalPP.toLocaleString() + ' Puke Points' : 'NO WIN — TRY AGAIN';
+      readout.classList.add('show');
+      clearTimeout(readout._timer);
+      readout._timer = setTimeout(() => readout.classList.remove('show'), 3000);
+    }
+    history.unshift({ pp: result.totalPP, grid: result.grid });
+    history = history.slice(0, 20);
+    $('spin').disabled = false;
+  }
+  function openModal(title, body) {
+    $('modalTitle').textContent = title;
+    $('modalBody').innerHTML = body;
+    $('modalShade').classList.add('open');
+    $('modalReset').style.display = 'none';
+  }
+  function closeModal() { $('modalShade').classList.remove('open'); }
+  spinButton?.addEventListener('click', () => send({type:'PT_SPIN'}));
+  $('watchAdSpins')?.addEventListener('click', () => send({type:'PT_WATCH_AD'}));
+  $('autoSpinToggle')?.addEventListener('click', () => {
+    auto = !auto;
+    $('autoSpinToggle').textContent = 'AUTO SPIN: ' + (auto ? 'ON' : 'OFF');
+    $('autoSpinToggle').setAttribute('aria-pressed', String(auto));
+    send({type:'PT_AUTO', enabled:auto});
+  });
+  $('toggleTurbo')?.addEventListener('click', () => {
+    turbo = !turbo;
+    $('toggleTurbo').setAttribute('aria-pressed', String(turbo));
+  });
+  $('claimReward')?.addEventListener('click', () => send({type:'PT_DAILY_CLAIM'}));
+  $('historyBtn')?.addEventListener('click', () => {
+    const rows = history.length ? history.map((h,i) => '<p>Spin ' + (i+1) + ': +' + h.pp.toLocaleString() + ' PP</p>').join('') : '<p>No spins recorded yet.</p>';
+    openModal('SPIN HISTORY', rows);
+  });
+  $('paytable')?.addEventListener('click', () => send({type:'PT_PAYTABLE'}));
+  $('modalClose')?.addEventListener('click', closeModal);
+  $('modalShade')?.addEventListener('click', e => { if (e.target === $('modalShade')) closeModal(); });
+  $('closeAdModal')?.addEventListener('click', () => $('adRewardModal').style.display='none');
+  $('completeDemoAd')?.addEventListener('click', () => $('adRewardModal').style.display='none');
+  ['betDown','betUp','freeSpin','autoDown','autoUp'].forEach(id => $(id)?.remove());
+  $('betReadout')?.remove();
+  $('freeSpinsReadout')?.remove();
+  $('poolReadout')?.remove();
+  $('modalReset')?.remove();
+  document.querySelector('.bottomNote')?.remove();
+  document.querySelector('.status')?.setAttribute('aria-live','polite');
+  window.addEventListener('message', event => {
+    const m = event.data || {};
+    if (m.type === 'PT_INIT') {
+      symbols = m.symbols || {};
+      balance = m.balance || 0;
+      if (m.initialGrid) draw(m.initialGrid, []);
+      $('autoReadout').textContent = '—';
+      $('claimReward').style.opacity = m.dailyClaimed ? '.35' : '1';
+      $('claimReward').disabled = !!m.dailyClaimed;
+    }
+    if (m.type === 'PT_BALANCE') balance = m.balance;
+    if (m.type === 'PT_SPIN_START') {
+      spinButton.disabled = true;
+      art?.classList.remove('is-pressed');
+      if (spinningTimer) clearInterval(spinningTimer);
+      cosmeticSpin();
+      spinningTimer = setInterval(cosmeticSpin, m.turbo ? 55 : 90);
+    }
+    if (m.type === 'PT_SPIN_RESULT') finish(m.result);
+    if (m.type === 'PT_SPIN_ERROR') spinButton.disabled = false;
+    if (m.type === 'PT_AUTO_STATE') {
+      auto = !!m.enabled;
+      $('autoSpinToggle').textContent = 'AUTO SPIN: ' + (auto ? 'ON' : 'OFF');
+      $('autoSpinToggle').setAttribute('aria-pressed', String(auto));
+    }
+    if (m.type === 'PT_DAILY_STATE') {
+      $('claimReward').style.opacity = m.claimed ? '.35' : '1';
+      $('claimReward').disabled = !!m.claimed;
+    }
+    if (m.type === 'PT_PAYTABLE') {
+      const rows = m.rows.map(s => '<div class="payRow"><b>' + s.label + '</b><span>' + s.pays[0] + '</span><span>' + s.pays[1] + '</span><span>' + s.pays[2] + '</span></div>').join('');
+      openModal('TOXIC PAY TABLE', '<div class="paytableList">' + rows + '</div><p>Match 3, 4 or 5 symbols across consecutive reels.</p>');
+    }
+    if (m.type === 'PT_AD_MODAL') $('adRewardModal').style.display = 'flex';
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && spinningTimer) { clearInterval(spinningTimer); spinningTimer=null; } });
+  window.addEventListener('beforeunload', () => { if (spinningTimer) clearInterval(spinningTimer); });
+  if (spinButton && art) {
+    const down = () => art.classList.add('is-pressed');
+    const up = () => art.classList.remove('is-pressed');
+    spinButton.addEventListener('pointerdown', down);
+    ['pointerup','pointercancel','pointerleave','blur'].forEach(e => spinButton.addEventListener(e, up));
+  }
+  send({type:'PT_FRAME_READY'});
+})();
+`;
 
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
   const toast = useToast();
-  const [grid, setGrid] = useState<SymbolId[][]>(() => {
-    const init: SymbolId[][] = [];
-    for (let r = 0; r < 5; r++) {
-      const col: SymbolId[] = [];
-      for (let i = 0; i < REEL_DISPLAY; i++) col.push(engine.randomReelStrip(1)[0]);
-      init.push(col);
-    }
-    return init;
-  });
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const [html, setHtml] = useState('');
   const [spinning, setSpinning] = useState(false);
-  const [lastResult, setLastResult] = useState<SpinResult | null>(null);
-  const [winPositions, setWinPositions] = useState<Set<string>>(new Set());
-  const [winPP, setWinPP] = useState(0);
-  const [showJackpot, setShowJackpot] = useState<string | null>(null);
-  const [showDoubleUp, setShowDoubleUp] = useState(false);
-  const [adModal, setAdModal] = useState<null | { title: string; subtitle?: string; reward: string; onComplete: () => void }>(null);
-  const [activeWinIndex, setActiveWinIndex] = useState(0);
-  const reelsRef = useRef<HTMLDivElement>(null);
-  const [reelPhases, setReelPhases] = useState<ReelPhase[]>(['idle', 'idle', 'idle', 'idle', 'idle']);
-  const [cyclingSymbols, setCyclingSymbols] = useState<SymbolId[][]>(() => {
-    const init: SymbolId[][] = [];
-    for (let r = 0; r < 5; r++) init.push(engine.randomReelStrip(REEL_DISPLAY));
-    return init;
-  });
-  const cycleInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-  const stopTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [autoSpin, setAutoSpin] = useState(false);
-  const autoSpinRef = useRef(false);
+  const [turbo, setTurbo] = useState(false);
+  const [adModal, setAdModal] = useState(false);
+  const [showDoubleUp, setShowDoubleUp] = useState(false);
   const doubleUpResolvedRef = useRef(false);
-  const [spinHistory, setSpinHistory] = useState<SpinHistoryEntry[]>([]);
-  const [potAccelCountdown, setPotAccelCountdown] = useState('');
-  const [showPaytable, setShowPaytable] = useState(false);
+  const [pendingDoubleUp, setPendingDoubleUp] = useState(0);
+  const autoRef = useRef(false);
+  const latestState = useRef(state);
+  latestState.current = state;
+  const latestActions = useRef(actions);
+  latestActions.current = actions;
 
-  useEffect(() => {
-    return () => {
-      if (cycleInterval.current) clearInterval(cycleInterval.current);
-      stopTimers.current.forEach(clearTimeout);
-    };
+  const symbolMeta = useMemo(() => Object.fromEntries(
+    Object.values(SYMBOLS).map(s => [s.id, { label: s.label, emoji: s.emoji, image: s.image }])
+  ), []);
+
+  const post = useCallback((message: object) => {
+    frameRef.current?.contentWindow?.postMessage(message, '*');
   }, []);
 
   useEffect(() => {
-    if (!state.potAccelUntil) return;
-    const update = () => {
-      const remaining = state.potAccelUntil! - Date.now();
-      if (remaining <= 0) {
-        setPotAccelCountdown('');
-        return;
-      }
-      const mins = Math.floor(remaining / 60000);
-      const secs = Math.floor((remaining % 60000) / 1000);
-      setPotAccelCountdown(`${mins}:${String(secs).padStart(2, '0')}`);
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [state.potAccelUntil]);
+    let cancelled = false;
+    fetch('/SlotsScreen.html')
+      .then(response => {
+        if (!response.ok) throw new Error('Could not load Cash Lab HTML');
+        return response.text();
+      })
+      .then(source => {
+        if (cancelled) return;
+        const doc = new DOMParser().parseFromString(source, 'text/html');
+        doc.querySelectorAll('script').forEach(script => script.remove());
+        doc.querySelector('base')?.remove();
+        const base = doc.createElement('base');
+        base.href = window.location.origin + '/';
+        doc.head.prepend(base);
+        const bridge = doc.createElement('script');
+        bridge.textContent = BRIDGE;
+        doc.body.appendChild(bridge);
+        setHtml('<!DOCTYPE html>' + doc.documentElement.outerHTML);
+      })
+      .catch(error => {
+        console.error(error);
+        toast('error', 'Cash Lab unavailable', 'The original slot screen could not be loaded.');
+      });
+    return () => { cancelled = true; };
+  }, [toast]);
 
   useEffect(() => {
-    if (!spinning || !lastResult || lastResult.wins.length === 0) return;
-    setActiveWinIndex(0);
-    if (lastResult.wins.length <= 1) return;
-    const interval = setInterval(() => {
-      setActiveWinIndex((i) => (i + 1) % lastResult!.wins.length);
-    }, 900);
-    return () => clearInterval(interval);
-  }, [spinning, lastResult]);
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frameRef.current?.contentWindow) return;
+      const message = event.data as FrameMessage | { type: string; enabled?: boolean };
+      if (message.type === 'PT_FRAME_READY') {
+        post({
+          type: 'PT_INIT',
+          symbols: symbolMeta,
+          balance: latestState.current.spinsRemaining,
+          dailyClaimed: latestState.current.freeSpinsClaimed,
+          initialGrid: Array.from({length:5}, () => engine.randomReelStrip(3)),
+        });
+      } else if (message.type === 'PT_SPIN') {
+        doSpinRef.current();
+      } else if (message.type === 'PT_WATCH_AD') {
+        setAdModal(true);
+      } else if (message.type === 'PT_AUTO') {
+        const enabled = !!message.enabled;
+        autoRef.current = enabled;
+        setAutoSpin(enabled);
+      } else if (message.type === 'PT_DAILY_CLAIM') {
+        if (latestState.current.freeSpinsClaimed) {
+          toast('info', 'Daily spins already claimed', 'Return after the daily reset.');
+        } else {
+          latestActions.current.claimDailyBonusSpins();
+          post({type:'PT_DAILY_STATE', claimed:true});
+          toast('success', 'Daily spins claimed', 'Your spins were added to the shared balance.');
+        }
+      } else if (message.type === 'PT_PAYTABLE') {
+        post({type:'PT_PAYTABLE', rows:Object.values(SYMBOLS).filter(s => !s.special).map(s => ({label:s.label,pays:s.pays}))});
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [post, toast]);
 
+  useEffect(() => {
+    post({type:'PT_BALANCE', balance:state.spinsRemaining});
+    post({type:'PT_DAILY_STATE', claimed:state.freeSpinsClaimed});
+  }, [state.spinsRemaining, state.freeSpinsClaimed, post]);
+
+  const finishSpin = useCallback((result: SpinResult) => {
+    setSpinning(false);
+    let finalPP = result.totalPP;
+    if (isPotAccelActive(latestState.current)) finalPP *= 2;
+    if (isHotStreakActive(latestState.current)) finalPP = Math.floor(finalPP * 1.5);
+    if (finalPP > 0) {
+      if (finalPP >= 10) {
+        doubleUpResolvedRef.current = false;
+        setPendingDoubleUp(finalPP);
+        latestActions.current.setDoubleUpPending(finalPP);
+        setShowDoubleUp(true);
+      } else latestActions.current.addPP(finalPP);
+    }
+    latestActions.current.addXP(1, false);
+    latestActions.current.recordSpin();
+    if (result.freeSpinsAwarded > 0) {
+      latestActions.current.addSpins(result.freeSpinsAwarded);
+      toast('success', `${result.freeSpinsAwarded} spins awarded`, 'Scatter reward added to your shared spin balance.');
+    }
+    if (result.jackpot) {
+      latestActions.current.recordJackpot();
+      toast('success', `${result.jackpot.type.toUpperCase()} JACKPOT`, `+${formatPP(result.jackpot.amount)} Puke Points`);
+    }
+    post({type:'PT_SPIN_RESULT', result:{...result, totalPP:finalPP}});
+    if (autoRef.current && latestState.current.spinsRemaining > 1 && !result.jackpot && finalPP < 10) {
+      window.setTimeout(() => { if (autoRef.current) doSpinRef.current(); }, turbo ? 500 : 900);
+    }
+  }, [post, toast, turbo]);
+
+  const doSpinRef = useRef<() => void>(() => undefined);
   const doSpin = useCallback(() => {
     if (spinning) return;
-    if (state.spinsRemaining <= 0) {
-      toast('error', 'No Toxic Twists Left', 'Absorb radiation or wait for daily dose');
+    if (latestState.current.spinsRemaining <= 0) {
+      autoRef.current = false;
+      setAutoSpin(false);
+      post({type:'PT_AUTO_STATE', enabled:false});
+      toast('error', 'No spins remaining', 'Claim a reward to add spins to your shared balance.');
+      post({type:'PT_SPIN_ERROR'});
       return;
     }
     setSpinning(true);
-    setWinPositions(new Set());
-    setWinPP(0);
-    setLastResult(null);
-    setReelPhases(['spinning', 'spinning', 'spinning', 'spinning', 'spinning']);
     const result = engine.spin();
-    cycleInterval.current = setInterval(() => {
-      const next: SymbolId[][] = [];
-      for (let r = 0; r < 5; r++) next.push(engine.randomReelStrip(REEL_DISPLAY));
-      setCyclingSymbols(next);
-    }, 70);
-    const baseDelay = 1000;
-    const stagger = 320;
-    for (let r = 0; r < 5; r++) {
-      const t = setTimeout(() => {
-        setGrid((prev) => {
-          const next = [...prev];
-          next[r] = result.grid[r].slice(0, REEL_DISPLAY);
-          return next;
-        });
-        setReelPhases((prev) => {
-          const next = [...prev];
-          next[r] = 'stopped';
-          return next;
-        });
-        if (r === 4) {
-          if (cycleInterval.current) {
-            clearInterval(cycleInterval.current);
-            cycleInterval.current = null;
-          }
-          setTimeout(() => finishSpin(result), 500);
-        }
-      }, baseDelay + r * stagger);
-      stopTimers.current.push(t);
-    }
-    function finishSpin(res: SpinResult) {
-      setSpinning(false);
-      setReelPhases(['idle', 'idle', 'idle', 'idle', 'idle']);
-      setLastResult(res);
-      let finalPP = res.totalPP;
-      const hadPotAccel = isPotAccelActive(state);
-      const hadHotStreak = isHotStreakActive(state);
-      if (hadPotAccel) finalPP *= 2;
-      if (hadHotStreak) finalPP = Math.floor(finalPP * 1.5);
-      const posSet = new Set<string>();
-      res.wins.forEach((w) => w.positions.forEach(([r, row]) => posSet.add(`${r}-${row}`)));
-      res.jackpot && res.grid.forEach((col, r) => col.forEach((s, row) => s === 'jackpot' && posSet.add(`${r}-${row}`)));
-      setWinPositions(posSet);
-      setWinPP(finalPP);
-      const eligibleDoubleUp = finalPP >= 10;
-      if (finalPP > 0) {
-        if (eligibleDoubleUp) {
-          doubleUpResolvedRef.current = false;
-          actions.setDoubleUpPending(finalPP);
-          setShowDoubleUp(true);
-        } else {
-          actions.addPP(finalPP);
-        }
-      }
-      actions.addXP(1, false);
-      actions.recordSpin();
-      if (res.freeSpinsAwarded > 0) {
-        actions.addSpins(res.freeSpinsAwarded);
-        toast('success', `${res.freeSpinsAwarded} Toxic Twists!`, 'Contamination scatter triggered ☢️');
-      }
-      if (res.jackpot) {
-        setShowJackpot(res.jackpot.type);
-        actions.recordJackpot();
-        setTimeout(() => setShowJackpot(null), 3000);
-      }
-      const winSymbols = res.wins.length > 0
-        ? [...new Set(res.wins.map((w) => w.symbols[0]))]
-        : [];
-      setSpinHistory((prev) => [{
-        kind: 'spin',
-        pp: finalPP,
-        symbols: winSymbols,
-        multiplied: hadPotAccel || hadHotStreak,
-        multiplier: hadPotAccel ? 'x2' : hadHotStreak ? 'x1.5' : null,
-      }, ...prev].slice(0, MAX_HISTORY));
-    }
-  }, [spinning, state.spinsRemaining, actions, toast]);
+    post({type:'PT_SPIN_START', turbo});
+    window.setTimeout(() => finishSpin(result), turbo ? 1500 : 2600);
+  }, [spinning, post, toast, turbo, finishSpin]);
+  doSpinRef.current = doSpin;
 
-  const handleWheelResult = useCallback((result: WheelResult) => {
+  const completeAd = useCallback(() => {
+    const awarded = latestActions.current.openMysteryPack();
+    latestActions.current.watchAd();
+    setAdModal(false);
+    toast('success', 'SPINS AWARDED', `+${awarded} spins added to your shared balance.`);
+  }, [toast]);
+
+  const handleWheel = useCallback((result: WheelResult) => {
     if (doubleUpResolvedRef.current) return;
     doubleUpResolvedRef.current = true;
     setShowDoubleUp(false);
-    actions.useDoubleUp();
-    if (result.outcome === 'double') {
-      actions.addPP(result.amount);
-      toast('success', '☢️ DOUBLED!', `+${formatPP(result.amount)} Puke Points (x2 stake)`);
-      setSpinHistory((prev) => [{ kind: 'double', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
-    }
-    else if (result.outcome === 'safe') {
-      actions.addPP(result.amount);
-      toast('success', '🛡️ SECURED', `+${formatPP(result.amount)} Puke Points (x1 stake)`);
-      setSpinHistory((prev) => [{ kind: 'safe', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
-    }
-    else if (result.outcome === 'half') {
-      actions.addPP(result.amount);
-      toast('info', '⚠️ HALVED', `+${formatPP(result.amount)} Puke Points (0.5× stake)`);
-      setSpinHistory((prev) => [{ kind: 'half', pp: result.amount }, ...prev].slice(0, MAX_HISTORY));
-    }
-    else if (result.outcome === 'lose') {
-      setWinPP(0);
-      toast('error', '☠️ SPILLED!', 'Stake lost — nothing returned');
-      setSpinHistory((prev) => [{ kind: 'lose', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
-    }
-  }, [actions, toast]);
-
-  const handleForfeit = useCallback(() => {
-    if (doubleUpResolvedRef.current) return;
-    doubleUpResolvedRef.current = true;
-    setShowDoubleUp(false);
-    actions.useDoubleUp();
-    toast('info', '☣️ FORFEITED', 'Stake lost — nothing returned');
-    setSpinHistory((prev) => [{ kind: 'forfeit', pp: 0 }, ...prev].slice(0, MAX_HISTORY));
-  }, [actions, toast]);
-
-  const handleMysteryPack = () => {
-    if (spinning) return;
-    setAdModal({
-      title: 'Mystery Goop Vat',
-      subtitle: 'Absorb radiation to crack open a random sludge barrel',
-      reward: '+15 to +25 Toxic Twists',
-      onComplete: () => {
-        const got = actions.openMysteryPack();
-        actions.watchAd();
-        toast('success', '🧪 BARREL OPENED!', `+${got} Toxic Twists contaminated!`);
-      },
-    });
-  };
-
-  const handlePotAccel = () => {
-    if (state.dailyPotAccel >= 2) {
-      toast('info', 'ACCELERATOR OVERHEATED', 'Return after radiation cools');
-      return;
-    }
-    if (isPotAccelActive(state)) {
-      toast('info', '☢️ ALREADY ACTIVE', 'Sludge fill rate doubled right now!');
-      return;
-    }
-    setAdModal({
-      title: 'Sludge Accelerator',
-      subtitle: 'Absorb radiation — fill vat TWICE as fast for 5 minutes',
-      reward: 'x2 Flow • 5 Minutes',
-      onComplete: () => {
-        actions.activatePotAccel();
-        actions.watchAd();
-        toast('success', '☢️ ACCELERATOR ACTIVE', 'Sludge flowing at x2 speed!');
-      },
-    });
-  };
-
-  const canSpin = state.spinsRemaining > 0;
-
-  const toggleAutoSpin = useCallback(() => {
-    setAutoSpin((prev) => {
-      const next = !prev;
-      autoSpinRef.current = next;
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!autoSpin) return;
-    if (spinning || showDoubleUp || showJackpot || adModal) return;
-    if (state.spinsRemaining <= 0) {
-      setAutoSpin(false);
-      autoSpinRef.current = false;
-      toast('info', 'OUT OF GOOPS', 'Auto-contamination halted — get more Twists to continue');
-      return;
-    }
-    const t = setTimeout(() => {
-      if (autoSpinRef.current) doSpin();
-    }, 600);
-    return () => clearTimeout(t);
-  }, [autoSpin, spinning, showDoubleUp, showJackpot, adModal, state.spinsRemaining, doSpin, toast]);
+    latestActions.current.useDoubleUp();
+    if (result.outcome === 'double' || result.outcome === 'safe' || result.outcome === 'half') {
+      latestActions.current.addPP(result.amount);
+      toast('success', 'REWARD SECURED', `+${formatPP(result.amount)} Puke Points`);
+    } else toast('error', 'SPILLED', 'No Puke Points returned.');
+  }, [toast]);
 
   return (
-    <div className="space-y-4">
-      {/* Ad spins and existing accelerator */}
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={handleMysteryPack}
-          disabled={spinning}
-          className="ghost-btn min-h-[64px] p-2.5 text-center font-display font-black text-sm leading-tight text-toxic-300 disabled:opacity-40"
-        >
-          <span className="block">▶ WATCH AD</span>
-          <span className="block">GET 15–25 SPINS</span>
-        </button>
-        <BonusBtn
-          icon={<Zap size={16} />}
-          label="Sludge Accelerator"
-          sub={`${2 - state.dailyPotAccel} left • x2 flow for 5 min`}
-          ad
-          onClick={handlePotAccel}
-          disabled={state.dailyPotAccel >= 2 || spinning}
-        />
+    <div className="w-full space-y-3">
+      <div className="w-full mx-auto overflow-hidden" style={{maxWidth:941, aspectRatio:'941 / 1576'}}>
+        {html ? (
+          <iframe
+            ref={frameRef}
+            title="Puke Town Cash Lab Slots"
+            srcDoc={html}
+            className="block w-full h-full border-0"
+            style={{width:'100%',height:'100%',background:'#020503'}}
+            allow="autoplay"
+          />
+        ) : <div className="w-full h-full flex items-center justify-center text-toxic-300">Loading Cash Lab…</div>}
       </div>
-
-      {(isHotStreakActive(state) || isPotAccelActive(state)) && (
-        <div className="flex flex-wrap gap-2">
-          {isHotStreakActive(state) && (
-            <span className="px-2 py-1 rounded-full bg-hazard-amber/15 border border-hazard-amber/40 text-hazard-amber text-[10px] font-display font-bold flex items-center gap-1">
-              <Flame size={10} /> FEVER PITCH x1.5
-            </span>
-          )}
-          {isPotAccelActive(state) && potAccelCountdown && (
-            <span className="px-2 py-1 rounded-full bg-radioactive-500/15 border border-radioactive-600/30 text-radioactive-400 text-[10px] font-display font-bold flex items-center gap-1">
-              <Timer size={10} /> VAT FLOW x2 • {potAccelCountdown}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* REEL BOX */}
-      <div
-        className="relative w-full mx-auto"
-        style={{
-          maxWidth: '480px',
-          aspectRatio: '433 / 577',
-        }}
-      >
-        <div
-          className="absolute z-10"
-          style={{
-            top: '40%',
-            bottom: '8%',
-            left: '10.5%',
-            right: '10.5%',
-          }}
-        >
-          <div ref={reelsRef} className="grid grid-cols-5 gap-0 h-full">
-            {grid.map((reel, ri) => {
-              const phase = reelPhases[ri];
-              const displayReel = phase === 'spinning' ? (cyclingSymbols[ri] ?? reel) : reel;
-              return (
-                <div
-                  key={ri}
-                  className={`relative overflow-hidden rounded-sm ${
-                    phase === 'spinning' ? 'reel-spinning' : ''
-                  } ${phase === 'stopped' ? 'reel-stopped' : ''}`}
-                  style={{ backgroundColor: 'transparent' }}
-                >
-                  {displayReel.map((symId, row) => {
-                    const isWin = winPositions.has(`${ri}-${row}`);
-                    const sym = SYMBOLS[symId];
-                    return (
-                      <div key={row} className="aspect-square flex items-center justify-center p-2">
-                        <span
-                          className={isWin ? 'win-symbol-pop' : ''}
-                          style={{
-                            filter: isWin ? 'drop-shadow(0 0 8px #39ff14)' : 'none',
-                            display: 'block',
-                            width: '100%',
-                            height: '100%'
-                          }}
-                        >
-                          {sym.image ? (
-                            <img
-                              src={sym.image}
-                              alt={sym.label}
-                              className="w-full h-full object-contain"
-                              style={{ background: 'transparent', display: 'block' }}
-                            />
-                          ) : (
-                            <span className="text-xl">{sym.emoji}</span>
-                          )}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <img
-          src="/reel-box.png"
-          alt="Puke Town Cash Lab"
-          className="absolute inset-0 w-full h-full z-20"
-          style={{ pointerEvents: 'none' }}
-        />
-      </div>
-
-      <div className="max-w-lg mx-auto space-y-3 px-2">
-        <div className="min-h-[50px] flex items-center justify-center text-center">
-          {spinning ? (
-            <div>
-              <RefreshCw size={22} className="text-toxic-400/70 animate-spin mx-auto" />
-              <div className="font-display text-xs text-toxic-300/50 mt-1.5 tracking-[0.3em] animate-pulse">CONTAMINATING</div>
-            </div>
-          ) : winPP > 0 ? (
-            <div className="animate-pop">
-              <div className="font-display font-black text-2xl text-toxic-400 neon-text">+{formatPP(winPP)} Puke Points</div>
-              {lastResult && lastResult.wins.length > 0 && (
-                <div className="text-[10px] text-toxic-100/50 font-mono mt-1">
-                  {lastResult.wins.length} way{lastResult.wins.length > 1 ? 's' : ''} • {lastResult.wins.map((w) => SYMBOLS[w.symbols[0]].label).join(', ')}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-toxic-100/30">
-              <div className="font-display text-sm">Contaminate the reels for Puke Points</div>
-              <div className="text-[10px] font-mono">243 veins • match 3+ • win goops + +1 XP per twist</div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-center">
-          <span className="font-display font-bold text-sm text-toxic-300">
-            Toxic Twists: <span className="text-toxic-400 neon-text tabular-nums">{state.spinsRemaining}</span>
-          </span>
-        </div>
-
-        <button
-          onClick={doSpin}
-          disabled={!canSpin || spinning}
-          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2 active:translate-y-1 active:scale-[.985] active:brightness-90 transition-transform"
-        >
-          {spinning ? (
-            <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
-          ) : (
-            <><Play size={22} /> CONTAMINATE</>
-          )}
-        </button>
-
-        <button
-          onClick={toggleAutoSpin}
-          className={`w-full py-2.5 rounded-lg font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 transition-all ${
-            autoSpin
-              ? 'bg-toxic-500/20 border border-toxic-400 text-toxic-400'
-              : 'bg-ink-700/50 border border-toxic-900/40 text-toxic-100/40'
-          }`}
-          style={autoSpin ? { boxShadow: '0 0 14px #39ff1455' } : undefined}
-        >
-          {autoSpin ? <><Square size={16} /> HALT CONTAMINATION</> : <><Zap size={16} /> AUTO-CONTAMINATE</>}
-        </button>
-      </div>
-
-      <div className="max-w-lg mx-auto">
-        <SpinHistory entries={spinHistory} />
-
-        <div className="grunge-panel overflow-hidden mt-4">
-          <button
-            onClick={() => setShowPaytable((o) => !o)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5"
-          >
-            <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2">
-              <Layers size={16} /> ☢️ GOOP PAYTABLE
-            </span>
-            <span className="text-toxic-100/40 text-xs">{showPaytable ? 'Collapse' : 'Reveal'}</span>
-          </button>
-          {showPaytable && (
-            <div className="px-3 pb-3 space-y-2 animate-slide-up">
-              <div className="grid grid-cols-12 gap-2 text-[10px] font-mono text-toxic-100/50 border-b border-toxic-900/40 pb-2">
-                <span className="col-span-5">SYMBOL</span>
-                <span className="col-span-2 text-center">MATCH 3</span>
-                <span className="col-span-2 text-center">MATCH 4</span>
-                <span className="col-span-3 text-center">MATCH 5 ☢️</span>
-              </div>
-              {PAYTABLE.map((sym, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded bg-ink-700/30">
-                  <span className="col-span-5 font-mono text-sm flex items-center gap-2">
-                    {sym.image ? (
-                      <img src={sym.image} alt={sym.label} className="w-6 h-6 object-contain" style={{ background: 'transparent' }} />
-                    ) : sym.emoji}
-                    {sym.label}
-                  </span>
-                  <span className="col-span-2 text-center font-mono text-toxic-200 text-sm">{sym.pays[0]}</span>
-                  <span className="col-span-2 text-center font-mono text-toxic-300 text-sm">{sym.pays[1]}</span>
-                  <span className="col-span-3 text-center font-mono text-toxic-400 font-bold text-sm">{sym.pays[2]}</span>
-                </div>
-              ))}
-              <div className="mt-3 pt-3 border-t border-toxic-900/40 text-[10px] font-mono text-toxic-100/50 space-y-1.5 px-1">
-                <div><SpecialIcon symId="wild" label="= substitutes for any symbol" /></div>
-                <div><SpecialIcon symId="scatter" label="= Free Toxic Twists" /></div>
-                <div><SpecialIcon symId="hazard" label="= Mystery Goop" /></div>
-                <div><SpecialIcon symId="jackpot" label="= Instant Puke Points!" /></div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {showDoubleUp && state.doubleUpPending && (
+      <div className="sr-only" aria-live="polite">Shared spins remaining: {state.spinsRemaining}</div>
+      {showDoubleUp && pendingDoubleUp > 0 && (
         <SpinWheelModal
-          stake={state.doubleUpPending}
-          onWatchAd={() => {
-            setAdModal({
-              title: 'Absorb Radiation',
-              subtitle: 'Watch ad to claim your Risk Wheel reward',
-              reward: 'Claim Puke Points',
-              onComplete: () => setAdModal(null),
-            });
-          }}
-          onClaim={handleWheelResult}
-          onLose={() => { setShowDoubleUp(false); handleWheelResult({ outcome: 'lose', amount: 0 }); }}
-          onForfeit={handleForfeit}
+          stake={pendingDoubleUp}
+          onWatchAd={() => setAdModal(true)}
+          onClaim={handleWheel}
+          onLose={() => handleWheel({outcome:'lose',amount:0})}
+          onForfeit={() => { setShowDoubleUp(false); latestActions.current.useDoubleUp(); }}
         />
       )}
-
       <AdModal
-        open={!!adModal}
-        onClose={() => setAdModal(null)}
-        onComplete={() => {
-          adModal?.onComplete();
-          setAdModal(null);
-        }}
-        title={adModal?.title ?? ''}
-        subtitle={adModal?.subtitle}
-        reward={adModal?.reward ?? ''}
+        open={adModal}
+        onClose={() => setAdModal(false)}
+        onComplete={completeAd}
+        title="WATCH AD"
+        subtitle="Complete the rewarded ad to receive 15–25 spins."
+        reward="15–25 spins"
       />
-    </div>
-  );
-}
-
-function BonusBtn({ icon, label, sub, ad, onClick, disabled }: {
-  icon: React.ReactNode;
-  label: string;
-  sub: string;
-  ad?: boolean;
-  onClick: () => void;
-  disabled?: boolean
-}) {
-  return (
-    <button onClick={onClick} disabled={disabled} className="ghost-btn p-2.5 text-left disabled:opacity-30">
-      <div className="flex items-center gap-1.5 mb-0.5">
-        <span className="text-toxic-400">{icon}</span>
-        <span className="font-display font-bold text-xs text-toxic-200">{label}</span>
-      </div>
-      <div className="text-[10px] text-toxic-100/40 font-mono">{sub}</div>
-      {ad && <div className="ad-badge mt-1.5"><Tv size={8} /> Absorb Radiation</div>}
-    </button>
-  );
-}
-
-function SpinHistory({ entries }: { entries: any[] }) {
-  const [open, setOpen] = useState(true);
-  return (
-    <div className="grunge-panel overflow-hidden">
-      <button onClick={() => setOpen((o) => !o)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-toxic-500/5">
-        <span className="font-display font-bold text-sm text-toxic-300 flex items-center gap-2"><History size={16} /> Contamination Log</span>
-        <span className="text-toxic-100/40 text-xs">{open ? 'Hide' : 'Reveal'}</span>
-      </button>
-      {open && (
-        <div className="px-3 pb-3 space-y-1 max-h-64 overflow-y-auto">
-          {entries.length === 0 ? (
-            <p className="text-[11px] text-toxic-100/30 font-mono text-center py-4">No contamination yet — start the infection!</p>
-          ) : (
-            entries.map((entry, i) => {
-              if (entry.kind === 'spin') {
-                return (
-                  <div key={i} className={`flex items-center justify-between px-2 py-1.5 rounded ${entry.multiplied ? 'bg-radioactive-500/10 border border-radioactive-600/30' : 'bg-ink-700/40'}`}>
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-[10px] font-mono text-toxic-100/30 shrink-0">#{entries.length - i}</span>
-                      {entry.pp > 0 && entry.symbols.length > 0 ? (
-                        <span className="flex items-center gap-1">
-                          {entry.symbols.map((symId: string, idx: number) => (
-                            <HistorySymbolIcon key={idx} symId={symId as SymbolId} />
-                          ))}
-                          {entry.multiplied && entry.multiplier && (
-                            <span className="text-radioactive-400 text-[10px] font-bold font-mono px-1 py-0.5 rounded bg-radioactive-500/15 border border-radioactive-600/30">
-                              ☢️ {entry.multiplier}
-                            </span>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-mono text-toxic-100/30">No contamination</span>
-                      )}
-                    </div>
-                    <span className={`font-mono text-sm tabular-nums ${entry.multiplied ? 'text-radioactive-400 font-bold' : 'text-toxic-300'}`}>+{formatPP(entry.pp)}</span>
-                  </div>
-                );
-              } else if (entry.kind === 'double') {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-toxic-500/10 border border-toxic-500/30">
-                    <span className="text-sm font-mono text-toxic-400">☢️ DOUBLED!</span>
-                    <span className="font-mono text-sm text-toxic-400 font-bold tabular-nums">+{formatPP(entry.pp)}</span>
-                  </div>
-                );
-              } else if (entry.kind === 'half') {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-hazard-amber/10 border border-hazard-amber/30">
-                    <span className="text-sm font-mono text-hazard-amber">⚠️ HALVED</span>
-                    <span className="font-mono text-sm text-hazard-amber tabular-nums">+{formatPP(entry.pp)}</span>
-                  </div>
-                );
-              } else if (entry.kind === 'safe') {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-radioactive-500/10 border border-radioactive-600/30">
-                    <span className="text-sm font-mono text-radioactive-400">☣️ SECURED</span>
-                    <span className="font-mono text-sm text-radioactive-400 tabular-nums">+{formatPP(entry.pp)}</span>
-                  </div>
-                );
-              } else if (entry.kind === 'forfeit') {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
-                    <span className="text-sm font-mono text-red-400">☣️ FORFEITED</span>
-                    <span className="font-mono text-sm text-red-400">— 0 —</span>
-                  </div>
-                );
-              } else {
-                return (
-                  <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded bg-red-900/20 border border-red-800/30">
-                    <span className="text-sm font-mono text-red-400">☠️ SPILLED</span>
-                    <span className="font-mono text-sm text-red-400">— 0 —</span>
-                  </div>
-                );
-              }
-            })
-          )}
-        </div>
-      )}
     </div>
   );
 }
