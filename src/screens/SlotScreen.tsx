@@ -62,20 +62,6 @@ function HistorySymbolIcon({ symId }: { symId: SymbolId }) {
 }
 
 export function SlotScreen({ state, actions }: { state: GameState; actions: GameActions }) {
-  const [machineArt, setMachineArt] = useState('');
-  const [spinArt, setSpinArt] = useState('');
-  const [spinPressed, setSpinPressed] = useState(false);
-  useEffect(() => {
-    let active = true;
-    fetch('/SlotsScreen.html').then((response) => response.text()).then((html) => {
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      const machine = doc.querySelector<HTMLImageElement>('.art')?.getAttribute('src') ?? '';
-      const spin = doc.querySelector<HTMLImageElement>('#spinArtwork')?.getAttribute('src') ?? '';
-      if (active) { setMachineArt(machine); setSpinArt(spin); }
-    }).catch(() => undefined);
-    return () => { active = false; };
-  }, []);
-
   const toast = useToast();
   const [grid, setGrid] = useState<SymbolId[][]>(() => {
     const init: SymbolId[][] = [];
@@ -331,8 +317,24 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-center">
-        <BonusBtn icon={<Zap size={16} />} label="Sludge Accelerator" sub={`${2 - state.dailyPotAccel} left • x2 flow for 5 min`} ad onClick={handlePotAccel} disabled={state.dailyPotAccel >= 2 || spinning} />
+      {/* Ad spins and existing accelerator */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={handleMysteryPack}
+          disabled={spinning}
+          className="ghost-btn min-h-[64px] p-2.5 text-center font-display font-black text-sm leading-tight text-toxic-300 disabled:opacity-40"
+        >
+          <span className="block">▶ WATCH AD</span>
+          <span className="block">GET 15–25 SPINS</span>
+        </button>
+        <BonusBtn
+          icon={<Zap size={16} />}
+          label="Sludge Accelerator"
+          sub={`${2 - state.dailyPotAccel} left • x2 flow for 5 min`}
+          ad
+          onClick={handlePotAccel}
+          disabled={state.dailyPotAccel >= 2 || spinning}
+        />
       </div>
 
       {(isHotStreakActive(state) || isPotAccelActive(state)) && (
@@ -355,16 +357,16 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         className="relative w-full mx-auto"
         style={{
           maxWidth: '480px',
-          aspectRatio: '941 / 1576',
+          aspectRatio: '433 / 577',
         }}
       >
         <div
           className="absolute z-10"
           style={{
-            top: '39.31574%',
-            height: '21.00609%',
-            left: '10.2%',
-            width: '79.7%',
+            top: '40%',
+            bottom: '8%',
+            left: '10.5%',
+            right: '10.5%',
           }}
         >
           <div ref={reelsRef} className="grid grid-cols-5 gap-0 h-full">
@@ -413,16 +415,11 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </div>
         </div>
         <img
-          src={machineArt || '/reel-box.png'}
+          src="/reel-box.png"
           alt="Puke Town Cash Lab"
-          className="absolute inset-0 w-full h-full z-0"
-          style={{ pointerEvents: 'none', objectFit: 'fill' }}
+          className="absolute inset-0 w-full h-full z-20"
+          style={{ pointerEvents: 'none' }}
         />
-        <div style={{ position: 'absolute', left: '5.1%', top: '62.92107%', width: '28.1%', height: '8.38122%', zIndex: 29, background: '#020503', border: '1px solid rgba(88,255,30,.18)', borderRadius: 8, boxShadow: 'inset 0 0 8px rgba(0,0,0,.85)', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <button onClick={handleMysteryPack} disabled={spinning} style={{ width: '100%', height: '100%', border: '1px solid #d14cff', borderRadius: 7, background: 'linear-gradient(135deg,#260044,#6500a5 55%,#1b0032)', color: '#fff', fontWeight: 1000, fontSize: 'clamp(10px,2.2vw,19px)', lineHeight: 1.35, textShadow: '0 0 7px #e78aff', boxShadow: 'inset 0 0 10px #a900ff,0 0 8px #c100ff65' }}>▶ WATCH AD<br />GET 15–25 SPINS</button>
-        </div>
-        {spinArt && <img src={spinArt} alt="" aria-hidden="true" draggable={false} onPointerDown={() => setSpinPressed(true)} style={{ position: 'absolute', left: '36.66%', top: '59.26%', width: '26.68%', aspectRatio: '1', objectFit: 'contain', zIndex: 30, pointerEvents: 'none', transform: spinPressed ? 'translateY(7px) scale(.985)' : 'translateY(0)', filter: spinPressed ? 'brightness(.88)' : 'none', transition: 'transform 100ms cubic-bezier(.2,.75,.25,1),filter 100ms ease' }} />}
-        <button aria-label="Spin reels" onClick={doSpin} onPointerDown={() => setSpinPressed(true)} onPointerUp={() => setSpinPressed(false)} onPointerCancel={() => setSpinPressed(false)} onPointerLeave={() => setSpinPressed(false)} onBlur={() => setSpinPressed(false)} disabled={!canSpin || spinning} style={{ position: 'absolute', left: '36%', top: '62.33756%', width: '28%', height: '11.45787%', zIndex: 31, border: 0, padding: 0, background: 'transparent', boxShadow: 'none', outline: 'none', touchAction: 'manipulation' }} />
       </div>
 
       <div className="max-w-lg mx-auto space-y-3 px-2">
@@ -455,7 +452,17 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
           </span>
         </div>
 
-
+        <button
+          onClick={doSpin}
+          disabled={!canSpin || spinning}
+          className="toxic-btn w-full py-4 text-lg flex items-center justify-center gap-2 active:translate-y-1 active:scale-[.985] active:brightness-90 transition-transform"
+        >
+          {spinning ? (
+            <><RefreshCw size={22} className="animate-spin" /> CONTAMINATING...</>
+          ) : (
+            <><Play size={22} /> CONTAMINATE</>
+          )}
+        </button>
 
         <button
           onClick={toggleAutoSpin}
