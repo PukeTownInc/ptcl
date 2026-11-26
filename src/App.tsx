@@ -16,10 +16,9 @@ import { RoadmapScreen } from './screens/RoadmapScreen';
 import { ContagionCacheScreen } from './screens/ContagionCacheScreen';
 import { PlinkoScreen } from './screens/PlinkoScreen';
 import { LoginScreen } from './components/LoginScreen';
-import { DAILY_XP_FREE_CAP } from './constants';
 
 function AppContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signInAnonymously } = useAuth();
   const userId = user?.id ?? null;
   const { state, cloudLoading, ...actions } = useGameState(userId);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
@@ -82,7 +81,7 @@ function AppContent() {
   }
 
   if (!user) {
-    return <LoginScreen />;
+    return <LoginScreen onSkip={signInAnonymously} />;
   }
 
   if (cloudLoading || !state) {
@@ -113,7 +112,7 @@ function AppContent() {
           alt="Install Puke Town Cash Lab"
           onClick={handleInstallClick}
           className={`h-auto ${deferredPrompt ? 'cursor-pointer' : 'cursor-default opacity-90'}`}
-          style={{ 
+          style={{
             width: '100%',
             maxWidth: '320px'
           }}

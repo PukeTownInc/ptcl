@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Tv, LogOut, Zap, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 interface Props {
-  onSkip: () => void;
+  onSkip: () => Promise<{ success: boolean; error?: string }>;
 }
 export function LoginScreen({ onSkip }: Props) {
   const { signInWithEmailPassword, signUpWithEmailPassword } = useAuth();
@@ -21,6 +21,21 @@ export function LoginScreen({ onSkip }: Props) {
     setBusy(false);
     if (!result.success) {
       setStatus({ type: 'error', msg: result.error ?? 'Authentication failed' });
+    }
+  };
+  const handleGuest = async () => {
+    if (busy) return;
+    setBusy(true);
+    setStatus(null);
+    try {
+      const result = await onSkip();
+      if (!result.success) {
+        setStatus({ type: 'error', msg: result.error ?? 'Guest sign-in failed' });
+      }
+    } catch (error) {
+      setStatus({ type: 'error', msg: error instanceof Error ? error.message : 'Guest sign-in failed' });
+    } finally {
+      setBusy(false);
     }
   };
   return (
@@ -67,6 +82,7 @@ export function LoginScreen({ onSkip }: Props) {
           </button>
           <button
             onClick={() => { setIsSignUp(!isSignUp); setStatus(null); }}
+            disabled={busy}
             className="w-full text-center text-[11px] text-toxic-100/40 hover:text-toxic-100/70 font-mono transition-colors mt-2"
           >
             {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
@@ -74,6 +90,7 @@ export function LoginScreen({ onSkip }: Props) {
         </div>
         {status && (
           <div
+            role="status"
             className={`text-center text-[11px] font-mono p-2.5 rounded-lg ${
               status.type === 'success'
                 ? 'bg-toxic-500/10 border border-toxic-600/30 text-toxic-400'
@@ -92,10 +109,11 @@ export function LoginScreen({ onSkip }: Props) {
           </div>
         </div>
         <button
-          onClick={onSkip}
-          className="w-full py-2.5 text-[11px] text-toxic-100/40 hover:text-toxic-100/70 font-mono transition-colors flex items-center justify-center gap-1.5"
+          onClick={handleGuest}
+          disabled={busy}
+          className="w-full py-2.5 text-[11px] text-toxic-100/40 hover:text-toxic-100/70 font-mono transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
         >
-          <Zap size={12} /> Continue as Guest
+          <Zap size={12} /> {busy ? 'CONNECTING…' : 'Continue as Guest'}
         </button>
         <p className="text-center text-[9px] text-toxic-100/20 font-mono pt-2">
           Guest progress stays on this device only. Sign in to withdraw & sync.
