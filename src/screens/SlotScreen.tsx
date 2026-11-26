@@ -63,12 +63,7 @@ const BRIDGE = `
     const timer = $('dailyRewardTimer');
     const button = $('claimReward');
     if (!timer || !button) return;
-    const remaining = Math.max(0, Math.ceil((nextUkMidnight() - Date.now()) / 1000));
-    const hours = Math.floor(remaining / 3600);
-    const minutes = Math.floor((remaining % 3600) / 60);
-    const seconds = remaining % 60;
-    timer.textContent = 'NEXT FREE SPINS IN ' + String(hours).padStart(2, '0') + ':' +
-      String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    timer.textContent = 'RESETS MIDNIGHT';
     if (dailyClaimed) {
       button.setAttribute('aria-label', 'Daily spin reward claimed today');
       button.disabled = true;
@@ -246,8 +241,6 @@ const BRIDGE = `
     ['pointerup','pointercancel','pointerleave','blur'].forEach(e => spinButton.addEventListener(e, up));
   }
   updateDailyRewardTimer();
-  const dailyRewardInterval = setInterval(updateDailyRewardTimer, 1000);
-  window.addEventListener('beforeunload', () => clearInterval(dailyRewardInterval));
   send({type:'PT_FRAME_READY'});
 })();
 `;
