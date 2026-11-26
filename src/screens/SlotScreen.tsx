@@ -137,6 +137,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
       toast('error', 'No Toxic Twists Left', 'Absorb radiation or wait for daily dose');
       return;
     }
+    const usesFreeSpin = freeSpinsLeft > 0;
     setSpinning(true);
     setWinPositions(new Set());
     setWinPP(0);
@@ -197,7 +198,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         }
       }
       actions.addXP(1, false);
-      actions.recordSpin();
+      actions.recordSpin(!usesFreeSpin);
       if (freeSpinsLeft > 0) {
         setFreeSpinsLeft((n) => n - 1);
       }
@@ -326,7 +327,7 @@ export function SlotScreen({ state, actions }: { state: GameState; actions: Game
         <button
           onClick={handleMysteryPack}
           disabled={spinning}
-          className="ghost-btn min-h-[64px] p-2.5 text-center font-display font-black text-sm leading-tight text-toxic-300 disabled:opacity-40 active:translate-y-1 active:scale-[0.985] transition-transform"
+          className="min-h-[64px] p-2.5 text-center font-display font-black text-sm leading-tight text-white rounded-lg border border-fuchsia-400 bg-gradient-to-br from-purple-950 via-purple-800 to-purple-950 shadow-[inset_0_0_10px_rgba(169,0,255,.65),0_0_8px_rgba(193,0,255,.35)] text-shadow disabled:opacity-40 active:translate-y-1 active:scale-[0.985] transition-transform"
         >
           <span className="block">▶ WATCH AD</span>
           <span className="block">GET 15–25 SPINS</span>
