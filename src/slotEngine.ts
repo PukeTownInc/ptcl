@@ -2,9 +2,9 @@ import type { SlotSymbol, SpinResult, SymbolId, WinLine } from './types';
 import { JACKPOT_TYPES, JACKPOT_WEIGHTS, REEL_COUNT, ROW_COUNT, SYMBOLS } from './constants';
 
 const REGULAR_IDS: SymbolId[] = [
-  'beetle', 'wastepit', 'toxiccloud',
   'puke', 'slime', 'sneeze', 'tp', 'pill', 'germ',
   'beaker', 'vomit', 'toxic', 'barrel', 'warn', 'rich',
+  'beetle', 'wastepit', 'toxiccloud',
 ];
 const SPECIAL_IDS: SymbolId[] = ['wild', 'scatter', 'bonus', 'hazard', 'jackpot'];
 
