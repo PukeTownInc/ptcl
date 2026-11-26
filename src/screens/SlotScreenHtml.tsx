@@ -6,6 +6,8 @@ import { getLevel, getLevelProgress } from '../constants';
 type SlotMessage =
   | { type: 'PT_FRAME_READY' }
   | { type: 'PT_SPIN_REQUEST'; spinId: string; paid?: boolean }
+  | { type: 'PT_SPIN_COMPLETE'; spinId: string }
+  | { type: 'PT_SPIN_ERROR'; spinId: string }
   | { type: 'PT_REWARD'; eventId: string; pp?: number; spins?: number; xp?: number }
   | { type: 'PT_DAILY_CLAIM'; requestId: string };
 
@@ -49,6 +51,11 @@ export function SlotScreenHtml({ state, actions }: Props) {
         }
         activeSpin.current = data.spinId;
         if (data.paid !== false) actions.recordSpin();
+        return;
+      }
+
+      if (data.type === 'PT_SPIN_COMPLETE' || data.type === 'PT_SPIN_ERROR') {
+        if (activeSpin.current === data.spinId) activeSpin.current = null;
         return;
       }
 
