@@ -63,22 +63,21 @@ const BRIDGE = `
     const timer = $('dailyRewardTimer');
     const button = $('claimReward');
     if (!timer || !button) return;
-    if (dailyClaimed) {
-      timer.textContent = 'CLAIMED TODAY';
-      button.setAttribute('aria-label', 'Daily spin reward claimed today');
-      button.disabled = true;
-      button.style.cursor = 'default';
-      return;
-    }
     const remaining = Math.max(0, Math.ceil((nextUkMidnight() - Date.now()) / 1000));
     const hours = Math.floor(remaining / 3600);
     const minutes = Math.floor((remaining % 3600) / 60);
     const seconds = remaining % 60;
-    timer.textContent = 'NEXT SPIN IN ' + String(hours).padStart(2, '0') + ':' +
+    timer.textContent = 'NEXT FREE SPINS IN ' + String(hours).padStart(2, '0') + ':' +
       String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-    button.setAttribute('aria-label', 'Claim daily spin reward');
-    button.disabled = false;
-    button.style.cursor = 'pointer';
+    if (dailyClaimed) {
+      button.setAttribute('aria-label', 'Daily spin reward claimed today');
+      button.disabled = true;
+      button.style.cursor = 'default';
+    } else {
+      button.setAttribute('aria-label', 'Claim daily spin reward');
+      button.disabled = false;
+      button.style.cursor = 'pointer';
+    }
   };
   const makeCell = (id, win) => {
     const meta = symbols[id] || {};
