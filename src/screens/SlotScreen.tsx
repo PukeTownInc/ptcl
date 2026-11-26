@@ -108,7 +108,8 @@ const BRIDGE = `
   $('closeAdModal')?.addEventListener('click', () => $('adRewardModal').style.display='none');
   $('completeDemoAd')?.addEventListener('click', () => $('adRewardModal').style.display='none');
   ['betDown','betUp','freeSpin','autoDown','autoUp'].forEach(id => $(id)?.remove());
-  $('betReadout')?.remove();
+  const betReadout = $('betReadout');
+  if (betReadout) { betReadout.id = 'spinBalance'; betReadout.className = 'betReadout'; betReadout.textContent = '0'; betReadout.setAttribute('aria-label', 'Shared spins remaining'); }
   $('freeSpinsReadout')?.remove();
   $('poolReadout')?.remove();
   $('modalReset')?.remove();
@@ -119,12 +120,13 @@ const BRIDGE = `
     if (m.type === 'PT_INIT') {
       symbols = m.symbols || {};
       balance = m.balance || 0;
+      if ($('spinBalance')) $('spinBalance').textContent = String(balance);
       if (m.initialGrid) draw(m.initialGrid, []);
       $('autoReadout').textContent = '—';
       $('claimReward').style.opacity = m.dailyClaimed ? '.35' : '1';
       $('claimReward').disabled = !!m.dailyClaimed;
     }
-    if (m.type === 'PT_BALANCE') balance = m.balance;
+    if (m.type === 'PT_BALANCE') { balance = m.balance; if ($('spinBalance')) $('spinBalance').textContent = String(balance); }
     if (m.type === 'PT_SPIN_START') {
       spinButton.disabled = true;
       art?.classList.remove('is-pressed');
