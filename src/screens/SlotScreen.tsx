@@ -62,8 +62,8 @@ const BRIDGE = `
   const updateDailyRewardTimer = () => {
     const timer = $('dailyRewardTimer');
     const button = $('claimReward');
-    if (!timer || !button) return;
-    timer.textContent = 'RESETS MIDNIGHT';
+    if (timer) timer.remove();
+    if (!button) return;
     if (dailyClaimed) {
       button.setAttribute('aria-label', 'Daily spin reward claimed today');
       button.disabled = true;
