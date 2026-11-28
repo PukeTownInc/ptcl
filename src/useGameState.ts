@@ -452,7 +452,7 @@ export function useGameState(userId: string | null) {
   const recordWithdrawal = useCallback((rec: WithdrawalRecord) => {
     updateState((prev) => ({
       ...prev,
-      withdrawablePP: Math.max(0, prev.withdrawablePP - (rec.amountPP + rec.feePP)),
+      withdrawablePP: Math.max(0, prev.withdrawablePP - rec.amountPP),
       lastWithdraw: Date.now(),
       withdrawalHistory: [rec, ...prev.withdrawalHistory].slice(0, 50),
     }));
